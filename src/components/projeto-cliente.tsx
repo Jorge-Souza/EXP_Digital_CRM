@@ -22,6 +22,22 @@ const typeLabels: Record<string, string> = {
   feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
 }
 
+const typeColors: Record<string, string> = {
+  feed:      "border-l-4 border-l-blue-400 bg-blue-50/50 dark:bg-blue-950/20",
+  reels:     "border-l-4 border-l-pink-400 bg-pink-50/50 dark:bg-pink-950/20",
+  story:     "border-l-4 border-l-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
+  carrossel: "border-l-4 border-l-violet-400 bg-violet-50/50 dark:bg-violet-950/20",
+  tiktok:    "border-l-4 border-l-cyan-400 bg-cyan-50/50 dark:bg-cyan-950/20",
+}
+
+const typeBadgeColors: Record<string, string> = {
+  feed:      "bg-blue-100 text-blue-700 border-blue-200",
+  reels:     "bg-pink-100 text-pink-700 border-pink-200",
+  story:     "bg-amber-100 text-amber-700 border-amber-200",
+  carrossel: "bg-violet-100 text-violet-700 border-violet-200",
+  tiktok:    "bg-cyan-100 text-cyan-700 border-cyan-200",
+}
+
 const typeOptions = ["feed", "reels", "story", "carrossel", "tiktok"]
 
 interface PostEditState {
@@ -127,12 +143,12 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
           const isCollapsed = collapsed[status] ?? false
 
           return (
-            <div key={status} className="rounded-lg border overflow-hidden">
+            <div key={status} className="rounded-xl border overflow-hidden shadow-sm">
               {/* Header do grupo */}
               <button
                 type="button"
                 onClick={() => toggle(status)}
-                className="flex w-full items-center gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+                className="flex w-full items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-muted/50 hover:bg-gray-200 dark:hover:bg-muted/70 transition-colors text-left"
               >
                 {isCollapsed
                   ? <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -156,7 +172,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
               {/* Lista */}
               {!isCollapsed && (
                 <div>
-                  <div className="grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 px-4 py-1.5 border-b bg-muted/20 text-xs font-medium text-muted-foreground">
+                  <div className="grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 px-4 py-1.5 border-b bg-gray-50 dark:bg-muted/20 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     <span>Título</span>
                     <span>Tipo</span>
                     <span>Data</span>
@@ -164,7 +180,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                     <span />
                   </div>
                   {items.length === 0 ? (
-                    <p className="px-4 py-3 text-xs text-muted-foreground italic">
+                    <p className="px-4 py-3 text-xs text-muted-foreground italic bg-gray-50 dark:bg-muted/10">
                       Nenhuma publicação neste status
                     </p>
                   ) : (
@@ -172,12 +188,12 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                       <div
                         key={post.id}
                         onClick={() => openEdit(post)}
-                        className="grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                        className={`grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:brightness-95 transition-all cursor-pointer ${typeColors[post.tipo] ?? "border-l-4 border-l-gray-300 bg-gray-50/50"}`}
                       >
-                        <p className="text-sm font-medium truncate">{post.titulo}</p>
-                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 w-fit">
+                        <p className="text-sm font-semibold truncate">{post.titulo}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${typeBadgeColors[post.tipo] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
                           {typeLabels[post.tipo] ?? post.tipo}
-                        </Badge>
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {post.data_publicacao
                             ? new Date(post.data_publicacao + "T00:00:00").toLocaleDateString("pt-BR")
