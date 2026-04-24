@@ -8,7 +8,6 @@ import {
   CalendarDays,
   LogOut,
   ChevronUp,
-  Zap,
   FolderKanban,
 } from "lucide-react"
 import {
@@ -35,15 +34,15 @@ import { useRouter } from "next/navigation"
 import type { ClientStatus } from "@/lib/types"
 
 const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Publicações", url: "/publicacoes", icon: CalendarDays },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, emoji: "📊" },
+  { title: "Clientes", url: "/clientes", icon: Users, emoji: "👥" },
+  { title: "Publicações", url: "/publicacoes", icon: CalendarDays, emoji: "📅" },
 ]
 
 const statusDot: Record<ClientStatus, string> = {
-  ativo: "bg-green-500",
-  pausado: "bg-yellow-500",
-  inativo: "bg-gray-400",
+  ativo: "bg-green-400",
+  pausado: "bg-yellow-400",
+  inativo: "bg-gray-500",
 }
 
 interface AppSidebarProps {
@@ -70,21 +69,28 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
+        <div className="flex items-center gap-3 px-3 py-4">
+          {/* Logo EXP */}
+          <div className="flex items-end leading-none select-none shrink-0">
+            <span className="text-2xl font-black text-white tracking-tight">E</span>
+            <span className="text-2xl font-black tracking-tight"
+              style={{ background: "linear-gradient(135deg, #C084FC, #7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              X
+            </span>
+            <span className="text-2xl font-black text-white tracking-tight">P</span>
           </div>
           <div>
-            <p className="text-sm font-semibold">EXP Digital</p>
-            <p className="text-xs text-muted-foreground">CRM</p>
+            <p className="text-sm font-bold text-white">EXP Digital</p>
+            <p className="text-[10px] text-white/40 tracking-wider uppercase">Sistema CRM</p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Menu principal */}
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3">
+            Menu Principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -92,8 +98,9 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
                   <SidebarMenuButton
                     render={<Link href={item.url} />}
                     isActive={pathname === item.url}
+                    className="text-white/70 hover:text-white hover:bg-white/10 data-[active=true]:bg-purple-600/30 data-[active=true]:text-white font-medium"
                   >
-                    <item.icon />
+                    <span className="text-base">{item.emoji}</span>
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -102,16 +109,15 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Projetos por cliente */}
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center gap-1.5">
-            <FolderKanban className="h-3.5 w-3.5" />
+          <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3 flex items-center gap-1.5">
+            <FolderKanban className="h-3 w-3" />
             Projetos
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {clients.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-muted-foreground">
+                <p className="px-3 py-2 text-xs text-white/30">
                   Nenhum cliente ainda
                 </p>
               ) : (
@@ -120,10 +126,10 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
                     <SidebarMenuButton
                       render={<Link href={`/clientes/${c.id}/projeto`} />}
                       isActive={pathname.startsWith(`/clientes/${c.id}`)}
-                      className="gap-2.5"
+                      className="text-white/60 hover:text-white hover:bg-white/10 data-[active=true]:bg-purple-600/30 data-[active=true]:text-white gap-2.5"
                     >
                       <span className={`h-2 w-2 rounded-full shrink-0 ${statusDot[c.status]}`} />
-                      <span className="truncate">{c.nome}</span>
+                      <span className="truncate text-sm">{c.nome}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))
@@ -137,20 +143,21 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="hover:bg-white/10" />}>
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+                  <AvatarFallback className="rounded-lg text-xs font-bold text-white"
+                    style={{ background: "linear-gradient(135deg, #9333EA, #7C3AED)" }}>
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{userName ?? "Usuária"}</span>
-                  <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                  <span className="truncate font-semibold text-white">{userName ?? "Usuária"}</span>
+                  <span className="truncate text-xs text-white/40">{userEmail}</span>
                 </div>
-                <ChevronUp className="ml-auto h-4 w-4" />
+                <ChevronUp className="ml-auto h-4 w-4 text-white/40" />
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>

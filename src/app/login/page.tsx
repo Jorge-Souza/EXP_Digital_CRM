@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Loader2 } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function LoginPage() {
@@ -34,29 +34,42 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <Zap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="font-bold text-lg leading-none">EXP Digital</p>
-              <p className="text-xs text-muted-foreground">Sistema CRM</p>
-            </div>
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "linear-gradient(135deg, #0f0a1e 0%, #1a0b2e 50%, #0f0a1e 100%)" }}>
+
+      {/* Glow de fundo */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, #7C3AED 0%, transparent 70%)" }} />
+      </div>
+
+      <div className="relative w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8 gap-2">
+          <div className="flex items-end gap-1 leading-none select-none">
+            <span className="text-6xl font-black text-white tracking-tight">E</span>
+            <span className="text-6xl font-black tracking-tight"
+              style={{ background: "linear-gradient(135deg, #C084FC 0%, #7C3AED 50%, #4C1D95 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              X
+            </span>
+            <span className="text-6xl font-black text-white tracking-tight">P</span>
+          </div>
+          <span className="text-white/60 text-sm font-light tracking-[0.3em] uppercase">digital</span>
+          <div className="mt-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10">
+            <span className="text-purple-300 text-xs font-medium tracking-wider">✨ Sistema CRM</span>
           </div>
         </div>
 
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Bem-vinda de volta</CardTitle>
-            <CardDescription>Entre com seu email e senha para acessar</CardDescription>
+        <Card className="border-purple-500/20 shadow-2xl"
+          style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)" }}>
+          <CardHeader className="text-center pb-2">
+            <p className="text-white/90 text-lg font-semibold">Bem-vinda de volta 👋</p>
+            <p className="text-white/40 text-sm">Entre com suas credenciais para acessar</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-white/70 text-sm">📧 Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -65,10 +78,11 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-purple-400 focus:ring-purple-400/30"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" className="text-white/70 text-sm">🔒 Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -77,16 +91,19 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-purple-400 focus:ring-purple-400/30"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full font-semibold text-base h-11 mt-2"
+                style={{ background: "linear-gradient(135deg, #9333EA, #7C3AED)", boxShadow: "0 4px 20px rgba(124,58,237,0.4)" }}
+                disabled={loading}
+              >
                 {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</>
                 ) : (
-                  "Entrar"
+                  "Entrar →"
                 )}
               </Button>
             </form>
