@@ -70,14 +70,37 @@ export function ClientForm({ client }: ClientFormProps) {
       observacoes: form.observacoes || null,
     }
 
-    const { error } = client?.id
-      ? await supabase.from("clients").update(payload).eq("id", client.id)
-      : await supabase.from("clients").insert(payload)
+    if (client?.id) {
+      const { error } = await supabase.from("clients").update(payload).eq("id", client.id)
+      if (error) {
+        toast.error("Erro ao salvar cliente: " + error.message)
+        setLoading(false)
+        return
+      }
+    } else {
+      const { data: novo, error } = await supabase.from("clients").insert(payload).select("id, nome").single()
+      if (error || !novo) {
+        toast.error("Erro ao salvar cliente: " + (error?.message ?? "desconhecido"))
+        setLoading(false)
+        return
+      }
 
-    if (error) {
-      toast.error("Erro ao salvar cliente: " + error.message)
-      setLoading(false)
-      return
+      // Cria pasta no Google Drive automaticamente
+      if (!payload.drive_folder_url) {
+        try {
+          const res = await fetch("/api/drive/create-folder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientName: novo.nome }),
+          })
+          const driveData = await res.json()
+          if (driveData.folderUrl) {
+            await supabase.from("clients").update({ drive_folder_url: driveData.folderUrl }).eq("id", novo.id)
+          }
+        } catch {
+          // não bloqueia o cadastro se o Drive falhar
+        }
+      }
     }
 
     toast.success(client?.id ? "Cliente atualizado!" : "Cliente cadastrado!")
