@@ -1,5 +1,5 @@
 export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
-export type PostStatus = 'planejado' | 'falta_insumo' | 'producao' | 'aprovado' | 'publicado'
+export type PostStatus = 'planejado' | 'falta_insumo' | 'producao' | 'aprovado_design' | 'aprovado' | 'agendado' | 'publicado'
 export type PostType = 'feed' | 'reels' | 'story' | 'tiktok' | 'carrossel'
 export type UserRole = 'admin' | 'profissional'
 

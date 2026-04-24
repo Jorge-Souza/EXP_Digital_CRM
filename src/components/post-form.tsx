@@ -18,9 +18,10 @@ interface PostFormProps {
   post?: Post
   defaultClientId?: string
   defaultStatus?: string
+  defaultDate?: string
 }
 
-export function PostForm({ clients, post, defaultClientId, defaultStatus }: PostFormProps) {
+export function PostForm({ clients, post, defaultClientId, defaultStatus, defaultDate }: PostFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -30,7 +31,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus }: Post
     tema: post?.tema ?? "",
     tipo: post?.tipo ?? "feed",
     status: post?.status ?? defaultStatus ?? "planejado",
-    data_publicacao: post?.data_publicacao ?? "",
+    data_publicacao: post?.data_publicacao ?? defaultDate ?? "",
     drive_file_url: post?.drive_file_url ?? "",
     notas: post?.notas ?? "",
   })
@@ -140,7 +141,9 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus }: Post
                   <SelectItem value="planejado">Falta Fazer</SelectItem>
                   <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
                   <SelectItem value="producao">Em Produção</SelectItem>
+                  <SelectItem value="aprovado_design">Aprovação Design</SelectItem>
                   <SelectItem value="aprovado">P/ Aprovação Cliente</SelectItem>
+                  <SelectItem value="agendado">Agendado</SelectItem>
                   <SelectItem value="publicado">Postado</SelectItem>
                 </SelectContent>
               </Select>

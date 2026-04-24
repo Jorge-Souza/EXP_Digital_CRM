@@ -22,11 +22,13 @@ import { toast } from "sonner"
 import type { Post, Client } from "@/lib/types"
 
 const columnConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  planejado:    { label: "Falta Fazer",         color: "border-t-gray-400",   bg: "bg-gray-100 dark:bg-gray-800",    dot: "bg-gray-400" },
-  falta_insumo: { label: "Falta Insumo",        color: "border-t-red-500",    bg: "bg-red-50 dark:bg-red-950/30",    dot: "bg-red-500" },
-  producao:     { label: "Em Produção",          color: "border-t-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30", dot: "bg-yellow-500" },
-  aprovado:     { label: "P/ Aprovação",         color: "border-t-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",  dot: "bg-blue-500" },
-  publicado:    { label: "Postado ✅",           color: "border-t-green-500",  bg: "bg-green-50 dark:bg-green-950/30", dot: "bg-green-500" },
+  planejado:       { label: "Falta Fazer",         color: "border-t-gray-400",   bg: "bg-gray-100 dark:bg-gray-800",       dot: "bg-gray-400" },
+  falta_insumo:    { label: "Falta Insumo",        color: "border-t-red-500",    bg: "bg-red-50 dark:bg-red-950/30",       dot: "bg-red-500" },
+  producao:        { label: "Em Produção",          color: "border-t-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30", dot: "bg-yellow-500" },
+  aprovado_design: { label: "Aprovação Design",    color: "border-t-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30", dot: "bg-orange-500" },
+  aprovado:        { label: "P/ Aprovação",         color: "border-t-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",     dot: "bg-blue-500" },
+  agendado:        { label: "Agendado",             color: "border-t-amber-800",  bg: "bg-amber-50 dark:bg-amber-950/30",   dot: "bg-amber-800" },
+  publicado:       { label: "Postado ✅",           color: "border-t-green-500",  bg: "bg-green-50 dark:bg-green-950/30",   dot: "bg-green-500" },
 }
 
 const typeColors: Record<string, { bar: string; badge: string }> = {
@@ -41,7 +43,7 @@ const typeLabels: Record<string, string> = {
   feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
 }
 
-const groupOrder = ["planejado", "falta_insumo", "producao", "aprovado", "publicado"] as const
+const groupOrder = ["planejado", "falta_insumo", "producao", "aprovado_design", "aprovado", "agendado", "publicado"] as const
 
 type PostWithClient = Post & { clients: Pick<Client, "id" | "nome"> | null }
 

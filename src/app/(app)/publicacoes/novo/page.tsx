@@ -7,9 +7,9 @@ import type { Client } from "@/lib/types"
 export default async function NovaPublicacaoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ client_id?: string; status?: string }>
+  searchParams: Promise<{ client_id?: string; status?: string; data?: string }>
 }) {
-  const { client_id, status } = await searchParams
+  const { client_id, status, data } = await searchParams
   const supabase = await createClient()
 
   const { data: clients } = await supabase
@@ -29,7 +29,7 @@ export default async function NovaPublicacaoPage({
           <p className="text-muted-foreground">Cadastre um novo conteúdo</p>
         </div>
       </div>
-      <PostForm clients={(clients as Pick<Client, "id" | "nome">[]) ?? []} defaultClientId={client_id} defaultStatus={status} />
+      <PostForm clients={(clients as Pick<Client, "id" | "nome">[]) ?? []} defaultClientId={client_id} defaultStatus={status} defaultDate={data} />
     </div>
   )
 }

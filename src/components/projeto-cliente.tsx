@@ -272,7 +272,9 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                     <SelectItem value="planejado">Falta Fazer</SelectItem>
                     <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
                     <SelectItem value="producao">Em Produção</SelectItem>
-                    <SelectItem value="aprovado">P/ Aprovação</SelectItem>
+                    <SelectItem value="aprovado_design">Aprovação Design</SelectItem>
+                    <SelectItem value="aprovado">P/ Aprovação Cliente</SelectItem>
+                    <SelectItem value="agendado">Agendado</SelectItem>
                     <SelectItem value="publicado">Postado</SelectItem>
                   </SelectContent>
                 </Select>
