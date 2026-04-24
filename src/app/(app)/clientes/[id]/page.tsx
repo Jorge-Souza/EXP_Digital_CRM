@@ -19,11 +19,12 @@ const statusConfig = {
   pausado: { label: "Pausado", variant: "secondary" as const },
 }
 
-const postStatusConfig = {
-  planejado: { label: "Planejado", variant: "outline" as const },
-  producao: { label: "Em Produção", variant: "secondary" as const },
-  aprovado: { label: "Aprovado", variant: "default" as const },
-  publicado: { label: "Publicado", variant: "default" as const },
+const postStatusConfig: Record<string, { label: string; variant: "outline" | "secondary" | "default" | "destructive" }> = {
+  planejado:    { label: "Falta Fazer",          variant: "outline" },
+  falta_insumo: { label: "Falta Insumo",         variant: "destructive" },
+  producao:     { label: "Em Produção",           variant: "secondary" },
+  aprovado:     { label: "P/ Aprovação Cliente",  variant: "default" },
+  publicado:    { label: "Postado",               variant: "default" },
 }
 
 const postTypeLabels: Record<string, string> = {
