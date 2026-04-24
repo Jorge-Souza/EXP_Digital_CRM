@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  planejado: "Falta Fazer", falta_insumo: "Falta Insumo", producao: "Em Produção",
+  planejado: "Planejado", falta_insumo: "Falta Insumo", producao: "Em Produção",
   aprovado_design: "Aprovação Design", aprovado: "P/ Aprovação", agendado: "Agendado", publicado: "Postado",
 }
 
@@ -61,10 +61,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [datas, setDatas] = useState<DataComemorativa[]>(planejamento.datas_comemorativas)
 
   // Post extra fields
-  const [postFields, setPostFields] = useState<Record<string, { plataforma: string; referencia_url: string }>>(
+  const [postFields, setPostFields] = useState<Record<string, { plataforma: string; referencia_url: string; aprovado: boolean }>>(
     Object.fromEntries(posts.map((p) => [p.id, {
       plataforma: p.plataforma ?? "instagram",
       referencia_url: p.referencia_url ?? "",
+      aprovado: p.aprovado ?? false,
     }]))
   )
 
@@ -134,6 +135,14 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
   async function updatePostReferencia(postId: string, value: string) {
     await supabase.from("posts").update({ referencia_url: value || null }).eq("id", postId)
+  }
+
+  async function toggleAprovado(postId: string) {
+    const current = postFields[postId]?.aprovado ?? false
+    const next = !current
+    setPostFields((prev) => ({ ...prev, [postId]: { ...prev[postId], aprovado: next } }))
+    await supabase.from("posts").update({ aprovado: next }).eq("id", postId)
+    toast.success(next ? "Aprovado para o calendário" : "Removido do calendário")
   }
 
   function navMes(delta: number) {
@@ -367,6 +376,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                     <th className="px-3 py-2 text-left font-semibold">Plataforma</th>
                     <th className="px-3 py-2 text-left font-semibold">Referência</th>
                     <th className="px-3 py-2 text-left font-semibold">Status</th>
+                    <th className="px-3 py-2 text-center font-semibold">No Calendário</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -420,6 +430,19 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                             {STATUS_LABELS[post.status] ?? post.status}
                           </span>
                         </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <button
+                            onClick={() => toggleAprovado(post.id)}
+                            title={pf.aprovado ? "Remover do calendário" : "Aprovar para o calendário"}
+                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto transition-colors ${
+                              pf.aprovado
+                                ? "bg-green-500 border-green-500 text-white hover:bg-green-600"
+                                : "border-gray-300 text-gray-300 hover:border-gray-400 hover:text-gray-400"
+                            }`}
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
                     )
                   })}
@@ -430,13 +453,22 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
-      {/* Calendário */}
+      {/* Calendário — apenas posts aprovados */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {posts.filter((p) => postFields[p.id]?.aprovado).length} aprovados
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-hidden">
-          <CalendarioPlan posts={posts} ano={ano} mes={mesIndex} />
+          <CalendarioPlan
+            posts={posts.filter((p) => postFields[p.id]?.aprovado === true)}
+            ano={ano}
+            mes={mesIndex}
+          />
         </CardContent>
       </Card>
     </div>

@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import type { Post, PostStatus, PostType } from "@/lib/types"
 
 const STATUS_COLORS: Record<string, string> = {
-  planejado:       "bg-gray-300 text-gray-800",
+  planejado: "bg-gray-300 text-gray-800",
   falta_insumo:    "bg-red-400 text-red-950",
   producao:        "bg-yellow-300 text-yellow-900",
   aprovado_design: "bg-orange-400 text-orange-950",
@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  planejado:       "Falta Fazer",
+  planejado:       "Planejado",
   falta_insumo:    "Falta Insumo",
   producao:        "Em Produção",
   aprovado_design: "Aprovação Design",
@@ -331,7 +331,7 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
                 <Select value={editForm.status} onValueChange={(v) => v && setField("status", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="planejado">Falta Fazer</SelectItem>
+                    <SelectItem value="planejado">Planejado</SelectItem>
                     <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
                     <SelectItem value="producao">Em Produção</SelectItem>
                     <SelectItem value="aprovado_design">Aprovação Design</SelectItem>

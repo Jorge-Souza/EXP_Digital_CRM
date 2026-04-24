@@ -59,6 +59,7 @@ export default async function PublicPlanejamentoPage({
       .from("posts")
       .select("*")
       .eq("client_id", plan.client_id)
+      .eq("aprovado", true)
       .gte("data_publicacao", `${plan.mes}-01`)
       .lte("data_publicacao", `${plan.mes}-31`)
       .order("data_publicacao", { ascending: true }),

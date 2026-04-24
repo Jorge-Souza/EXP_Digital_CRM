@@ -138,7 +138,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
               <Select value={form.status} onValueChange={(v) => set("status", v ?? "planejado")}>
                 <SelectTrigger id="status"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="planejado">Falta Fazer</SelectItem>
+                  <SelectItem value="planejado">Planejado</SelectItem>
                   <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
                   <SelectItem value="producao">Em Produção</SelectItem>
                   <SelectItem value="aprovado_design">Aprovação Design</SelectItem>

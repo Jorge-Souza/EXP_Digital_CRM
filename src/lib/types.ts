@@ -42,6 +42,7 @@ export interface Post {
   notas: string | null
   plataforma: PostPlatform | null
   referencia_url: string | null
+  aprovado: boolean
   created_at: string
   updated_at: string
   client?: Client
