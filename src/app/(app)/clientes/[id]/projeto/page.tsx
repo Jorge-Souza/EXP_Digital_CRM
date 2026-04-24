@@ -4,8 +4,8 @@ import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Pencil } from "lucide-react"
 import Link from "next/link"
-import { ProjetoCliente } from "@/components/projeto-cliente"
 import { StatsSection } from "@/components/stats-section"
+import { ProjetoView } from "@/components/projeto-view"
 import type { Client, Post } from "@/lib/types"
 
 const clientStatusConfig = {
@@ -92,8 +92,8 @@ export default async function ProjetoPage({
         metaSemanal={c.meta_posts_semana}
       />
 
-      {/* Grupos por status */}
-      <ProjetoCliente clientId={id} posts={allPosts} />
+      {/* Lista ou Calendário */}
+      <ProjetoView clientId={id} posts={allPosts} />
     </div>
   )
 }
