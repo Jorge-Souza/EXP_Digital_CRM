@@ -44,7 +44,7 @@ export function ProjetoView({ clientId, posts }: ProjetoViewProps) {
 
       {view === "lista"
         ? <ProjetoCliente clientId={clientId} posts={posts} />
-        : <CalendarioMes posts={posts} />
+        : <CalendarioMes posts={posts} clientId={clientId} />
       }
     </div>
   )

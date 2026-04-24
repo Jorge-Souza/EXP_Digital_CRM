@@ -315,7 +315,7 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipo</Label>
-                <Select value={editForm.tipo} onValueChange={(v) => setField("tipo", v)}>
+                <Select value={editForm.tipo} onValueChange={(v) => v && setField("tipo", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="feed">Feed</SelectItem>
@@ -328,7 +328,7 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</Label>
-                <Select value={editForm.status} onValueChange={(v) => setField("status", v)}>
+                <Select value={editForm.status} onValueChange={(v) => v && setField("status", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="planejado">Falta Fazer</SelectItem>

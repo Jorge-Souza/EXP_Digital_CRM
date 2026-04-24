@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Pencil } from "lucide-react"
+import { ArrowLeft, Pencil, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { StatsSection } from "@/components/stats-section"
 import { ProjetoView } from "@/components/projeto-view"
@@ -74,6 +74,10 @@ export default async function ProjetoPage({
         <div className="flex items-center gap-2 shrink-0">
           <Link href={`/clientes/${id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Ver Perfil
+          </Link>
+          <Link href={`/clientes/${id}/planejamento`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <CalendarRange className="mr-1.5 h-3.5 w-3.5" />
+            Planejamento
           </Link>
           <Link href={`/clientes/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Pencil className="mr-1.5 h-3.5 w-3.5" />

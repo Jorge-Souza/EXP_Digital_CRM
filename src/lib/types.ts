@@ -1,6 +1,7 @@
 export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
 export type PostStatus = 'planejado' | 'falta_insumo' | 'producao' | 'aprovado_design' | 'aprovado' | 'agendado' | 'publicado'
 export type PostType = 'feed' | 'reels' | 'story' | 'tiktok' | 'carrossel'
+export type PostPlatform = 'instagram' | 'tiktok' | 'ambos'
 export type UserRole = 'admin' | 'profissional'
 
 export interface Client {
@@ -39,9 +40,37 @@ export interface Post {
   data_publicacao: string | null
   drive_file_url: string | null
   notas: string | null
+  plataforma: PostPlatform | null
+  referencia_url: string | null
   created_at: string
   updated_at: string
   client?: Client
+}
+
+export interface DataComemorativa {
+  data: string       // YYYY-MM-DD
+  nome: string
+  ideia: string
+  ativo: boolean
+}
+
+export interface Referencia {
+  id: string
+  url: string
+  label: string
+}
+
+export interface Planejamento {
+  id: string
+  client_id: string
+  mes: string  // YYYY-MM
+  objetivo_mes: string | null
+  sugestoes_acoes: string | null
+  referencias: Referencia[]
+  datas_comemorativas: DataComemorativa[]
+  share_token: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Profile {
