@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet"
 import {
-  ChevronLeft, ChevronRight, Link2, Copy, Plus, Trash2,
+  ChevronLeft, ChevronRight, Link2, Plus, Trash2,
   ExternalLink, ChevronDown, ChevronUp, Loader2, Check,
 } from "lucide-react"
 import { toast } from "sonner"
 import { CalendarioPlan } from "@/components/calendario-plan"
-import type { Client, Planejamento, DataComemorativa, Referencia, Post } from "@/lib/types"
+import type { Client, Planejamento, DataComemorativa, Referencia, Post, PostStatus, PostType } from "@/lib/types"
 
 const MESES = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
@@ -42,6 +42,11 @@ const STATUS_LABELS: Record<string, string> = {
   aprovado_design: "Aprovação Design", aprovado: "P/ Aprovação", agendado: "Agendado", publicado: "Postado",
 }
 
+interface PostEditForm {
+  titulo: string; tipo: string; status: string
+  data_publicacao: string; drive_file_url: string; notas: string; tema: string; aprovado: boolean
+}
+
 interface Props {
   planejamento: Planejamento
   client: Client
@@ -54,7 +59,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [ano, month] = mes.split("-").map(Number)
   const mesIndex = month - 1 // 0-based
 
-  // Fields state
+  // Planning fields
   const [objetivo, setObjetivo] = useState(planejamento.objetivo_mes ?? "")
   const [sugestoes, setSugestoes] = useState(planejamento.sugestoes_acoes ?? "")
   const [referencias, setReferencias] = useState<Referencia[]>(planejamento.referencias)
@@ -75,6 +80,15 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [newRefLabel, setNewRefLabel] = useState("")
   const [savingField, setSavingField] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [expandedDatas, setExpandedDatas] = useState<Set<number>>(new Set())
+
+  // Post edit sheet
+  const [editingPost, setEditingPost] = useState<Post | null>(null)
+  const [editForm, setEditForm] = useState<PostEditForm>({
+    titulo: "", tipo: "feed", status: "planejado",
+    data_publicacao: "", drive_file_url: "", notas: "", tema: "", aprovado: false,
+  })
+  const [savingPost, setSavingPost] = useState(false)
 
   // Debounce ref for datas ideias
   const datasTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -88,7 +102,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
     setSavingField(field)
     const { error } = await supabase
       .from("planejamentos")
-      .update({ [field]: value, updated_at: new Date().toISOString() })
+      .update({ [field]: value })
       .eq("id", planejamento.id)
     if (error) toast.error("Erro ao salvar")
     else toast.success("Salvo!")
@@ -106,6 +120,15 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
     const updated = datas.map((d, i) => (i === idx ? { ...d, ativo: !d.ativo } : d))
     setDatas(updated)
     await saveField("datas_comemorativas", updated)
+  }
+
+  function toggleDataExpanded(idx: number) {
+    setExpandedDatas((prev) => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      return next
+    })
   }
 
   async function addReferencia() {
@@ -142,7 +165,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
     const next = !current
     setPostFields((prev) => ({ ...prev, [postId]: { ...prev[postId], aprovado: next } }))
     await supabase.from("posts").update({ aprovado: next }).eq("id", postId)
-    toast.success(next ? "Aprovado para o calendário" : "Removido do calendário")
+    toast.success(next ? "Marcado para calendário oficial" : "Removido do calendário oficial")
   }
 
   function navMes(delta: number) {
@@ -162,6 +185,66 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
     }
   }
 
+  // Post edit functions
+  function openPostEdit(post: Post) {
+    setEditingPost(post)
+    setEditForm({
+      titulo: post.titulo,
+      tipo: post.tipo,
+      status: post.status,
+      data_publicacao: post.data_publicacao ?? "",
+      drive_file_url: post.drive_file_url ?? "",
+      notas: post.notas ?? "",
+      tema: post.tema ?? "",
+      aprovado: post.aprovado ?? false,
+    })
+  }
+
+  function setEditField(field: keyof PostEditForm, value: string | boolean) {
+    setEditForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSavePost() {
+    if (!editingPost) return
+    setSavingPost(true)
+    const { error } = await supabase
+      .from("posts")
+      .update({
+        titulo: editForm.titulo,
+        tipo: editForm.tipo as PostType,
+        status: editForm.status as PostStatus,
+        data_publicacao: editForm.data_publicacao || null,
+        drive_file_url: editForm.drive_file_url || null,
+        notas: editForm.notas || null,
+        tema: editForm.tema || null,
+        aprovado: editForm.aprovado,
+      })
+      .eq("id", editingPost.id)
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message)
+    } else {
+      toast.success("Publicação atualizada!")
+      setEditingPost(null)
+      router.refresh()
+    }
+    setSavingPost(false)
+  }
+
+  async function handleDeletePost() {
+    if (!editingPost) return
+    if (!confirm("Remover esta publicação?")) return
+    setSavingPost(true)
+    const { error } = await supabase.from("posts").delete().eq("id", editingPost.id)
+    if (error) {
+      toast.error("Erro ao remover: " + error.message)
+    } else {
+      toast.success("Publicação removida!")
+      setEditingPost(null)
+      router.refresh()
+    }
+    setSavingPost(false)
+  }
+
   const savingIndicator = (field: string) =>
     savingField === field ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null
 
@@ -170,11 +253,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => navMes(-1)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <button type="button" onClick={() => navMes(-1)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </button>
           <h2 className="text-xl font-black capitalize">{MESES[mesIndex]} {ano}</h2>
-          <button onClick={() => navMes(1)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <button type="button" onClick={() => navMes(1)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
@@ -204,49 +287,63 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
-      {/* Datas Comemorativas */}
+      {/* Datas Comemorativas — compacto com expand por item */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">📅 Datas Comemorativas</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2">
+            📅 Datas Comemorativas
+            <span className="text-xs font-normal bg-muted px-2 py-0.5 rounded-full">
+              {datas.filter(d => d.ativo).length} ativas
+            </span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {datas.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">Nenhuma data comemorativa neste mês.</p>
+            <p className="px-5 py-4 text-sm text-muted-foreground italic">Nenhuma data comemorativa neste mês.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y">
               {datas.map((d, idx) => (
-                <div key={d.data} className={`rounded-xl border p-4 space-y-3 transition-opacity ${d.ativo ? "" : "opacity-50"}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleAtivo(idx)}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          d.ativo ? "bg-primary border-primary" : "border-muted-foreground/40"
-                        }`}
-                      >
-                        {d.ativo && <Check className="h-3 w-3 text-primary-foreground" />}
-                      </button>
-                      <div>
-                        <p className="font-semibold text-sm">{d.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
-                        </p>
-                      </div>
+                <div key={d.data} className={`transition-opacity ${d.ativo ? "" : "opacity-40"}`}>
+                  <div className="flex items-center gap-3 px-4 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleAtivo(idx)}
+                      className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        d.ativo ? "bg-primary border-primary" : "border-muted-foreground/40"
+                      }`}
+                    >
+                      {d.ativo && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-semibold text-sm">{d.nome}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
+                      </span>
                     </div>
-                    <Badge variant={d.ativo ? "default" : "outline"} className="text-xs shrink-0">
-                      {d.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => toggleDataExpanded(idx)}
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1"
+                      title="Ver sugestão de conteúdo"
+                    >
+                      {expandedDatas.has(idx)
+                        ? <ChevronUp className="h-4 w-4" />
+                        : <ChevronDown className="h-4 w-4" />
+                      }
+                    </button>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Sugestão de ideia</Label>
-                    <Textarea
-                      value={d.ideia}
-                      onChange={(e) => handleIdeiaChange(idx, e.target.value)}
-                      rows={3}
-                      className="resize-none text-sm"
-                      placeholder="Descreva a ideia de conteúdo para esta data..."
-                    />
-                  </div>
+                  {expandedDatas.has(idx) && (
+                    <div className="px-4 pb-3 border-t bg-muted/20 space-y-2 pt-2">
+                      <Label className="text-xs text-muted-foreground">Sugestão de ideia</Label>
+                      <Textarea
+                        value={d.ideia}
+                        onChange={(e) => handleIdeiaChange(idx, e.target.value)}
+                        rows={3}
+                        className="resize-none text-sm"
+                        placeholder="Descreva a ideia de conteúdo para esta data..."
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -258,8 +355,9 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
       <Card>
         <CardHeader className="pb-0">
           <button
+            type="button"
             onClick={() => setRefExpanded((v) => !v)}
-            className="flex items-center justify-between w-full text-left"
+            className="flex items-center justify-between w-full text-left py-1"
           >
             <CardTitle className="text-sm flex items-center gap-2">
               🔗 Referências
@@ -289,6 +387,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                       {r.label}
                     </a>
                     <button
+                      type="button"
                       onClick={() => removeReferencia(r.id)}
                       className="text-muted-foreground hover:text-destructive shrink-0"
                     >
@@ -313,10 +412,10 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                   onChange={(e) => setNewRefUrl(e.target.value)}
                   placeholder="https://..."
                   className="text-sm flex-1"
-                  onKeyDown={(e) => e.key === "Enter" && addReferencia()}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addReferencia() } }}
                 />
-                <Button size="sm" onClick={addReferencia} disabled={!newRefUrl.trim()}>
-                  <Plus className="h-4 w-4" />
+                <Button type="button" size="sm" onClick={addReferencia} disabled={!newRefUrl.trim() || savingField === "referencias"}>
+                  {savingField === "referencias" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -376,14 +475,18 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                     <th className="px-3 py-2 text-left font-semibold">Plataforma</th>
                     <th className="px-3 py-2 text-left font-semibold">Referência</th>
                     <th className="px-3 py-2 text-left font-semibold">Status</th>
-                    <th className="px-3 py-2 text-center font-semibold">Planejado</th>
+                    <th className="px-3 py-2 text-center font-semibold">Cal. Oficial</th>
                   </tr>
                 </thead>
                 <tbody>
                   {posts.map((post) => {
-                    const pf = postFields[post.id] ?? { plataforma: "instagram", referencia_url: "" }
+                    const pf = postFields[post.id] ?? { plataforma: "instagram", referencia_url: "", aprovado: false }
                     return (
-                      <tr key={post.id} className="border-b last:border-0 hover:bg-muted/20">
+                      <tr
+                        key={post.id}
+                        className="border-b last:border-0 hover:bg-muted/20 cursor-pointer"
+                        onClick={() => openPostEdit(post)}
+                      >
                         <td className="px-4 py-2.5">
                           <p className="font-semibold truncate max-w-[180px]">{post.titulo}</p>
                           {post.tema && <p className="text-xs text-muted-foreground truncate max-w-[180px]">{post.tema}</p>}
@@ -396,7 +499,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                             ? new Date(post.data_publicacao + "T00:00:00").toLocaleDateString("pt-BR")
                             : "—"}
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                           <Select
                             value={pf.plataforma}
                             onValueChange={(v) => v && updatePostPlataforma(post.id, v)}
@@ -411,7 +514,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                           <Input
                             className="h-7 text-xs w-[160px]"
                             placeholder="https://..."
@@ -430,10 +533,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                             {STATUS_LABELS[post.status] ?? post.status}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
+                            type="button"
                             onClick={() => toggleAprovado(post.id)}
-                            title={pf.aprovado ? "Remover do calendário oficial" : "Aprovar para o calendário oficial"}
+                            title={pf.aprovado ? "Remover do calendário oficial" : "Mover para calendário oficial"}
                             className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto transition-colors ${
                               pf.aprovado
                                 ? "bg-green-500 border-green-500 text-white hover:bg-green-600"
@@ -459,7 +563,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
             <span className="text-xs text-muted-foreground">
-              {posts.filter((p) => p.data_publicacao).length} com data
+              {posts.filter((p) => p.data_publicacao).length} com data · clique para editar
             </span>
           </div>
         </CardHeader>
@@ -468,9 +572,128 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
             posts={posts}
             ano={ano}
             mes={mesIndex}
+            onPostClick={openPostEdit}
           />
         </CardContent>
       </Card>
+
+      {/* Sheet de edição de post */}
+      <Sheet open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
+          <SheetHeader className="px-5 py-4 border-b shrink-0">
+            <SheetTitle className="text-base font-semibold">Editar Publicação</SheetTitle>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Título</Label>
+              <Input value={editForm.titulo} onChange={(e) => setEditField("titulo", e.target.value)} className="text-sm" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipo</Label>
+                <Select value={editForm.tipo} onValueChange={(v) => v && setEditField("tipo", v)}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="feed">Feed</SelectItem>
+                    <SelectItem value="reels">Reels</SelectItem>
+                    <SelectItem value="story">Story</SelectItem>
+                    <SelectItem value="carrossel">Carrossel</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => v && setEditField("status", v)}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planejado">Planejado</SelectItem>
+                    <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
+                    <SelectItem value="producao">Em Produção</SelectItem>
+                    <SelectItem value="aprovado_design">Aprovação Design</SelectItem>
+                    <SelectItem value="aprovado">P/ Aprovação Cliente</SelectItem>
+                    <SelectItem value="agendado">Agendado</SelectItem>
+                    <SelectItem value="publicado">Postado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data de Publicação</Label>
+              <Input type="date" value={editForm.data_publicacao} onChange={(e) => setEditField("data_publicacao", e.target.value)} className="text-sm" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tema / Ideia</Label>
+              <Textarea
+                value={editForm.tema}
+                onChange={(e) => setEditField("tema", e.target.value)}
+                rows={2}
+                className="text-sm resize-none"
+                placeholder="Ideia central do conteúdo..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Link do Drive</Label>
+              <Input
+                type="url"
+                value={editForm.drive_file_url}
+                onChange={(e) => setEditField("drive_file_url", e.target.value)}
+                className="text-sm"
+                placeholder="https://drive.google.com/..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notas / Legenda</Label>
+              <Textarea
+                value={editForm.notas}
+                onChange={(e) => setEditField("notas", e.target.value)}
+                rows={4}
+                className="text-sm resize-none"
+                placeholder="Legenda, hashtags, observações..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Calendário</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditField("aprovado", false)}
+                  className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
+                    !editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                  }`}
+                >
+                  📋 Planejamento
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditField("aprovado", true)}
+                  className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
+                    editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                  }`}
+                >
+                  📅 Calendário Oficial
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="px-5 py-4 border-t shrink-0 flex-row gap-2">
+            <Button onClick={handleSavePost} disabled={savingPost} className="flex-1">
+              {savingPost ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : "Salvar alterações"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDeletePost} disabled={savingPost} className="text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10">
+              Remover
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

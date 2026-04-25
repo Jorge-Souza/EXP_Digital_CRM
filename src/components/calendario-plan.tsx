@@ -1,3 +1,5 @@
+"use client"
+
 import { getFeriadosBrasil, toKey } from "@/lib/holidays"
 import type { Post } from "@/lib/types"
 
@@ -12,7 +14,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  planejado:       "Falta Fazer",
+  planejado:       "Planejado",
   falta_insumo:    "Falta Insumo",
   producao:        "Em Produção",
   aprovado_design: "Aprovação Design",
@@ -32,9 +34,10 @@ interface CalendarioPlanProps {
   ano: number
   mes: number // 0-based
   showLegend?: boolean
+  onPostClick?: (post: Post) => void
 }
 
-export function CalendarioPlan({ posts, ano, mes, showLegend = true }: CalendarioPlanProps) {
+export function CalendarioPlan({ posts, ano, mes, showLegend = true, onPostClick }: CalendarioPlanProps) {
   const feriados = getFeriadosBrasil(ano)
   const today = new Date()
   const primeiroDia = new Date(ano, mes, 1)
@@ -110,13 +113,25 @@ export function CalendarioPlan({ posts, ano, mes, showLegend = true }: Calendari
 
               <div className="flex flex-col gap-0.5">
                 {dayPosts.slice(0, 4).map((post) => (
-                  <span
-                    key={post.id}
-                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight ${STATUS_COLORS[post.status] ?? "bg-gray-200 text-gray-700"}`}
-                    title={post.titulo}
-                  >
-                    {post.titulo}
-                  </span>
+                  onPostClick ? (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => onPostClick(post)}
+                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight text-left w-full hover:opacity-80 transition-opacity cursor-pointer ${STATUS_COLORS[post.status] ?? "bg-gray-200 text-gray-700"}`}
+                      title={post.titulo}
+                    >
+                      {post.titulo}
+                    </button>
+                  ) : (
+                    <span
+                      key={post.id}
+                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight ${STATUS_COLORS[post.status] ?? "bg-gray-200 text-gray-700"}`}
+                      title={post.titulo}
+                    >
+                      {post.titulo}
+                    </span>
+                  )
                 ))}
                 {dayPosts.length > 4 && (
                   <span className="text-[10px] text-muted-foreground px-1">+{dayPosts.length - 4} mais</span>
