@@ -19,9 +19,10 @@ interface PostFormProps {
   defaultClientId?: string
   defaultStatus?: string
   defaultDate?: string
+  defaultAprovado?: boolean
 }
 
-export function PostForm({ clients, post, defaultClientId, defaultStatus, defaultDate }: PostFormProps) {
+export function PostForm({ clients, post, defaultClientId, defaultStatus, defaultDate, defaultAprovado }: PostFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -34,6 +35,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
     data_publicacao: post?.data_publicacao ?? defaultDate ?? "",
     drive_file_url: post?.drive_file_url ?? "",
     notas: post?.notas ?? "",
+    aprovado: post?.aprovado ?? defaultAprovado ?? false,
   })
 
   function set(field: string, value: string) {
@@ -58,6 +60,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
       data_publicacao: form.data_publicacao || null,
       drive_file_url: form.drive_file_url || null,
       notas: form.notas || null,
+      aprovado: form.aprovado,
     }
 
     const { error } = post?.id
@@ -105,6 +108,36 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
               placeholder="Ex: Post de lançamento do produto X"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Onde este conteúdo aparece?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, aprovado: true }))}
+                className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all text-left space-y-0.5 ${
+                  form.aprovado
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-muted text-muted-foreground hover:border-muted-foreground/50"
+                }`}
+              >
+                <div>📋 Planejamento</div>
+                <div className="text-xs font-normal opacity-70">Calendário de planejamento</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, aprovado: false }))}
+                className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all text-left space-y-0.5 ${
+                  !form.aprovado
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-muted text-muted-foreground hover:border-muted-foreground/50"
+                }`}
+              >
+                <div>📅 Calendário Oficial</div>
+                <div className="text-xs font-normal opacity-70">Calendário de produção</div>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">

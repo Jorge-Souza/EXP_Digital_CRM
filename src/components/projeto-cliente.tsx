@@ -48,6 +48,7 @@ interface PostEditState {
   drive_file_url: string
   notas: string
   tema: string
+  aprovado: boolean
 }
 
 interface ProjetoClienteProps {
@@ -61,7 +62,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
   const [editingPost, setEditingPost] = useState<Post | null>(null)
   const [editForm, setEditForm] = useState<PostEditState>({
     titulo: "", tipo: "feed", status: "planejado",
-    data_publicacao: "", drive_file_url: "", notas: "", tema: "",
+    data_publicacao: "", drive_file_url: "", notas: "", tema: "", aprovado: false,
   })
   const [saving, setSaving] = useState(false)
 
@@ -79,6 +80,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
       drive_file_url: post.drive_file_url ?? "",
       notas: post.notas ?? "",
       tema: post.tema ?? "",
+      aprovado: post.aprovado ?? false,
     })
   }
 
@@ -100,6 +102,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
         drive_file_url: editForm.drive_file_url || null,
         notas: editForm.notas || null,
         tema: editForm.tema || null,
+        aprovado: editForm.aprovado,
       })
       .eq("id", editingPost.id)
 
@@ -317,6 +320,30 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                 className="text-sm resize-none"
                 placeholder="Legenda, hashtags, observações de aprovação..."
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Calendário</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: true }))}
+                  className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
+                    editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                  }`}
+                >
+                  📋 Planejamento
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: false }))}
+                  className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
+                    !editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                  }`}
+                >
+                  📅 Calendário Oficial
+                </button>
+              </div>
             </div>
           </div>
 

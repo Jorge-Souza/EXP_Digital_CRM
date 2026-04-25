@@ -352,7 +352,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
               <span className="text-xs font-normal bg-muted px-2 py-0.5 rounded-full">{posts.length}</span>
             </CardTitle>
             <a
-              href={`/publicacoes/novo?client_id=${client.id}`}
+              href={`/publicacoes/novo?client_id=${client.id}&aprovado=true`}
               className="text-xs text-primary hover:underline flex items-center gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -376,7 +376,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                     <th className="px-3 py-2 text-left font-semibold">Plataforma</th>
                     <th className="px-3 py-2 text-left font-semibold">Referência</th>
                     <th className="px-3 py-2 text-left font-semibold">Status</th>
-                    <th className="px-3 py-2 text-center font-semibold">No Calendário</th>
+                    <th className="px-3 py-2 text-center font-semibold">Planejado</th>
                   </tr>
                 </thead>
                 <tbody>
