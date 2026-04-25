@@ -327,18 +327,18 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: true }))}
+                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: false }))}
                   className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
-                    editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                    !editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
                   }`}
                 >
                   📋 Planejamento
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: false }))}
+                  onClick={() => setEditForm((prev) => ({ ...prev, aprovado: true }))}
                   className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
-                    !editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
+                    editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
                   }`}
                 >
                   📅 Calendário Oficial

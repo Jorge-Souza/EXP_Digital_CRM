@@ -35,7 +35,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
     data_publicacao: post?.data_publicacao ?? defaultDate ?? "",
     drive_file_url: post?.drive_file_url ?? "",
     notas: post?.notas ?? "",
-    aprovado: post?.aprovado ?? defaultAprovado ?? true,
+    aprovado: post?.aprovado ?? defaultAprovado ?? false,
   })
 
   function set(field: string, value: string) {
@@ -115,9 +115,9 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setForm((prev) => ({ ...prev, aprovado: true }))}
+                onClick={() => setForm((prev) => ({ ...prev, aprovado: false }))}
                 className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all text-left space-y-0.5 ${
-                  form.aprovado
+                  !form.aprovado
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-muted text-muted-foreground hover:border-muted-foreground/50"
                 }`}
@@ -127,9 +127,9 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
               </button>
               <button
                 type="button"
-                onClick={() => setForm((prev) => ({ ...prev, aprovado: false }))}
+                onClick={() => setForm((prev) => ({ ...prev, aprovado: true }))}
                 className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all text-left space-y-0.5 ${
-                  !form.aprovado
+                  form.aprovado
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-muted text-muted-foreground hover:border-muted-foreground/50"
                 }`}

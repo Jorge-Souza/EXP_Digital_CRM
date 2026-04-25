@@ -352,7 +352,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
               <span className="text-xs font-normal bg-muted px-2 py-0.5 rounded-full">{posts.length}</span>
             </CardTitle>
             <a
-              href={`/publicacoes/novo?client_id=${client.id}&aprovado=true`}
+              href={`/publicacoes/novo?client_id=${client.id}`}
               className="text-xs text-primary hover:underline flex items-center gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -433,7 +433,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                         <td className="px-3 py-2.5 text-center">
                           <button
                             onClick={() => toggleAprovado(post.id)}
-                            title={pf.aprovado ? "Remover do calendário" : "Aprovar para o calendário"}
+                            title={pf.aprovado ? "Remover do calendário oficial" : "Aprovar para o calendário oficial"}
                             className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mx-auto transition-colors ${
                               pf.aprovado
                                 ? "bg-green-500 border-green-500 text-white hover:bg-green-600"
@@ -453,19 +453,19 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
-      {/* Calendário — apenas posts aprovados */}
+      {/* Calendário — todos os posts com data */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
             <span className="text-xs text-muted-foreground">
-              {posts.filter((p) => postFields[p.id]?.aprovado).length} aprovados
+              {posts.filter((p) => p.data_publicacao).length} com data
             </span>
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-hidden">
           <CalendarioPlan
-            posts={posts.filter((p) => postFields[p.id]?.aprovado === true)}
+            posts={posts}
             ano={ano}
             mes={mesIndex}
           />
