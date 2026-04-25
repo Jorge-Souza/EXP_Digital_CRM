@@ -35,7 +35,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
     data_publicacao: post?.data_publicacao ?? defaultDate ?? "",
     drive_file_url: post?.drive_file_url ?? "",
     notas: post?.notas ?? "",
-    aprovado: post?.aprovado ?? defaultAprovado ?? false,
+    aprovado: post?.aprovado ?? defaultAprovado ?? true,
   })
 
   function set(field: string, value: string) {

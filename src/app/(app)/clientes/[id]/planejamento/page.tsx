@@ -24,12 +24,25 @@ export default async function PlanejamentoPage({
 
   const supabase = await createClient()
 
-  const [{ data: clientData }, { data: postsData }] = await Promise.all([
+  const [
+    { data: clientData },
+    { data: planejadoPostsData },
+    { data: monthPostsData },
+  ] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
+    // All "planejado" posts for this client (regardless of date)
     supabase
       .from("posts")
       .select("*")
       .eq("client_id", id)
+      .eq("status", "planejado")
+      .order("data_publicacao", { ascending: true }),
+    // Posts with dates in this month that are not "planejado" (avoid duplicates)
+    supabase
+      .from("posts")
+      .select("*")
+      .eq("client_id", id)
+      .neq("status", "planejado")
       .gte("data_publicacao", `${mes}-01`)
       .lte("data_publicacao", `${mes}-31`)
       .order("data_publicacao", { ascending: true }),
@@ -37,7 +50,7 @@ export default async function PlanejamentoPage({
 
   if (!clientData) notFound()
   const client = clientData as Client
-  const posts = (postsData ?? []) as Post[]
+  const posts = [...(planejadoPostsData ?? []), ...(monthPostsData ?? [])] as Post[]
 
   // Carrega ou cria o planejamento do mês
   let { data: planData } = await supabase
