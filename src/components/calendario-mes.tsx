@@ -144,6 +144,10 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
 
   async function handleSave() {
     if (!editingPost) return
+    if (editForm.aprovado && editForm.status === "planejado") {
+      toast.error("Altere o status de 'Planejado' antes de mover para o Calendário Oficial.")
+      return
+    }
     setSaving(true)
     const supabase = createClient()
     const { error } = await supabase.from("posts").update({

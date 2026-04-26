@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet"
-import { ChevronDown, ChevronRight, Plus, ExternalLink, Loader2 } from "lucide-react"
+import { ChevronDown, ChevronRight, Plus, ExternalLink, Loader2, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import type { Post, PostStatus, PostType } from "@/lib/types"
@@ -90,6 +90,10 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
 
   async function handleSave() {
     if (!editingPost) return
+    if (editForm.aprovado && editForm.status === "planejado") {
+      toast.error("Altere o status de 'Planejado' antes de mover para o Calendário Oficial.")
+      return
+    }
     setSaving(true)
     const supabase = createClient()
     const { error } = await supabase
@@ -162,61 +166,93 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                 <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5 border">
                   {items.length}
                 </span>
-                <Link
-                  href={`/publicacoes/novo?client_id=${clientId}&status=${status}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="ml-2 flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Adicionar
-                </Link>
+                {status === "planejado" ? (
+                  <Link
+                    href={`/clientes/${clientId}/planejamento`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="ml-2 flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <CalendarRange className="h-3.5 w-3.5" />
+                    Planejamento
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/publicacoes/novo?client_id=${clientId}&status=${status}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="ml-2 flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar
+                  </Link>
+                )}
               </button>
 
               {/* Lista */}
               {!isCollapsed && (
                 <div>
-                  <div className="grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 px-4 py-1.5 border-b bg-gray-50 dark:bg-muted/20 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    <span>Título</span>
-                    <span>Tipo</span>
-                    <span>Data</span>
-                    <span>Responsável</span>
-                    <span />
-                  </div>
-                  {items.length === 0 ? (
-                    <p className="px-4 py-3 text-xs text-muted-foreground italic bg-gray-50 dark:bg-muted/10">
-                      Nenhuma publicação neste status
-                    </p>
-                  ) : (
-                    items.map((post) => (
-                      <div
-                        key={post.id}
-                        onClick={() => openEdit(post)}
-                        className={`grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:brightness-95 transition-all cursor-pointer ${typeColors[post.tipo] ?? "border-l-4 border-l-gray-300 bg-gray-50/50"}`}
+                  {status === "planejado" ? (
+                    /* Planejados ficam na página de Planejamento */
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-muted/10">
+                      <p className="text-xs text-muted-foreground">
+                        {items.length === 0
+                          ? "Nenhum conteúdo em planejamento"
+                          : `${items.length} conteúdo${items.length > 1 ? "s" : ""} na página de Planejamento`
+                        }
+                      </p>
+                      <Link
+                        href={`/clientes/${clientId}/planejamento`}
+                        className="flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
                       >
-                        <p className="text-sm font-semibold truncate">{post.titulo}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${typeBadgeColors[post.tipo] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                          {typeLabels[post.tipo] ?? post.tipo}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {post.data_publicacao
-                            ? new Date(post.data_publicacao + "T00:00:00").toLocaleDateString("pt-BR")
-                            : <span className="opacity-40">—</span>
-                          }
-                        </span>
-                        <span className="text-xs text-muted-foreground opacity-40">—</span>
-                        {post.drive_file_url ? (
-                          <a
-                            href={post.drive_file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-muted-foreground hover:text-primary"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        ) : <span />}
+                        <CalendarRange className="h-3.5 w-3.5" />
+                        Ver Planejamento
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 px-4 py-1.5 border-b bg-gray-50 dark:bg-muted/20 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        <span>Título</span>
+                        <span>Tipo</span>
+                        <span>Data</span>
+                        <span>Responsável</span>
+                        <span />
                       </div>
-                    ))
+                      {items.length === 0 ? (
+                        <p className="px-4 py-3 text-xs text-muted-foreground italic bg-gray-50 dark:bg-muted/10">
+                          Nenhuma publicação neste status
+                        </p>
+                      ) : (
+                        items.map((post) => (
+                          <div
+                            key={post.id}
+                            onClick={() => openEdit(post)}
+                            className={`grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:brightness-95 transition-all cursor-pointer ${typeColors[post.tipo] ?? "border-l-4 border-l-gray-300 bg-gray-50/50"}`}
+                          >
+                            <p className="text-sm font-semibold truncate">{post.titulo}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${typeBadgeColors[post.tipo] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                              {typeLabels[post.tipo] ?? post.tipo}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {post.data_publicacao
+                                ? new Date(post.data_publicacao + "T00:00:00").toLocaleDateString("pt-BR")
+                                : <span className="opacity-40">—</span>
+                              }
+                            </span>
+                            <span className="text-xs text-muted-foreground opacity-40">—</span>
+                            {post.drive_file_url ? (
+                              <a
+                                href={post.drive_file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-muted-foreground hover:text-primary"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            ) : <span />}
+                          </div>
+                        ))
+                      )}
+                    </>
                   )}
                 </div>
               )}

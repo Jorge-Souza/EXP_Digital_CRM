@@ -206,6 +206,10 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
   async function handleSavePost() {
     if (!editingPost) return
+    if (editForm.aprovado && editForm.status === "planejado") {
+      toast.error("Altere o status de 'Planejado' antes de mover para o Calendário Oficial.")
+      return
+    }
     setSavingPost(true)
     const { error } = await supabase
       .from("posts")
