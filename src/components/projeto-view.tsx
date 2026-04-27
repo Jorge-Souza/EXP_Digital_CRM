@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutList, CalendarDays } from "lucide-react"
+import Link from "next/link"
+import { LayoutList, CalendarDays, CalendarRange } from "lucide-react"
 import { ProjetoCliente } from "@/components/projeto-cliente"
 import { CalendarioMes } from "@/components/calendario-mes"
 import type { Post } from "@/lib/types"
@@ -29,6 +30,13 @@ export function ProjetoView({ clientId, posts }: ProjetoViewProps) {
           <LayoutList className="h-4 w-4" />
           Lista
         </button>
+        <Link
+          href={`/clientes/${clientId}/planejamento`}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all text-muted-foreground hover:text-foreground"
+        >
+          <CalendarRange className="h-4 w-4" />
+          Planejamento
+        </Link>
         <button
           onClick={() => setView("calendario")}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
@@ -38,7 +46,7 @@ export function ProjetoView({ clientId, posts }: ProjetoViewProps) {
           }`}
         >
           <CalendarDays className="h-4 w-4" />
-          Calendário
+          Calendário Oficial
         </button>
       </div>
 
