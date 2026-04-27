@@ -161,11 +161,17 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   }
 
   async function toggleAprovado(postId: string) {
+    const post = posts.find((p) => p.id === postId)
     const current = postFields[postId]?.aprovado ?? false
     const next = !current
+    const updates: Record<string, unknown> = { aprovado: next }
+    if (next && post?.status === "planejado") {
+      updates.status = "falta_insumo"
+    }
     setPostFields((prev) => ({ ...prev, [postId]: { ...prev[postId], aprovado: next } }))
-    await supabase.from("posts").update({ aprovado: next }).eq("id", postId)
+    await supabase.from("posts").update(updates).eq("id", postId)
     toast.success(next ? "Marcado para calendário oficial" : "Removido do calendário oficial")
+    router.refresh()
   }
 
   function navMes(delta: number) {
@@ -206,10 +212,6 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
   async function handleSavePost() {
     if (!editingPost) return
-    if (editForm.aprovado && editForm.status === "planejado") {
-      toast.error("Altere o status de 'Planejado' antes de mover para o Calendário Oficial.")
-      return
-    }
     setSavingPost(true)
     const { error } = await supabase
       .from("posts")
@@ -677,7 +679,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditField("aprovado", true)}
+                  onClick={() => setEditForm((prev) => ({
+                    ...prev,
+                    aprovado: true,
+                    status: prev.status === "planejado" ? "falta_insumo" : prev.status,
+                  }))}
                   className={`py-2.5 px-3 rounded-lg border-2 text-xs font-semibold transition-all text-left ${
                     editForm.aprovado ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
                   }`}
