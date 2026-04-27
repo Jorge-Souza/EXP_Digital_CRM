@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Plus, Users } from "lucide-react"
 import Link from "next/link"
 import type { Client } from "@/lib/types"
+import { BulkDriveButton } from "@/components/bulk-drive-button"
 
 const statusConfig = {
   ativo: { label: "Ativo", variant: "default" as const },
@@ -27,10 +28,13 @@ export default async function ClientesPage() {
           <h1 className="text-2xl font-bold">Clientes</h1>
           <p className="text-muted-foreground">{clients?.length ?? 0} clientes cadastrados</p>
         </div>
-        <Link href="/clientes/novo" className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Link>
+        <div className="flex items-center gap-2">
+          <BulkDriveButton />
+          <Link href="/clientes/novo" className={buttonVariants()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Link>
+        </div>
       </div>
 
       {!clients || clients.length === 0 ? (
