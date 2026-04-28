@@ -82,3 +82,20 @@ export interface Profile {
   avatar_url: string | null
   created_at: string
 }
+
+export type ReferenciaStatus = 'processando' | 'concluido' | 'erro'
+export type ReferenciaPlataforma = 'youtube' | 'instagram' | 'tiktok'
+
+export interface ReferenciaLaboratorio {
+  id: string
+  client_id: string
+  url: string
+  plataforma: ReferenciaPlataforma | null
+  titulo: string | null
+  transcricao: string | null
+  sugestoes: string | null
+  status: ReferenciaStatus
+  erro: string | null
+  created_at: string
+  updated_at: string
+}

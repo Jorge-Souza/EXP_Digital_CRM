@@ -11,7 +11,8 @@ import {
   CheckCircle2, Clock, AlertTriangle, TrendingUp
 } from "lucide-react"
 import Link from "next/link"
-import type { Client, Post } from "@/lib/types"
+import type { Client, Post, ReferenciaLaboratorio } from "@/lib/types"
+import { LaboratorioTab } from "@/components/laboratorio-tab"
 
 const statusConfig = {
   ativo: { label: "Ativo", variant: "default" as const },
@@ -57,10 +58,11 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [{ data: client }, { data: posts }, { data: postsThisMonth }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: postsThisMonth }, { data: refsLab }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
     supabase.from("posts").select("id, status").eq("client_id", id).gte("created_at", startOfMonth),
+    supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
   ])
 
   if (!client) notFound()
@@ -162,13 +164,14 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
         </CardContent>
       </Card>
 
-      {/* Tabs: Briefing / Publicações / Contato */}
+      {/* Tabs: Briefing / Publicações / Laboratório / Contato */}
       <Tabs defaultValue="briefing">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="briefing">Manual do Cliente</TabsTrigger>
           <TabsTrigger value="publicacoes">
             Publicações ({allPosts.length})
           </TabsTrigger>
+          <TabsTrigger value="laboratorio">Laboratório</TabsTrigger>
           <TabsTrigger value="contato">Contato</TabsTrigger>
         </TabsList>
 
@@ -277,6 +280,15 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* LABORATÓRIO */}
+        <TabsContent value="laboratorio" className="mt-4">
+          <LaboratorioTab
+            clientId={id}
+            clientNome={c.nome}
+            initialRefs={(refsLab ?? []) as ReferenciaLaboratorio[]}
+          />
         </TabsContent>
 
         {/* CONTATO */}
