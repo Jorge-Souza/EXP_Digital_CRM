@@ -17,14 +17,14 @@ export default async function AppLayout({
 
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { count: adminCount }, clientsRes, clientsExtraRes] = await Promise.all([
+  const [{ data: profile }, { data: adminData }, clientsRes, clientsExtraRes] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", user.id).single(),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("id", user.id).eq("role", "admin"),
+    supabase.rpc("current_user_is_admin"),
     supabase.from("clients").select("id, nome, status").order("nome"),
     supabase.from("clients").select("id, avatar_emoji, cor").order("nome"),
   ])
 
-  const isAdmin = (adminCount ?? 0) > 0
+  const isAdmin = adminData === true
 
   const clientsBase = clientsRes.data ?? []
   const clientsExtra = clientsExtraRes.data ?? []

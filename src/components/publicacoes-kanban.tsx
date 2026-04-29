@@ -22,7 +22,8 @@ import { toast } from "sonner"
 import type { Post, Client } from "@/lib/types"
 
 const columnConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  planejado:       { label: "Falta Fazer",         color: "border-t-gray-400",   bg: "bg-gray-100 dark:bg-gray-800",       dot: "bg-gray-400" },
+  planejado:       { label: "Planejado",            color: "border-t-gray-400",   bg: "bg-gray-100 dark:bg-gray-800",       dot: "bg-gray-400" },
+  a_fazer:         { label: "A Fazer",              color: "border-t-slate-500",  bg: "bg-slate-50 dark:bg-slate-900/40",   dot: "bg-slate-500" },
   falta_insumo:    { label: "Falta Insumo",        color: "border-t-red-500",    bg: "bg-red-50 dark:bg-red-950/30",       dot: "bg-red-500" },
   producao:        { label: "Em Produção",          color: "border-t-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30", dot: "bg-yellow-500" },
   aprovado_design: { label: "Aprovação Design",    color: "border-t-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30", dot: "bg-orange-500" },
@@ -43,7 +44,7 @@ const typeLabels: Record<string, string> = {
   feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
 }
 
-const groupOrder = ["planejado", "falta_insumo", "producao", "aprovado_design", "aprovado", "agendado", "publicado"] as const
+const groupOrder = ["planejado", "a_fazer", "falta_insumo", "producao", "aprovado_design", "aprovado", "agendado", "publicado"] as const
 
 type PostWithClient = Post & { clients: Pick<Client, "id" | "nome"> | null }
 

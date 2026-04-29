@@ -68,6 +68,7 @@ export default async function DashboardPage() {
 
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     planejado:       { label: "Planejado",            variant: "outline" },
+    a_fazer:         { label: "A Fazer",              variant: "outline" },
     falta_insumo:    { label: "Falta Insumo",        variant: "destructive" },
     producao:        { label: "Em Produção",          variant: "secondary" },
     aprovado_design: { label: "Aprovação Design",    variant: "secondary" },
