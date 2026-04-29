@@ -264,23 +264,36 @@ export function PublicacoesKanban({ posts: initialPosts, clients }: PublicacoesK
 
                 {/* Cards */}
                 <SortableContext items={items.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                  <div
-                    id={status}
-                    className="flex-1 p-2 space-y-2 min-h-[100px]"
-                  >
+                  <div id={status} className="flex-1 p-2 min-h-[100px]">
                     {items.length === 0 ? (
                       <div className="flex items-center justify-center h-20 rounded-lg border-2 border-dashed border-black/10 text-xs text-muted-foreground">
                         Arraste aqui
                       </div>
-                    ) : (
-                      items.map((post) => (
-                        <SortableCard
-                          key={post.id}
-                          post={post}
-                          showClient={selectedClient === "all"}
-                        />
-                      ))
-                    )}
+                    ) : (() => {
+                      const normais = items.filter((p) => p.tipo !== "story")
+                      const stories = items.filter((p) => p.tipo === "story")
+                      return (
+                        <div className="space-y-1">
+                          {normais.map((post) => (
+                            <SortableCard key={post.id} post={post} showClient={selectedClient === "all"} />
+                          ))}
+                          {stories.length > 0 && (
+                            <>
+                              {normais.length > 0 && (
+                                <div className="flex items-center gap-1.5 py-1.5">
+                                  <div className="flex-1 h-px bg-amber-300/60" />
+                                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Stories</span>
+                                  <div className="flex-1 h-px bg-amber-300/60" />
+                                </div>
+                              )}
+                              {stories.map((post) => (
+                                <SortableCard key={post.id} post={post} showClient={selectedClient === "all"} />
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </SortableContext>
               </div>

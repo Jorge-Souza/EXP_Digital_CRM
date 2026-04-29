@@ -17,8 +17,8 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("status", "ativo"),
-    supabase.from("posts").select("*", { count: "exact", head: true }),
-    supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "publicado"),
+    supabase.from("posts").select("*", { count: "exact", head: true }).neq("tipo", "story"),
+    supabase.from("posts").select("*", { count: "exact", head: true }).neq("tipo", "story").eq("status", "publicado"),
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story"),
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story").eq("status", "publicado"),
     supabase
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       emoji: "✅",
       title: "Posts Publicados",
       value: publishedPosts ?? 0,
-      sub: `de ${totalPosts ?? 0} criados`,
+      sub: `de ${totalPosts ?? 0} criados (sem stories)`,
       gradient: "from-emerald-500 to-green-600",
       bg: "bg-emerald-50 dark:bg-emerald-950/40",
     },
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       emoji: "🎬",
       title: "Em Produção",
       value: (totalPosts ?? 0) - (publishedPosts ?? 0),
-      sub: "aguardando publicação",
+      sub: "feed · reels · carrossel · tiktok",
       gradient: "from-orange-500 to-amber-500",
       bg: "bg-orange-50 dark:bg-orange-950/40",
     },
