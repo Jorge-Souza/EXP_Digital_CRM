@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -18,16 +17,14 @@ export default async function AppLayout({
 
   if (!user) redirect("/login")
 
-  const admin = createAdminClient()
-
-  const [{ data: profile }, { data: roleRow }, clientsRes, clientsExtraRes] = await Promise.all([
+  const [{ data: profile }, { count: adminCount }, clientsRes, clientsExtraRes] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", user.id).single(),
-    admin.from("profiles").select("role").eq("id", user.id).single(),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("id", user.id).eq("role", "admin"),
     supabase.from("clients").select("id, nome, status").order("nome"),
     supabase.from("clients").select("id, avatar_emoji, cor").order("nome"),
   ])
 
-  const isAdmin = roleRow?.role === "admin"
+  const isAdmin = (adminCount ?? 0) > 0
 
   const clientsBase = clientsRes.data ?? []
   const clientsExtra = clientsExtraRes.data ?? []
