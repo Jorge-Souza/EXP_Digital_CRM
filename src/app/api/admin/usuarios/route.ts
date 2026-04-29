@@ -4,16 +4,20 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 async function assertAdmin() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (profile?.role !== "admin") return null
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (!user) {
+    console.error("[assertAdmin] no user", userError)
+    return null
+  }
+  const { data: isAdmin, error: rpcError } = await supabase.rpc("current_user_is_admin")
+  console.log("[assertAdmin] uid:", user.id, "isAdmin:", isAdmin, "rpcError:", rpcError)
+  if (!isAdmin) return null
   return user
 }
 
 export async function GET() {
   const caller = await assertAdmin()
-  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+  if (!caller) return NextResponse.json({ error: "Não autorizado — veja logs do servidor" }, { status: 403 })
 
   const admin = createAdminClient()
   const { data, error } = await admin
@@ -27,7 +31,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const caller = await assertAdmin()
-  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+  if (!caller) return NextResponse.json({ error: "Não autorizado — veja logs do servidor" }, { status: 403 })
 
   const { nome, email, senha, role, telefone, endereco, data_admissao } = await req.json() as {
     nome: string
