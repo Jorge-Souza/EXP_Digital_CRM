@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import type { ReferenciaLaboratorio } from '@/lib/types'
 import {
   PlayCircle, Camera, Music2, Link, Loader2,
-  Sparkles, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Trash2, PenLine,
+  Sparkles, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Trash2, PenLine, Mic, Square,
 } from 'lucide-react'
 
 const plataformaConfig = {
@@ -28,9 +28,50 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
   const [textoManual, setTextoManual] = useState('')
   const [salvandoManual, setSalvandoManual] = useState(false)
   const [mostrarManual, setMostrarManual] = useState(false)
+  const [gravando, setGravando] = useState(false)
+  const [transcrevendoAudio, setTranscrevendoAudio] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   const plat = r.plataforma ? plataformaConfig[r.plataforma] : null
   const Icon = plat?.icon ?? Link
+
+  async function iniciarGravacao() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      chunksRef.current = []
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        setTranscrevendoAudio(true)
+        try {
+          const form = new FormData()
+          form.append('audio', blob, 'audio.webm')
+          const res = await fetch('/api/laboratorio/transcrever-audio', { method: 'POST', body: form })
+          const data = await res.json() as { transcricao?: string; error?: string }
+          if (!res.ok) throw new Error(data.error ?? 'Erro ao transcrever')
+          setTextoManual(prev => prev ? prev + ' ' + data.transcricao : data.transcricao ?? '')
+          toast.success('Áudio transcrito!')
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao transcrever áudio')
+        } finally {
+          setTranscrevendoAudio(false)
+        }
+      }
+      mr.start()
+      mediaRecorderRef.current = mr
+      setGravando(true)
+    } catch {
+      toast.error('Permissão de microfone negada')
+    }
+  }
+
+  function pararGravacao() {
+    mediaRecorderRef.current?.stop()
+    setGravando(false)
+  }
 
   async function salvarTranscricaoManual() {
     if (!textoManual.trim()) return
@@ -125,9 +166,24 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
               </Button>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Cole ou escreva o texto do vídeo:</p>
+                <p className="text-xs text-muted-foreground">Grave um áudio ou cole o texto do vídeo:</p>
+                <div className="flex gap-2">
+                  {!gravando ? (
+                    <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0"
+                      onClick={iniciarGravacao} disabled={transcrevendoAudio}>
+                      {transcrevendoAudio
+                        ? <><Loader2 className="h-3 w-3 animate-spin" /> Transcrevendo...</>
+                        : <><Mic className="h-3 w-3 text-red-500" /> Gravar áudio</>}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="destructive" className="gap-1 text-xs shrink-0 animate-pulse"
+                      onClick={pararGravacao}>
+                      <Square className="h-3 w-3" /> Parar gravação
+                    </Button>
+                  )}
+                </div>
                 <Textarea
-                  placeholder="Cole aqui o conteúdo falado no vídeo..."
+                  placeholder="Cole aqui o conteúdo falado no vídeo, ou grave um áudio acima..."
                   value={textoManual}
                   onChange={e => setTextoManual(e.target.value)}
                   className="text-xs min-h-[100px]"

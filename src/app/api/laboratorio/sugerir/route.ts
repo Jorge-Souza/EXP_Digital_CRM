@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export const maxDuration = 60
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -14,7 +11,6 @@ export async function POST(req: Request) {
   const { referencia_id } = await req.json() as { referencia_id: string }
   if (!referencia_id) return NextResponse.json({ error: 'referencia_id obrigatório' }, { status: 400 })
 
-  // Busca a referência + dados do cliente
   const { data: ref } = await supabase
     .from('referencias_laboratorio')
     .select('*, clients(nome, objetivo, publico_alvo, tom_de_voz, diferenciais, nicho)')
@@ -24,7 +20,6 @@ export async function POST(req: Request) {
   if (!ref) return NextResponse.json({ error: 'Referência não encontrada' }, { status: 404 })
   if (!ref.transcricao) return NextResponse.json({ error: 'Referência ainda sem transcrição' }, { status: 400 })
 
-  // Retorna sugestões em cache se já existem
   if (ref.sugestoes) return NextResponse.json({ sugestoes: ref.sugestoes })
 
   const c = ref.clients as {
@@ -45,7 +40,7 @@ export async function POST(req: Request) {
 BRIEFING DO CLIENTE:
 ${briefing}
 
-TRANSCRIÇÃO DE CONTEÚDO DE REFERÊNCIA (${ref.plataforma?.toUpperCase()}):
+TRANSCRIÇÃO DE CONTEÚDO DE REFERÊNCIA (${ref.plataforma?.toUpperCase() ?? 'MANUAL'}):
 ${ref.transcricao}
 
 Com base nessa transcrição como referência e no perfil do cliente acima, crie 3 sugestões de conteúdo adaptadas para o cliente. Para cada sugestão forneça:
@@ -71,9 +66,30 @@ Com base nessa transcrição como referência e no perfil do cliente acima, crie
 Adapte o tom de voz, linguagem e abordagem para o perfil do cliente. Seja direto e prático — isso vai para a equipe de produção.`
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-    const result = await model.generateContent(prompt)
-    const sugestoes = result.response.text()
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2048,
+        temperature: 0.7,
+      }),
+    })
+
+    const groq = await groqRes.json() as {
+      choices?: Array<{ message: { content: string } }>
+      error?: { message: string }
+    }
+
+    if (!groqRes.ok || !groq.choices?.[0]) {
+      throw new Error(groq.error?.message ?? 'Groq não retornou sugestões')
+    }
+
+    const sugestoes = groq.choices[0].message.content
 
     await supabase
       .from('referencias_laboratorio')
