@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { PostForm } from "@/components/post-form"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import type { Client } from "@/lib/types"
+import type { Client, Profile } from "@/lib/types"
 
 export default async function NovaPublicacaoPage({
   searchParams,
@@ -12,11 +12,10 @@ export default async function NovaPublicacaoPage({
   const { client_id, status, data, aprovado } = await searchParams
   const supabase = await createClient()
 
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("id, nome")
-    .eq("status", "ativo")
-    .order("nome")
+  const [{ data: clients }, { data: profiles }] = await Promise.all([
+    supabase.from("clients").select("id, nome").eq("status", "ativo").order("nome"),
+    supabase.from("profiles").select("id, nome").order("nome"),
+  ])
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -31,6 +30,7 @@ export default async function NovaPublicacaoPage({
       </div>
       <PostForm
         clients={(clients as Pick<Client, "id" | "nome">[]) ?? []}
+        profiles={(profiles as Pick<Profile, "id" | "nome">[]) ?? []}
         defaultClientId={client_id}
         defaultStatus={status}
         defaultDate={data}

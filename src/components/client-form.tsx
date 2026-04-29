@@ -15,7 +15,7 @@ import { toast } from "sonner"
 import type { Client, ClientStatus } from "@/lib/types"
 import {
   Loader2, ExternalLink, Building2, Phone, BookOpen,
-  Mic, Square, Sparkles, Users, ChevronDown, ChevronUp,
+  Mic, Square, Sparkles, Users, ChevronDown, ChevronUp, Palette,
 } from "lucide-react"
 
 interface ClientFormProps {
@@ -68,6 +68,14 @@ function useAudioRecorder(onTranscricao: (texto: string) => void) {
   return { gravando, transcrevendo, iniciar, parar }
 }
 
+const EMOJIS = [
+  "🏢","🏪","🏬","🏭","🏗️","🏠","🏡","🏨","🏦","🏥",
+  "💼","💰","🛍️","🛒","🎯","🚀","⭐","💎","🎨","📸",
+  "📱","💻","🍕","🍔","🍜","☕","🧁","🌸","🌺","💄",
+  "👗","👠","💪","🏋️","🎭","🎬","🎵","🎮","🐾","🌿",
+  "🌱","💊","🔧","🔑","🚗","✈️","⚡","🌊","🧠","🏆",
+]
+
 const guiaPerguntas = [
   { num: "1", pergunta: "Quem é essa pessoa?", detalhe: "Características demográficas e comportamentais: idade, profissão, cargo, escolaridade, estilo de vida, rotina, interesses e contexto pessoal/profissional." },
   { num: "2", pergunta: "O que ela quer alcançar?", detalhe: "Principais objetivos e metas, tanto profissionais quanto pessoais. O que significa sucesso para ela?" },
@@ -84,6 +92,8 @@ export function ClientForm({ client }: ClientFormProps) {
   const [gerandoPersona, setGerandoPersona] = useState(false)
   const [narrativaBriefing, setNarrativaBriefing] = useState("")
   const [narrativaPersona, setNarrativaPersona] = useState("")
+
+  const [emojiPickerAberto, setEmojiPickerAberto] = useState(false)
 
   const [form, setForm] = useState({
     nome: client?.nome ?? "",
@@ -104,6 +114,8 @@ export function ClientForm({ client }: ClientFormProps) {
     diferenciais: client?.diferenciais ?? "",
     observacoes: client?.observacoes ?? "",
     persona: client?.persona ?? "",
+    avatar_emoji: client?.avatar_emoji ?? "🏢",
+    cor: client?.cor ?? "#6366f1",
   })
 
   function set(field: string, value: string) {
@@ -181,6 +193,8 @@ export function ClientForm({ client }: ClientFormProps) {
       diferenciais: form.diferenciais || null,
       observacoes: form.observacoes || null,
       persona: form.persona || null,
+      avatar_emoji: form.avatar_emoji,
+      cor: form.cor,
     }
 
     if (client?.id) {
@@ -233,15 +247,59 @@ export function ClientForm({ client }: ClientFormProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+
+              {/* Avatar + Cor */}
+              <div className="flex items-end gap-4">
                 <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><Palette className="h-3.5 w-3.5 text-muted-foreground" /> Avatar</Label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setEmojiPickerAberto(v => !v)}
+                      className="h-10 w-14 rounded-lg border border-input flex items-center justify-center text-2xl hover:bg-muted transition-colors"
+                      style={{ background: `${form.cor}18` }}
+                    >
+                      {form.avatar_emoji}
+                    </button>
+                    {emojiPickerAberto && (
+                      <div className="absolute top-12 left-0 z-20 bg-popover border border-border rounded-xl shadow-xl p-3 w-64">
+                        <div className="grid grid-cols-10 gap-1">
+                          {EMOJIS.map(e => (
+                            <button
+                              key={e}
+                              type="button"
+                              className={`text-xl p-1 rounded hover:bg-muted transition-colors ${form.avatar_emoji === e ? "bg-primary/20 ring-1 ring-primary" : ""}`}
+                              onClick={() => { set("avatar_emoji", e); setEmojiPickerAberto(false) }}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Cor</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.cor}
+                      onChange={e => set("cor", e.target.value)}
+                      className="h-10 w-14 rounded-lg border border-input cursor-pointer p-1"
+                    />
+                    <span className="text-xs text-muted-foreground font-mono">{form.cor}</span>
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
                   <Label htmlFor="nome">Nome da Empresa *</Label>
                   <Input id="nome" value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Ex: Loja ABC" required />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nicho">Nicho / Segmento</Label>
-                  <Input id="nicho" value={form.nicho} onChange={e => set("nicho", e.target.value)} placeholder="Ex: Moda Feminina" />
-                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nicho">Nicho / Segmento</Label>
+                <Input id="nicho" value={form.nicho} onChange={e => set("nicho", e.target.value)} placeholder="Ex: Moda Feminina" />
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">

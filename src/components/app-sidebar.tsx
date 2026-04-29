@@ -48,7 +48,7 @@ const statusDot: Record<ClientStatus, string> = {
 interface AppSidebarProps {
   userEmail?: string
   userName?: string
-  clients: { id: string; nome: string; status: ClientStatus }[]
+  clients: { id: string; nome: string; status: ClientStatus; avatar_emoji?: string; cor?: string }[]
 }
 
 export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
@@ -128,7 +128,12 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
                       isActive={pathname.startsWith(`/clientes/${c.id}`)}
                       className="text-white/60 hover:text-white hover:bg-white/10 data-[active=true]:bg-purple-600/30 data-[active=true]:text-white gap-2.5"
                     >
-                      <span className={`h-2 w-2 rounded-full shrink-0 ${statusDot[c.status]}`} />
+                      <span
+                        className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center text-sm leading-none"
+                        style={{ background: c.cor ? `${c.cor}30` : "rgba(99,102,241,0.2)", border: `1px solid ${c.cor ?? "#6366f1"}40` }}
+                      >
+                        {c.avatar_emoji ?? "🏢"}
+                      </span>
                       <span className="truncate text-sm">{c.nome}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

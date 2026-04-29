@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
+import { NotificationBell } from "@/components/notification-bell"
 
 export default async function AppLayout({
   children,
@@ -16,7 +17,7 @@ export default async function AppLayout({
 
   const [{ data: profile }, { data: clients }] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", user.id).single(),
-    supabase.from("clients").select("id, nome, status").order("nome"),
+    supabase.from("clients").select("id, nome, status, avatar_emoji, cor").order("nome"),
   ])
 
   return (
@@ -28,6 +29,9 @@ export default async function AppLayout({
           <Separator orientation="vertical" className="mr-2 h-4" />
           <span className="text-sm font-semibold text-primary">✨ EXP Digital</span>
           <span className="text-sm text-muted-foreground">CRM</span>
+          <div className="ml-auto">
+            <NotificationBell userId={user.id} />
+          </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-6">
           {children}

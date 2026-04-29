@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
-import type { Post, PostStatus, PostType, Client } from "@/lib/types"
+import type { Post, PostStatus, PostType, Client, Profile } from "@/lib/types"
 
 interface PostFormProps {
   clients: Pick<Client, "id" | "nome">[]
+  profiles: Pick<Profile, "id" | "nome">[]
   post?: Post
   defaultClientId?: string
   defaultStatus?: string
@@ -22,7 +23,7 @@ interface PostFormProps {
   defaultAprovado?: boolean
 }
 
-export function PostForm({ clients, post, defaultClientId, defaultStatus, defaultDate, defaultAprovado }: PostFormProps) {
+export function PostForm({ clients, profiles, post, defaultClientId, defaultStatus, defaultDate, defaultAprovado }: PostFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -36,6 +37,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
     drive_file_url: post?.drive_file_url ?? "",
     notas: post?.notas ?? "",
     aprovado: post?.aprovado ?? defaultAprovado ?? false,
+    responsavel_id: post?.responsavel_id ?? "",
   })
 
   function set(field: string, value: string) {
@@ -61,6 +63,7 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
       drive_file_url: form.drive_file_url || null,
       notas: form.notas || null,
       aprovado: form.aprovado,
+      responsavel_id: form.responsavel_id || null,
     }
 
     const { error } = post?.id
@@ -191,6 +194,21 @@ export function PostForm({ clients, post, defaultClientId, defaultStatus, defaul
                 onChange={(e) => set("data_publicacao", e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="responsavel_id">Responsável pela Produção</Label>
+            <Select value={form.responsavel_id} onValueChange={(v) => set("responsavel_id", v ?? "")}>
+              <SelectTrigger id="responsavel_id">
+                <SelectValue placeholder="Nenhum responsável" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhum</SelectItem>
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

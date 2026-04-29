@@ -13,9 +13,7 @@ export interface Client {
   contato_telefone: string
   instagram: string | null
   tiktok: string | null
-  // briefing legado
   briefing: string | null
-  // briefing estruturado
   objetivo: string | null
   publico_alvo: string | null
   tom_de_voz: string | null
@@ -23,6 +21,8 @@ export interface Client {
   diferenciais: string | null
   observacoes: string | null
   persona: string | null
+  avatar_emoji: string
+  cor: string
   drive_folder_url: string | null
   posts_mensais: number
   meta_posts_semana: number
@@ -44,9 +44,21 @@ export interface Post {
   plataforma: PostPlatform | null
   referencia_url: string | null
   aprovado: boolean
+  responsavel_id: string | null
   created_at: string
   updated_at: string
   client?: Client
+  responsavel?: Profile
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  titulo: string
+  mensagem: string
+  link: string | null
+  lida: boolean
+  created_at: string
 }
 
 export interface DataComemorativa {
