@@ -6,7 +6,7 @@ import { ArrowLeft, Pencil, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { StatsSection } from "@/components/stats-section"
 import { ProjetoView } from "@/components/projeto-view"
-import type { Client, Post } from "@/lib/types"
+import type { Client, Post, ReferenciaLaboratorio } from "@/lib/types"
 
 const clientStatusConfig = {
   ativo:   { label: "Ativo",     variant: "default" as const },
@@ -26,9 +26,10 @@ export default async function ProjetoPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: client }, { data: posts }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: refsLab }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
+    supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
   ])
 
   if (!client) notFound()
@@ -97,7 +98,12 @@ export default async function ProjetoPage({
       />
 
       {/* Lista ou Calendário */}
-      <ProjetoView clientId={id} posts={allPosts} />
+      <ProjetoView
+        clientId={id}
+        clientNome={c.nome}
+        posts={allPosts}
+        initialRefs={(refsLab ?? []) as ReferenciaLaboratorio[]}
+      />
     </div>
   )
 }
