@@ -22,6 +22,7 @@ export interface Client {
   servicos_contratados: string | null
   diferenciais: string | null
   observacoes: string | null
+  persona: string | null
   drive_folder_url: string | null
   posts_mensais: number
   meta_posts_semana: number
