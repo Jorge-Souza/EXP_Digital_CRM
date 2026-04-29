@@ -17,7 +17,7 @@ import { ptBR } from "date-fns/locale"
 
 export function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   useEffect(() => {
     supabase
@@ -29,6 +29,7 @@ export function NotificationBell({ userId }: { userId: string }) {
       .then(({ data }) => {
         if (data) setNotifications(data as Notification[])
       })
+      .catch(() => {})
 
     let channel: ReturnType<typeof supabase.channel> | null = null
     try {
@@ -44,8 +45,10 @@ export function NotificationBell({ userId }: { userId: string }) {
         .subscribe()
     } catch {}
 
-    return () => { if (channel) supabase.removeChannel(channel) }
-  }, [userId])
+    return () => {
+      if (channel) supabase.removeChannel(channel).catch(() => {})
+    }
+  }, [userId, supabase])
 
   const unread = notifications.filter((n) => !n.lida).length
 
