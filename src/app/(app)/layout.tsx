@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
-import dynamic from "next/dynamic"
+import nextDynamic from "next/dynamic"
 
-const NotificationBell = dynamic(
+const NotificationBell = nextDynamic(
   () => import("@/components/notification-bell").then((m) => ({ default: m.NotificationBell })),
   { ssr: false }
 )
