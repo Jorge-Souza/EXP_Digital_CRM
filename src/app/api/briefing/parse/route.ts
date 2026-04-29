@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
     const prompt = `Você é um especialista em marketing digital. A partir da narração abaixo (que pode ser uma conversa, perguntas e respostas, ou texto livre), organize as informações em um briefing estruturado para uma agência de marketing.
 

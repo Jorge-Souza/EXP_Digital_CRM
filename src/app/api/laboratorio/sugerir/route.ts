@@ -71,7 +71,7 @@ Com base nessa transcrição como referência e no perfil do cliente acima, crie
 Adapte o tom de voz, linguagem e abordagem para o perfil do cliente. Seja direto e prático — isso vai para a equipe de produção.`
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
     const result = await model.generateContent(prompt)
     const sugestoes = result.response.text()
 
