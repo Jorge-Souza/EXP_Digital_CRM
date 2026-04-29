@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { UsuariosView } from "@/components/usuarios-view"
 import type { Profile } from "@/lib/types"
 
@@ -9,11 +8,10 @@ export default async function UsuariosPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (profile?.role !== "admin") redirect("/dashboard")
+  const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
+  if (!isAdmin) redirect("/dashboard")
 
-  const admin = createAdminClient()
-  const { data: usuarios } = await admin
+  const { data: usuarios } = await supabase
     .from("profiles")
     .select("id, nome, email, role, telefone, endereco, data_admissao, created_at")
     .order("nome")
