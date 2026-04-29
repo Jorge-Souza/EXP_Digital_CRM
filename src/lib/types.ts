@@ -98,6 +98,7 @@ export interface Profile {
   nome: string
   email: string
   role: UserRole
+  status: 'ativo' | 'inativo'
   avatar_url: string | null
   telefone: string | null
   endereco: string | null

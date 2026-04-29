@@ -4,25 +4,23 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 async function assertAdmin() {
   const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (!user) {
-    console.error("[assertAdmin] no user", userError)
-    return null
-  }
-  const { data: isAdmin, error: rpcError } = await supabase.rpc("current_user_is_admin")
-  console.log("[assertAdmin] uid:", user.id, "isAdmin:", isAdmin, "rpcError:", rpcError)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
   if (!isAdmin) return null
   return user
 }
 
+const PROFILE_FIELDS = "id, nome, email, role, status, telefone, endereco, data_admissao, created_at"
+
 export async function GET() {
   const caller = await assertAdmin()
-  if (!caller) return NextResponse.json({ error: "Não autorizado — veja logs do servidor" }, { status: 403 })
+  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
   const admin = createAdminClient()
   const { data, error } = await admin
     .from("profiles")
-    .select("id, nome, email, role, telefone, endereco, data_admissao, created_at")
+    .select(PROFILE_FIELDS)
     .order("nome")
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -31,7 +29,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const caller = await assertAdmin()
-  if (!caller) return NextResponse.json({ error: "Não autorizado — veja logs do servidor" }, { status: 403 })
+  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
   const { nome, email, senha, role, telefone, endereco, data_admissao } = await req.json() as {
     nome: string
@@ -49,6 +47,15 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
 
+  const profilePayload = {
+    nome,
+    role: role ?? "profissional",
+    telefone: telefone || null,
+    endereco: endereco || null,
+    data_admissao: data_admissao || null,
+    status: "ativo",
+  }
+
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password: senha,
@@ -56,22 +63,42 @@ export async function POST(req: Request) {
     user_metadata: { nome },
   })
 
-  if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
+  if (authError) {
+    if (!authError.message.includes("already been registered") && !authError.message.includes("already registered")) {
+      return NextResponse.json({ error: authError.message }, { status: 400 })
+    }
 
-  const { error: profileError } = await admin
-    .from("profiles")
-    .update({
-      nome,
-      role: role ?? "profissional",
-      telefone: telefone || null,
-      endereco: endereco || null,
-      data_admissao: data_admissao || null,
-    })
-    .eq("id", authData.user.id)
+    // Email já existe — busca o usuário e atualiza o perfil
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const existing = users.find(u => u.email === email)
+    if (!existing) return NextResponse.json({ error: "Usuário já existe mas não foi encontrado" }, { status: 400 })
 
+    await admin.auth.admin.updateUserById(existing.id, { password: senha })
+
+    const { error: profileError } = await admin.from("profiles").update(profilePayload).eq("id", existing.id)
+    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+
+    return NextResponse.json({ ok: true, id: existing.id })
+  }
+
+  const { error: profileError } = await admin.from("profiles").update(profilePayload).eq("id", authData.user.id)
   if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
 
   return NextResponse.json({ ok: true, id: authData.user.id })
+}
+
+export async function PATCH(req: Request) {
+  const caller = await assertAdmin()
+  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+
+  const { id, status } = await req.json() as { id: string; status: string }
+  if (!id || !status) return NextResponse.json({ error: "ID e status são obrigatórios" }, { status: 400 })
+
+  const admin = createAdminClient()
+  const { error } = await admin.from("profiles").update({ status }).eq("id", id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(req: Request) {

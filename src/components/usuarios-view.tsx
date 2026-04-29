@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Loader2, Plus, Trash2, UserCog, Phone, MapPin, Calendar, Shield, User } from "lucide-react"
+import { Loader2, Plus, Trash2, UserCog, Phone, MapPin, Calendar, Shield, User, ToggleLeft, ToggleRight } from "lucide-react"
 import type { Profile } from "@/lib/types"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -39,6 +39,7 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
   const [usuarios, setUsuarios] = useState<Profile[]>(inicial)
   const [dialogAberto, setDialogAberto] = useState(false)
   const [removendo, setRemovendo] = useState<string | null>(null)
+  const [togglingStatus, setTogglingStatus] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
   const [form, setForm] = useState({
@@ -78,6 +79,25 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
       toast.error(err instanceof Error ? err.message : "Erro ao criar usuário")
     } finally {
       setSalvando(false)
+    }
+  }
+
+  async function handleToggleStatus(id: string, statusAtual: string) {
+    const novoStatus = statusAtual === "ativo" ? "inativo" : "ativo"
+    setTogglingStatus(id)
+    try {
+      const res = await fetch("/api/admin/usuarios", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: novoStatus }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) throw new Error(data.error ?? "Erro ao atualizar status")
+      setUsuarios(prev => prev.map(u => u.id === id ? { ...u, status: novoStatus as 'ativo' | 'inativo' } : u))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar status")
+    } finally {
+      setTogglingStatus(null)
     }
   }
 
@@ -233,6 +253,9 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
                         {u.role === "admin" ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
                         {roleLabel[u.role] ?? u.role}
                       </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${u.status === "inativo" ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
+                        {u.status === "inativo" ? "Inativo" : "Ativo"}
+                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground">{u.email}</p>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
@@ -255,15 +278,31 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={() => handleRemover(u.id, u.nome)}
-                  disabled={removendo === u.id}
-                >
-                  {removendo === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={u.status === "inativo" ? "text-gray-400 hover:text-green-600" : "text-green-600 hover:text-gray-400"}
+                    onClick={() => handleToggleStatus(u.id, u.status ?? "ativo")}
+                    disabled={togglingStatus === u.id}
+                    title={u.status === "inativo" ? "Ativar usuário" : "Desativar usuário"}
+                  >
+                    {togglingStatus === u.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : u.status === "inativo"
+                        ? <ToggleLeft className="h-5 w-5" />
+                        : <ToggleRight className="h-5 w-5" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => handleRemover(u.id, u.nome)}
+                    disabled={removendo === u.id}
+                  >
+                    {removendo === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
