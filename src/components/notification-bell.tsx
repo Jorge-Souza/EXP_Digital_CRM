@@ -46,7 +46,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     } catch {}
 
     return () => {
-      if (channel) supabase.removeChannel(channel).catch(() => {})
+      if (channel) supabase.removeChannel(channel)
     }
   }, [userId, supabase])
 
