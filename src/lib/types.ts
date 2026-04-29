@@ -93,6 +93,9 @@ export interface Profile {
   email: string
   role: UserRole
   avatar_url: string | null
+  telefone: string | null
+  endereco: string | null
+  data_admissao: string | null
   created_at: string
 }
 

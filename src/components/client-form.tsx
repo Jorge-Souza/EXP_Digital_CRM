@@ -108,11 +108,6 @@ export function ClientForm({ client }: ClientFormProps) {
     status: client?.status ?? "ativo",
     drive_folder_url: client?.drive_folder_url ?? "",
     objetivo: client?.objetivo ?? "",
-    publico_alvo: client?.publico_alvo ?? "",
-    tom_de_voz: client?.tom_de_voz ?? "",
-    servicos_contratados: client?.servicos_contratados ?? "",
-    diferenciais: client?.diferenciais ?? "",
-    observacoes: client?.observacoes ?? "",
     persona: client?.persona ?? "",
     avatar_emoji: client?.avatar_emoji ?? "🏢",
     cor: client?.cor ?? "#6366f1",
@@ -187,11 +182,6 @@ export function ClientForm({ client }: ClientFormProps) {
       meta_posts_semana: parseInt(form.meta_posts_semana) || 0,
       status: form.status as ClientStatus,
       objetivo: form.objetivo || null,
-      publico_alvo: form.publico_alvo || null,
-      tom_de_voz: form.tom_de_voz || null,
-      servicos_contratados: form.servicos_contratados || null,
-      diferenciais: form.diferenciais || null,
-      observacoes: form.observacoes || null,
       persona: form.persona || null,
       avatar_emoji: form.avatar_emoji,
       cor: form.cor,
@@ -433,38 +423,10 @@ export function ClientForm({ client }: ClientFormProps) {
 
               <Separator />
 
-              {/* Campos manuais */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>🎯 Objetivo do Cliente</Label>
-                  <Textarea value={form.objetivo} onChange={e => set("objetivo", e.target.value)}
-                    placeholder="O que o cliente quer alcançar com as redes sociais?" rows={3} />
-                </div>
-                <div className="space-y-2">
-                  <Label>👥 Público-alvo</Label>
-                  <Textarea value={form.publico_alvo} onChange={e => set("publico_alvo", e.target.value)}
-                    placeholder="Quem são os clientes deles? Faixa etária, gênero, interesses..." rows={3} />
-                </div>
-                <div className="space-y-2">
-                  <Label>🎙️ Tom de Voz</Label>
-                  <Textarea value={form.tom_de_voz} onChange={e => set("tom_de_voz", e.target.value)}
-                    placeholder="Como a marca se comunica? Ex: descontraído, profissional, inspirador..." rows={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label>📋 Serviços Contratados</Label>
-                  <Textarea value={form.servicos_contratados} onChange={e => set("servicos_contratados", e.target.value)}
-                    placeholder="O que foi contratado?" rows={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label>⭐ Diferenciais da Marca</Label>
-                  <Textarea value={form.diferenciais} onChange={e => set("diferenciais", e.target.value)}
-                    placeholder="O que diferencia esse cliente da concorrência?" rows={3} />
-                </div>
-                <div className="space-y-2">
-                  <Label>📝 Observações Importantes</Label>
-                  <Textarea value={form.observacoes} onChange={e => set("observacoes", e.target.value)}
-                    placeholder="Restrições de conteúdo, preferências, datas importantes..." rows={3} />
-                </div>
+              <div className="space-y-2">
+                <Label>🎯 Objetivo / Briefing</Label>
+                <Textarea value={form.objetivo} onChange={e => set("objetivo", e.target.value)}
+                  placeholder="O que o cliente quer alcançar com as redes sociais?" rows={4} />
               </div>
             </CardContent>
           </Card>

@@ -16,13 +16,13 @@ export default async function AppLayout({
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: clients }] = await Promise.all([
-    supabase.from("profiles").select("nome").eq("id", user.id).single(),
+    supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
     supabase.from("clients").select("id, nome, status, avatar_emoji, cor").order("nome"),
   ])
 
   return (
     <SidebarProvider>
-      <AppSidebar userEmail={user.email} userName={profile?.nome} clients={clients ?? []} />
+      <AppSidebar userEmail={user.email} userName={profile?.nome} userRole={profile?.role} clients={clients ?? []} />
       <main className="flex flex-1 flex-col min-h-svh">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <SidebarTrigger className="-ml-1" />

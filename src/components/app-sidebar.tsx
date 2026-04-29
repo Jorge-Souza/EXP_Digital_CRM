@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronUp,
   FolderKanban,
+  UserCog,
 } from "lucide-react"
 import {
   Sidebar,
@@ -48,10 +49,11 @@ const statusDot: Record<ClientStatus, string> = {
 interface AppSidebarProps {
   userEmail?: string
   userName?: string
+  userRole?: string
   clients: { id: string; nome: string; status: ClientStatus; avatar_emoji?: string; cor?: string }[]
 }
 
-export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
+export function AppSidebar({ userEmail, userName, userRole, clients }: AppSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -108,6 +110,28 @@ export function AppSidebar({ userEmail, userName, clients }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {userRole === "admin" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3">
+              Administração
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href="/usuarios" />}
+                    isActive={pathname === "/usuarios"}
+                    className="text-white/70 hover:text-white hover:bg-white/10 data-[active=true]:bg-purple-600/30 data-[active=true]:text-white font-medium"
+                  >
+                    <UserCog className="h-4 w-4" />
+                    <span>Usuários</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3 flex items-center gap-1.5">
