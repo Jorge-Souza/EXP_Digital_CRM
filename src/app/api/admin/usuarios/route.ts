@@ -101,6 +101,44 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ ok: true })
 }
 
+export async function PUT(req: Request) {
+  const caller = await assertAdmin()
+  if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+
+  const { id, nome, senha, role, telefone, endereco, data_admissao, status } = await req.json() as {
+    id: string
+    nome: string
+    senha?: string
+    role: string
+    telefone?: string
+    endereco?: string
+    data_admissao?: string
+    status?: string
+  }
+
+  if (!id || !nome) return NextResponse.json({ error: "ID e nome são obrigatórios" }, { status: 400 })
+
+  const admin = createAdminClient()
+
+  if (senha) {
+    const { error } = await admin.auth.admin.updateUserById(id, { password: senha })
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  }
+
+  const { error } = await admin.from("profiles").update({
+    nome,
+    role: role ?? "profissional",
+    telefone: telefone || null,
+    endereco: endereco || null,
+    data_admissao: data_admissao || null,
+    status: status ?? "ativo",
+  }).eq("id", id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: Request) {
   const caller = await assertAdmin()
   if (!caller) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
