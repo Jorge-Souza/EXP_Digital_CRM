@@ -22,11 +22,9 @@ async function transcreverYouTube(videoId: string): Promise<{ titulo: string; tr
   })
   const html = await res.text()
 
-  // Extrai título
   const tituloMatch = html.match(/<title>(.+?) - YouTube<\/title>/)
   const titulo = tituloMatch?.[1] ?? 'Vídeo do YouTube'
 
-  // Extrai URL das legendas do playerResponse
   const prMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;(?:var |const |let |<)/)
   if (!prMatch) throw new Error('Não foi possível extrair playerResponse')
 
@@ -71,31 +69,62 @@ async function transcreverYouTube(videoId: string): Promise<{ titulo: string; tr
   return { titulo, transcricao }
 }
 
-async function transcreverComCobaltEGroq(url: string): Promise<{ titulo: string; transcricao: string }> {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY não configurada. Adicione no .env.local para transcrever Instagram e TikTok.')
-  }
+async function getAudioUrlTikTok(url: string): Promise<string> {
+  const res = await fetch(`https://tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`, {
+    headers: { 'User-Agent': 'Mozilla/5.0' },
+  })
+  const data = await res.json() as { code: number; data?: { music?: string; play?: string } }
+  if (data.code !== 0 || !data.data) throw new Error('Não foi possível obter o áudio do TikTok')
+  const audioUrl = data.data.music ?? data.data.play
+  if (!audioUrl) throw new Error('URL de áudio não encontrada no TikTok')
+  return audioUrl
+}
 
-  // Passo 1: Obter URL do áudio via cobalt.tools
-  const cobaltRes = await fetch('https://api.cobalt.tools/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ url, downloadMode: 'audio', audioFormat: 'mp3' }),
+async function getAudioUrlInstagram(url: string): Promise<string> {
+  const shortcodeMatch = url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)
+  if (!shortcodeMatch) throw new Error('URL do Instagram inválida')
+  const shortcode = shortcodeMatch[1]
+
+  const embedRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'pt-BR,pt;q=0.9',
+    },
   })
 
-  const cobalt = await cobaltRes.json() as { status: string; url?: string; error?: { code: string } }
+  const html = await embedRes.text()
 
-  if (cobalt.status === 'error' || !cobalt.url) {
-    throw new Error(`Não foi possível obter o áudio: ${cobalt.error?.code ?? 'erro desconhecido'}`)
+  // Tenta extrair URL do vídeo do HTML do embed
+  const patterns = [
+    /playableUrl\\?":\s*\\?"(https:[^"\\]+)\\?"/,
+    /"video_url":"(https:[^"]+)"/,
+    /property="og:video"\s+content="([^"]+)"/,
+    /video_url&quot;:&quot;(https:[^&]+)&quot;/,
+  ]
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern)
+    if (match) {
+      return match[1].replace(/\\u002F/g, '/').replace(/\\/g, '').replace(/&amp;/g, '&')
+    }
   }
 
-  // Passo 2: Baixar áudio
-  const audioRes = await fetch(cobalt.url)
+  throw new Error('Não foi possível extrair o vídeo do Instagram. O conteúdo pode ser privado ou o Instagram bloqueou o acesso.')
+}
+
+async function transcreverAudioUrl(audioUrl: string, tipo: 'audio/mp3' | 'video/mp4'): Promise<string> {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY não configurada no Vercel (Settings → Environment Variables).')
+  }
+
+  const audioRes = await fetch(audioUrl)
+  if (!audioRes.ok) throw new Error('Erro ao baixar o áudio')
   const audioBuffer = await audioRes.arrayBuffer()
 
-  // Passo 3: Transcrever com Groq Whisper
   const form = new FormData()
-  form.append('file', new Blob([audioBuffer], { type: 'audio/mp3' }), 'audio.mp3')
+  const ext = tipo === 'video/mp4' ? 'mp4' : 'mp3'
+  form.append('file', new Blob([audioBuffer], { type: tipo }), `audio.${ext}`)
   form.append('model', 'whisper-large-v3-turbo')
   form.append('response_format', 'json')
 
@@ -107,8 +136,7 @@ async function transcreverComCobaltEGroq(url: string): Promise<{ titulo: string;
 
   const groq = await groqRes.json() as { text?: string; error?: { message: string } }
   if (!groq.text) throw new Error(groq.error?.message ?? 'Groq não retornou transcrição')
-
-  return { titulo: 'Conteúdo', transcricao: groq.text }
+  return groq.text
 }
 
 export async function POST(req: Request) {
@@ -122,7 +150,7 @@ export async function POST(req: Request) {
   const plataforma = detectPlataforma(url)
   if (!plataforma) return NextResponse.json({ error: 'URL não reconhecida. Use links do YouTube, Instagram ou TikTok.' }, { status: 400 })
 
-  // Verifica cache — mesma URL para o mesmo cliente já processada
+  // Cache: mesma URL já processada
   const { data: existente } = await supabase
     .from('referencias_laboratorio')
     .select('*')
@@ -133,7 +161,6 @@ export async function POST(req: Request) {
 
   if (existente) return NextResponse.json(existente)
 
-  // Cria registro com status processando
   const { data: registro, error: insertErr } = await supabase
     .from('referencias_laboratorio')
     .insert({ client_id, url, plataforma, status: 'processando' })
@@ -151,8 +178,15 @@ export async function POST(req: Request) {
       const videoId = extrairVideoId(url)
       if (!videoId) throw new Error('ID do vídeo não encontrado na URL')
       resultado = await transcreverYouTube(videoId)
+    } else if (plataforma === 'tiktok') {
+      const audioUrl = await getAudioUrlTikTok(url)
+      const transcricao = await transcreverAudioUrl(audioUrl, 'audio/mp3')
+      resultado = { titulo: 'TikTok', transcricao }
     } else {
-      resultado = await transcreverComCobaltEGroq(url)
+      // Instagram
+      const videoUrl = await getAudioUrlInstagram(url)
+      const transcricao = await transcreverAudioUrl(videoUrl, 'video/mp4')
+      resultado = { titulo: 'Instagram Reel', transcricao }
     }
 
     const { data: atualizado } = await supabase
