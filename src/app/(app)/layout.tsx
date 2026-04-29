@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -17,11 +18,16 @@ export default async function AppLayout({
 
   if (!user) redirect("/login")
 
-  const [{ data: profile }, clientsRes, clientsExtraRes] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+  const admin = createAdminClient()
+
+  const [{ data: profile }, { data: roleRow }, clientsRes, clientsExtraRes] = await Promise.all([
+    supabase.from("profiles").select("nome").eq("id", user.id).single(),
+    admin.from("profiles").select("role").eq("id", user.id).single(),
     supabase.from("clients").select("id, nome, status").order("nome"),
     supabase.from("clients").select("id, avatar_emoji, cor").order("nome"),
   ])
+
+  const isAdmin = roleRow?.role === "admin"
 
   const clientsBase = clientsRes.data ?? []
   const clientsExtra = clientsExtraRes.data ?? []
@@ -32,7 +38,7 @@ export default async function AppLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar userEmail={user.email} userName={profile?.nome} userRole={profile?.role} clients={clients ?? []} />
+      <AppSidebar userEmail={user.email} userName={profile?.nome} isAdmin={isAdmin} clients={clients} />
       <main className="flex flex-1 flex-col min-h-svh">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <SidebarTrigger className="-ml-1" />

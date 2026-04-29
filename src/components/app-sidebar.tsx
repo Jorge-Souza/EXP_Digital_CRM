@@ -49,11 +49,11 @@ const statusDot: Record<ClientStatus, string> = {
 interface AppSidebarProps {
   userEmail?: string
   userName?: string
-  userRole?: string
+  isAdmin?: boolean
   clients: { id: string; nome: string; status: ClientStatus; avatar_emoji?: string; cor?: string }[]
 }
 
-export function AppSidebar({ userEmail, userName, userRole, clients }: AppSidebarProps) {
+export function AppSidebar({ userEmail, userName, isAdmin, clients }: AppSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -111,7 +111,7 @@ export function AppSidebar({ userEmail, userName, userRole, clients }: AppSideba
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {String(userRole).toLowerCase() === "admin" && (
+        {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3">
               Administração
