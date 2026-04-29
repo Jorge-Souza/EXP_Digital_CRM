@@ -120,6 +120,7 @@ interface PublicacoesKanbanProps {
 export function PublicacoesKanban({ posts: initialPosts, clients }: PublicacoesKanbanProps) {
   const [posts, setPosts] = useState(initialPosts)
   const [selectedClient, setSelectedClient] = useState<string>("all")
+  const [selectedTipo, setSelectedTipo] = useState<string>("all")
   const [activePost, setActivePost] = useState<PostWithClient | null>(null)
   const router = useRouter()
 
@@ -127,7 +128,9 @@ export function PublicacoesKanban({ posts: initialPosts, clients }: PublicacoesK
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  const filtered = selectedClient === "all" ? posts : posts.filter((p) => p.client_id === selectedClient)
+  const filtered = posts
+    .filter((p) => selectedClient === "all" || p.client_id === selectedClient)
+    .filter((p) => selectedTipo === "all" || p.tipo === selectedTipo)
 
   const grouped = groupOrder.reduce<Record<string, PostWithClient[]>>((acc, status) => {
     acc[status] = filtered.filter((p) => p.status === status)
@@ -190,7 +193,7 @@ export function PublicacoesKanban({ posts: initialPosts, clients }: PublicacoesK
       onDragEnd={handleDragEnd}
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={selectedClient} onValueChange={(v) => setSelectedClient(v ?? "all")}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Todos os clientes" />
@@ -202,7 +205,37 @@ export function PublicacoesKanban({ posts: initialPosts, clients }: PublicacoesK
               ))}
             </SelectContent>
           </Select>
-          <span className="text-sm text-muted-foreground">
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(["all", "story", "feed", "reels", "carrossel", "tiktok"] as const).map((tipo) => {
+              const baseCount = posts.filter((p) =>
+                (selectedClient === "all" || p.client_id === selectedClient) &&
+                (tipo === "all" || p.tipo === tipo)
+              ).length
+              const tc = tipo !== "all" ? typeColors[tipo] : null
+              const label = tipo === "all" ? "Todos" : typeLabels[tipo]
+              const isActive = selectedTipo === tipo
+              return (
+                <button
+                  key={tipo}
+                  onClick={() => setSelectedTipo(tipo)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    isActive
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {tc && <span className={`h-2 w-2 rounded-full ${tc.bar}`} />}
+                  {label}
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? "bg-white/20" : "bg-muted"}`}>
+                    {baseCount}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <span className="text-sm text-muted-foreground ml-auto">
             {filtered.length} publicaç{filtered.length === 1 ? "ão" : "ões"}
           </span>
         </div>

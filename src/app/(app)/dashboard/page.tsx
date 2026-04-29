@@ -11,12 +11,16 @@ export default async function DashboardPage() {
     { count: activeClients },
     { count: totalPosts },
     { count: publishedPosts },
+    { count: storiesTotal },
+    { count: storiesPublicados },
     { data: pendingPosts },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase.from("clients").select("*", { count: "exact", head: true }).eq("status", "ativo"),
     supabase.from("posts").select("*", { count: "exact", head: true }),
     supabase.from("posts").select("*", { count: "exact", head: true }).eq("status", "publicado"),
+    supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story"),
+    supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story").eq("status", "publicado"),
     supabase
       .from("posts")
       .select("id, titulo, tipo, status, data_publicacao, clients(nome)")
@@ -24,6 +28,8 @@ export default async function DashboardPage() {
       .order("data_publicacao", { ascending: true })
       .limit(5),
   ])
+
+  const storiesPendentes = (storiesTotal ?? 0) - (storiesPublicados ?? 0)
 
   const stats = [
     {
@@ -50,6 +56,14 @@ export default async function DashboardPage() {
       gradient: "from-orange-500 to-amber-500",
       bg: "bg-orange-50 dark:bg-orange-950/40",
     },
+    {
+      emoji: "📱",
+      title: "Stories",
+      value: storiesTotal ?? 0,
+      sub: `${storiesPublicados ?? 0} publicados · ${storiesPendentes} pendentes`,
+      gradient: "from-amber-400 to-yellow-500",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+    },
   ]
 
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -69,7 +83,7 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground mt-1">Visão geral da EXP Digital</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="overflow-hidden border-0 shadow-md">
             <CardContent className="p-0">
