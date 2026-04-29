@@ -3,12 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
-import nextDynamic from "next/dynamic"
-
-const NotificationBell = nextDynamic(
-  () => import("@/components/notification-bell").then((m) => ({ default: m.NotificationBell })),
-  { ssr: false }
-)
+import { NotificationBellWrapper } from "@/components/notification-bell-wrapper"
 
 export const dynamic = "force-dynamic"
 
@@ -48,7 +43,7 @@ export default async function AppLayout({
           <span className="text-sm font-semibold text-primary">✨ EXP Digital</span>
           <span className="text-sm text-muted-foreground">CRM</span>
           <div className="ml-auto">
-            <NotificationBell userId={user.id} />
+            <NotificationBellWrapper userId={user.id} />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-6">
