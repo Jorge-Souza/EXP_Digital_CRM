@@ -42,7 +42,8 @@ export async function GET(req: Request) {
   for (const post of posts) {
     const pubDate = new Date(post.data_publicacao + "T00:00:00")
     const diasRestantes = Math.ceil((pubDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-    const clientNome = (post.clients as { nome: string } | null)?.nome ?? ""
+    const clientRaw = post.clients as unknown
+    const clientNome = (Array.isArray(clientRaw) ? (clientRaw[0] as { nome: string } | undefined)?.nome : (clientRaw as { nome: string } | null)?.nome) ?? ""
 
     // Urgente: hoje ou amanhã com qualquer status de risco
     // Atenção: 2-3 dias e ainda em planejado/a_fazer

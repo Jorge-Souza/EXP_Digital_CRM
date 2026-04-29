@@ -20,16 +20,17 @@ export function NotificationBell({ userId }: { userId: string }) {
   const [supabase] = useState(() => createClient())
 
   useEffect(() => {
-    supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20)
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(20)
         if (data) setNotifications(data as Notification[])
-      })
-      .catch(() => {})
+      } catch {}
+    })()
 
     let channel: ReturnType<typeof supabase.channel> | null = null
     try {
