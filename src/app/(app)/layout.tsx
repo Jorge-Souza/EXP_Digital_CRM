@@ -5,6 +5,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { NotificationBell } from "@/components/notification-bell"
 
+export const dynamic = "force-dynamic"
+
 export default async function AppLayout({
   children,
 }: {
@@ -16,7 +18,7 @@ export default async function AppLayout({
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: clients }] = await Promise.all([
-    supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("clients").select("id, nome, status, avatar_emoji, cor").order("nome"),
   ])
 

@@ -111,7 +111,7 @@ export function AppSidebar({ userEmail, userName, userRole, clients }: AppSideba
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {userRole === "admin" && (
+        {String(userRole).toLowerCase() === "admin" && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-white/40 text-[10px] tracking-widest uppercase px-3">
               Administração
