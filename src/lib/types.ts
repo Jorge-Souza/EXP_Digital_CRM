@@ -1,4 +1,7 @@
 export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
+export type ClientServico = 'social_media' | 'trafego_pago' | 'ambos'
+export type ClientRedeSocial = 'instagram' | 'tiktok' | 'insta_tiktok' | 'youtube' | 'linkedin'
+export type ClientAds = 'meta_ads' | 'google_ads' | 'meta_google' | 'tiktok_ads' | 'ambos'
 export type PostStatus = 'planejado' | 'a_fazer' | 'falta_insumo' | 'producao' | 'aprovado_design' | 'aprovado' | 'agendado' | 'publicado'
 export type PostType = 'feed' | 'reels' | 'story' | 'tiktok' | 'carrossel'
 export type PostPlatform = 'instagram' | 'tiktok' | 'ambos'
@@ -21,6 +24,9 @@ export interface Client {
   diferenciais: string | null
   observacoes: string | null
   persona: string | null
+  servico: ClientServico | null
+  rede_social: ClientRedeSocial | null
+  ads: ClientAds | null
   avatar_emoji: string
   cor: string
   drive_folder_url: string | null

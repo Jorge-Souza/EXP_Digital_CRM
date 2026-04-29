@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import type { Client, ClientStatus } from "@/lib/types"
+import type { Client, ClientStatus, ClientServico, ClientRedeSocial, ClientAds } from "@/lib/types"
 import {
   Loader2, ExternalLink, Building2, Phone, BookOpen,
   Mic, Square, Sparkles, Users, ChevronDown, ChevronUp, Palette,
@@ -111,6 +111,9 @@ export function ClientForm({ client }: ClientFormProps) {
     persona: client?.persona ?? "",
     avatar_emoji: client?.avatar_emoji ?? "🏢",
     cor: client?.cor ?? "#6366f1",
+    servico: client?.servico ?? "",
+    rede_social: client?.rede_social ?? "",
+    ads: client?.ads ?? "",
   })
 
   function set(field: string, value: string) {
@@ -185,6 +188,9 @@ export function ClientForm({ client }: ClientFormProps) {
       persona: form.persona || null,
       avatar_emoji: form.avatar_emoji,
       cor: form.cor,
+      servico: (form.servico || null) as ClientServico | null,
+      rede_social: (form.rede_social || null) as ClientRedeSocial | null,
+      ads: (form.ads || null) as ClientAds | null,
     }
 
     if (client?.id) {
@@ -311,6 +317,62 @@ export function ClientForm({ client }: ClientFormProps) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Serviços Contratados */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-muted-foreground" /> Serviços Contratados
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Serviço</Label>
+                  <Select value={form.servico} onValueChange={v => set("servico", v ?? "")}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="social_media">Social Media</SelectItem>
+                      <SelectItem value="trafego_pago">Tráfego Pago</SelectItem>
+                      <SelectItem value="ambos">Ambos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(form.servico === "social_media" || form.servico === "ambos") && (
+                  <div className="space-y-2">
+                    <Label>Rede Social</Label>
+                    <Select value={form.rede_social} onValueChange={v => set("rede_social", v ?? "")}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="insta_tiktok">Insta & TikTok</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="linkedin">LinkedIn</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {(form.servico === "trafego_pago" || form.servico === "ambos") && (
+                  <div className="space-y-2">
+                    <Label>Ads</Label>
+                    <Select value={form.ads} onValueChange={v => set("ads", v ?? "")}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="meta_ads">Meta Ads</SelectItem>
+                        <SelectItem value="google_ads">Google Ads</SelectItem>
+                        <SelectItem value="meta_google">Meta & Google</SelectItem>
+                        <SelectItem value="tiktok_ads">TikTok Ads</SelectItem>
+                        <SelectItem value="ambos">Ambos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
