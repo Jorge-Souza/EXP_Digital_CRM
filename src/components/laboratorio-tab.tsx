@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import type { ReferenciaLaboratorio } from '@/lib/types'
 import {
   PlayCircle, Camera, Music2, Link, Loader2,
-  Sparkles, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Trash2,
+  Sparkles, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Trash2, PenLine,
 } from 'lucide-react'
 
 const plataformaConfig = {
@@ -24,9 +25,35 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
   const [sugestoes, setSugestoes] = useState(r.sugestoes ?? '')
   const [expandirTranscricao, setExpandirTranscricao] = useState(false)
   const [expandirSugestoes, setExpandirSugestoes] = useState(!!r.sugestoes)
+  const [textoManual, setTextoManual] = useState('')
+  const [salvandoManual, setSalvandoManual] = useState(false)
+  const [mostrarManual, setMostrarManual] = useState(false)
 
   const plat = r.plataforma ? plataformaConfig[r.plataforma] : null
   const Icon = plat?.icon ?? Link
+
+  async function salvarTranscricaoManual() {
+    if (!textoManual.trim()) return
+    setSalvandoManual(true)
+    try {
+      const res = await fetch(`/api/laboratorio/referencias/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcricao: textoManual.trim(), status: 'concluido' }),
+      })
+      if (!res.ok) throw new Error('Erro ao salvar')
+      r.transcricao = textoManual.trim()
+      r.status = 'concluido'
+      setMostrarManual(false)
+      setExpandirTranscricao(true)
+      toast.success('Transcrição salva!')
+      window.location.reload()
+    } catch {
+      toast.error('Erro ao salvar transcrição')
+    } finally {
+      setSalvandoManual(false)
+    }
+  }
 
   async function gerarSugestoes() {
     setGerandoSugestoes(true)
@@ -57,12 +84,8 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
             <Icon className={`h-4 w-4 shrink-0 ${plat?.color ?? ''}`} />
             <div className="min-w-0">
               <p className="font-medium text-sm truncate">{r.titulo ?? plat?.label ?? 'Referência'}</p>
-              <a
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-muted-foreground hover:text-primary truncate block max-w-xs"
-              >
+              <a href={r.url} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-primary truncate block max-w-xs">
                 {r.url}
               </a>
             </div>
@@ -70,40 +93,65 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
           <div className="flex items-center gap-2 shrink-0">
             {r.status === 'processando' && (
               <Badge variant="secondary" className="gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Processando
+                <Loader2 className="h-3 w-3 animate-spin" /> Processando
               </Badge>
             )}
             {r.status === 'concluido' && (
               <Badge variant="default" className="gap-1 bg-green-600">
-                <CheckCircle2 className="h-3 w-3" />
-                Concluído
+                <CheckCircle2 className="h-3 w-3" /> Concluído
               </Badge>
             )}
             {r.status === 'erro' && (
               <Badge variant="destructive" className="gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Erro
+                <AlertCircle className="h-3 w-3" /> Erro
               </Badge>
             )}
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(r.id)}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(r.id)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
-        {/* Erro */}
-        {r.status === 'erro' && r.erro && (
-          <p className="text-xs text-destructive bg-destructive/10 rounded p-2">{r.erro}</p>
+        {/* Erro + opção manual */}
+        {r.status === 'erro' && (
+          <div className="space-y-2">
+            <p className="text-xs text-destructive bg-destructive/10 rounded p-2">{r.erro}</p>
+            {!mostrarManual ? (
+              <Button variant="outline" size="sm" className="w-full text-xs h-8 gap-1"
+                onClick={() => setMostrarManual(true)}>
+                <PenLine className="h-3 w-3" />
+                Inserir transcrição manualmente
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Cole ou escreva o texto do vídeo:</p>
+                <Textarea
+                  placeholder="Cole aqui o conteúdo falado no vídeo..."
+                  value={textoManual}
+                  onChange={e => setTextoManual(e.target.value)}
+                  className="text-xs min-h-[100px]"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 text-xs" onClick={salvarTranscricaoManual}
+                    disabled={salvandoManual || !textoManual.trim()}>
+                    {salvandoManual ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                    Salvar e gerar sugestões
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-xs" onClick={() => setMostrarManual(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Transcrição */}
         {r.transcricao && (
           <div>
-            <button
-              className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-full"
-              onClick={() => setExpandirTranscricao(v => !v)}
-            >
+            <button className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-full"
+              onClick={() => setExpandirTranscricao(v => !v)}>
               {expandirTranscricao ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Transcrição
             </button>
@@ -122,10 +170,8 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
             <div className="space-y-2">
               {sugestoes ? (
                 <>
-                  <button
-                    className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-full"
-                    onClick={() => setExpandirSugestoes(v => !v)}
-                  >
+                  <button className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground w-full"
+                    onClick={() => setExpandirSugestoes(v => !v)}>
                     {expandirSugestoes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     <Sparkles className="h-3 w-3 text-primary" />
                     Sugestões de Conteúdo
@@ -135,7 +181,8 @@ function ReferenciaCard({ ref: r, onDelete }: { ref: ReferenciaLaboratorio; onDe
                       {sugestoes}
                     </div>
                   )}
-                  <Button variant="outline" size="sm" className="w-full text-xs h-7" onClick={gerarSugestoes} disabled={gerandoSugestoes}>
+                  <Button variant="outline" size="sm" className="w-full text-xs h-7"
+                    onClick={gerarSugestoes} disabled={gerandoSugestoes}>
                     {gerandoSugestoes ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
                     Gerar novas sugestões
                   </Button>
@@ -177,7 +224,20 @@ export function LaboratorioTab({
         body: JSON.stringify({ url: url.trim(), client_id: clientId }),
       })
       const data = await res.json() as ReferenciaLaboratorio & { error?: string }
-      if (!res.ok) throw new Error(data.error ?? 'Erro ao processar URL')
+      if (!res.ok) {
+        // Mesmo com erro, tenta buscar o registro criado para mostrar na lista
+        const { error: _e, ...registro } = data
+        if (registro.id) {
+          setRefs(prev => {
+            const existe = prev.find(r => r.id === registro.id)
+            if (existe) return prev
+            return [registro as ReferenciaLaboratorio, ...prev]
+          })
+        }
+        toast.error(data.error ?? 'Erro ao processar URL')
+        setUrl('')
+        return
+      }
       setRefs(prev => {
         const existe = prev.find(r => r.id === data.id)
         if (existe) return prev.map(r => r.id === data.id ? data : r)
@@ -202,7 +262,6 @@ export function LaboratorioTab({
 
   return (
     <div className="space-y-4">
-      {/* Cabeçalho */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
@@ -215,7 +274,7 @@ export function LaboratorioTab({
           </p>
           <div className="flex gap-2">
             <Input
-              placeholder="https://www.instagram.com/reel/... ou youtube.com/watch?v=..."
+              placeholder="https://www.youtube.com/watch?v=... ou tiktok.com/..."
               value={url}
               onChange={e => setUrl(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !carregando && adicionarReferencia()}
@@ -228,13 +287,12 @@ export function LaboratorioTab({
           </div>
           <div className="flex gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><PlayCircle className="h-3 w-3 text-red-500" /> YouTube</span>
-            <span className="flex items-center gap-1"><Camera className="h-3 w-3 text-pink-500" /> Instagram</span>
             <span className="flex items-center gap-1"><Music2 className="h-3 w-3" /> TikTok</span>
+            <span className="flex items-center gap-1"><Camera className="h-3 w-3 text-pink-500" /> Instagram (manual se falhar)</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de referências */}
       {refs.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground text-sm">
