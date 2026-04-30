@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { ChevronDown, ChevronRight, Plus, ExternalLink, Loader2, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import type { Post, PostStatus, PostType } from "@/lib/types"
+import type { Post, PostStatus, PostType, Profile } from "@/lib/types"
 import { statusConfig, groupOrder } from "@/lib/post-status"
 
 export { statusConfig, groupOrder }
@@ -49,20 +49,22 @@ interface PostEditState {
   notas: string
   tema: string
   aprovado: boolean
+  responsavel_id: string
 }
 
 interface ProjetoClienteProps {
   clientId: string
   posts: Post[]
+  profiles: Pick<Profile, "id" | "nome">[]
 }
 
-export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
+export function ProjetoCliente({ clientId, posts, profiles }: ProjetoClienteProps) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ publicado: true })
   const [editingPost, setEditingPost] = useState<Post | null>(null)
   const [editForm, setEditForm] = useState<PostEditState>({
     titulo: "", tipo: "feed", status: "planejado",
-    data_publicacao: "", drive_file_url: "", notas: "", tema: "", aprovado: false,
+    data_publicacao: "", drive_file_url: "", notas: "", tema: "", aprovado: false, responsavel_id: "",
   })
   const [saving, setSaving] = useState(false)
 
@@ -81,6 +83,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
       notas: post.notas ?? "",
       tema: post.tema ?? "",
       aprovado: post.aprovado ?? false,
+      responsavel_id: post.responsavel_id ?? "",
     })
   }
 
@@ -107,6 +110,7 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
         notas: editForm.notas || null,
         tema: editForm.tema || null,
         aprovado: editForm.aprovado,
+        responsavel_id: editForm.responsavel_id || null,
       })
       .eq("id", editingPost.id)
 
@@ -237,7 +241,9 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
                                 : <span className="opacity-40">—</span>
                               }
                             </span>
-                            <span className="text-xs text-muted-foreground opacity-40">—</span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {profiles.find((p) => p.id === post.responsavel_id)?.nome ?? <span className="opacity-40">—</span>}
+                            </span>
                             {post.drive_file_url ? (
                               <a
                                 href={post.drive_file_url}
@@ -323,6 +329,24 @@ export function ProjetoCliente({ clientId, posts }: ProjetoClienteProps) {
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data de Publicação</Label>
               <Input type="date" value={editForm.data_publicacao} onChange={(e) => setField("data_publicacao", e.target.value)} className="text-sm" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Responsável</Label>
+              <Select
+                value={editForm.responsavel_id || "none"}
+                onValueChange={(v) => setField("responsavel_id", v === "none" ? "" : v)}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Sem responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem responsável</SelectItem>
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

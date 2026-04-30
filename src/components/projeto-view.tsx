@@ -6,16 +6,17 @@ import { LayoutList, CalendarDays, CalendarRange, FlaskConical } from "lucide-re
 import { ProjetoCliente } from "@/components/projeto-cliente"
 import { CalendarioMes } from "@/components/calendario-mes"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
-import type { Post, ReferenciaLaboratorio } from "@/lib/types"
+import type { Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
 
 interface ProjetoViewProps {
   clientId: string
   clientNome: string
   posts: Post[]
   initialRefs: ReferenciaLaboratorio[]
+  profiles: Pick<Profile, "id" | "nome">[]
 }
 
-export function ProjetoView({ clientId, clientNome, posts, initialRefs }: ProjetoViewProps) {
+export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles }: ProjetoViewProps) {
   const [view, setView] = useState<"lista" | "calendario" | "laboratorio">("lista")
 
   const btnClass = (v: typeof view) =>
@@ -48,7 +49,7 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs }: Projet
         </button>
       </div>
 
-      {view === "lista" && <ProjetoCliente clientId={clientId} posts={posts} />}
+      {view === "lista" && <ProjetoCliente clientId={clientId} posts={posts} profiles={profiles} />}
       {view === "calendario" && (
         <CalendarioMes posts={posts.filter(p => p.aprovado && p.status !== "planejado")} clientId={clientId} />
       )}

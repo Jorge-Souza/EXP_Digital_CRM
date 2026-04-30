@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -6,7 +7,7 @@ import { ArrowLeft, Pencil, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { StatsSection } from "@/components/stats-section"
 import { ProjetoView } from "@/components/projeto-view"
-import type { Client, Post, ReferenciaLaboratorio } from "@/lib/types"
+import type { Client, Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
 
 const clientStatusConfig = {
   ativo:   { label: "Ativo",     variant: "default" as const },
@@ -25,11 +26,13 @@ export default async function ProjetoPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const [{ data: client }, { data: posts }, { data: refsLab }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: refsLab }, { data: profiles }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
     supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
+    adminClient.from("profiles").select("id, nome").eq("status", "ativo").order("nome"),
   ])
 
   if (!client) notFound()
@@ -103,6 +106,7 @@ export default async function ProjetoPage({
         clientNome={c.nome}
         posts={allPosts}
         initialRefs={(refsLab ?? []) as ReferenciaLaboratorio[]}
+        profiles={(profiles ?? []) as Pick<Profile, "id" | "nome">[]}
       />
     </div>
   )
