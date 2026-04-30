@@ -3,14 +3,15 @@ import { buttonVariants } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { PublicacoesKanban } from "@/components/publicacoes-kanban"
-import type { Post, Client } from "@/lib/types"
+import type { Post, Client, Profile } from "@/lib/types"
 
 export default async function PublicacoesPage() {
   const supabase = await createClient()
 
-  const [{ data: posts }, { data: clients }] = await Promise.all([
+  const [{ data: posts }, { data: clients }, { data: profiles }] = await Promise.all([
     supabase.from("posts").select("*, clients(id, nome)").order("data_publicacao", { ascending: true }),
     supabase.from("clients").select("id, nome").eq("status", "ativo").order("nome"),
+    supabase.from("profiles").select("id, nome").order("nome"),
   ])
 
   type PostWithClient = Post & { clients: Pick<Client, "id" | "nome"> | null }
@@ -31,6 +32,7 @@ export default async function PublicacoesPage() {
       <PublicacoesKanban
         posts={(posts ?? []) as PostWithClient[]}
         clients={(clients ?? []) as Pick<Client, "id" | "nome">[]}
+        profiles={(profiles ?? []) as Pick<Profile, "id" | "nome">[]}
       />
     </div>
   )
