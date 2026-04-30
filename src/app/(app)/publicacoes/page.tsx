@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { buttonVariants } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
@@ -7,11 +8,12 @@ import type { Post, Client, Profile } from "@/lib/types"
 
 export default async function PublicacoesPage() {
   const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   const [{ data: posts }, { data: clients }, { data: profiles }] = await Promise.all([
     supabase.from("posts").select("*, clients(id, nome)").order("data_publicacao", { ascending: true }),
     supabase.from("clients").select("id, nome").eq("status", "ativo").order("nome"),
-    supabase.from("profiles").select("id, nome").order("nome"),
+    adminClient.from("profiles").select("id, nome").eq("status", "ativo").order("nome"),
   ])
 
   type PostWithClient = Post & { clients: Pick<Client, "id" | "nome"> | null }
