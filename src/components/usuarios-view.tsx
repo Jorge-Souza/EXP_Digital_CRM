@@ -78,6 +78,14 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.nome.trim()) { toast.error("Nome é obrigatório"); return }
+    if (!editando && !form.email.trim()) { toast.error("E-mail é obrigatório"); return }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("E-mail inválido"); return
+    }
+    if (!editando && form.senha && form.senha.length < 6) {
+      toast.error("Senha deve ter pelo menos 6 caracteres"); return
+    }
     setSalvando(true)
     try {
       let res: Response

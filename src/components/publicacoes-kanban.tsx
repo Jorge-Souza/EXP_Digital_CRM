@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
   DndContext,
@@ -132,14 +132,20 @@ export function PublicacoesKanban({ posts: initialPosts, clients, profiles }: Pu
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  const filtered = posts
-    .filter((p) => selectedClient === "all" || p.client_id === selectedClient)
-    .filter((p) => selectedTipo === "all" || p.tipo === selectedTipo)
+  const filtered = useMemo(() =>
+    posts
+      .filter((p) => selectedClient === "all" || p.client_id === selectedClient)
+      .filter((p) => selectedTipo === "all" || p.tipo === selectedTipo),
+    [posts, selectedClient, selectedTipo]
+  )
 
-  const grouped = groupOrder.reduce<Record<string, PostWithClient[]>>((acc, status) => {
-    acc[status] = filtered.filter((p) => p.status === status)
-    return acc
-  }, {} as Record<string, PostWithClient[]>)
+  const grouped = useMemo(() =>
+    groupOrder.reduce<Record<string, PostWithClient[]>>((acc, status) => {
+      acc[status] = filtered.filter((p) => p.status === status)
+      return acc
+    }, {} as Record<string, PostWithClient[]>),
+    [filtered]
+  )
 
   function handleDragStart(event: DragStartEvent) {
     const post = posts.find((p) => p.id === event.active.id)

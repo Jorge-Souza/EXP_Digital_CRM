@@ -46,10 +46,9 @@ export function PostForm({ clients, profiles, post, defaultClientId, defaultStat
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.client_id) {
-      toast.error("Selecione um cliente")
-      return
-    }
+    if (!form.client_id) { toast.error("Selecione um cliente"); return }
+    if (!form.titulo.trim()) { toast.error("Título é obrigatório"); return }
+    if (!form.tipo) { toast.error("Selecione o tipo de publicação"); return }
     setLoading(true)
     const supabase = createClient()
 

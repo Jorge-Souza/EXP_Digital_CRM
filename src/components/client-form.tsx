@@ -124,6 +124,11 @@ export function ClientForm({ client }: ClientFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.nome.trim()) { toast.error("Nome do cliente é obrigatório"); return }
+    if (!form.nicho.trim()) { toast.error("Nicho é obrigatório"); return }
+    if (form.contato_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contato_email)) {
+      toast.error("E-mail de contato inválido"); return
+    }
     setLoading(true)
     const supabase = createClient()
 
