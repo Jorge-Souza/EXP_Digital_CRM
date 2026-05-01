@@ -13,6 +13,8 @@ import {
 import Link from "next/link"
 import type { Client, Post, ReferenciaLaboratorio } from "@/lib/types"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
+import { ContratoTab } from "@/components/contrato-tab"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 const statusConfig = {
   ativo: { label: "Ativo", variant: "default" as const },
@@ -54,6 +56,9 @@ function BriefingField({ icon: Icon, label, value }: {
 export default async function ClientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: isAdminData } = await supabase.rpc("current_user_is_admin")
+  const isAdmin = isAdminData === true
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
@@ -67,6 +72,16 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   if (!client) notFound()
 
   const c = client as Client
+
+  // Gera URL de download do contrato (só para admin)
+  let contratoDownloadUrl: string | null = null
+  if (isAdmin && c.contrato_path) {
+    const adminClient = createAdminClient()
+    const { data: signed } = await adminClient.storage
+      .from("contratos")
+      .createSignedUrl(c.contrato_path, 60 * 60) // 1 hora
+    contratoDownloadUrl = signed?.signedUrl ?? null
+  }
   const s = statusConfig[c.status]
 
   const allPosts = (posts ?? []) as Post[]
@@ -164,15 +179,16 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
         </CardContent>
       </Card>
 
-      {/* Tabs: Briefing / Publicações / Laboratório / Contato */}
+      {/* Tabs */}
       <Tabs defaultValue="briefing">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-5" : "grid-cols-4"}`}>
           <TabsTrigger value="briefing">Manual do Cliente</TabsTrigger>
           <TabsTrigger value="publicacoes">
             Publicações ({allPosts.length})
           </TabsTrigger>
           <TabsTrigger value="laboratorio">Laboratório</TabsTrigger>
           <TabsTrigger value="contato">Contato</TabsTrigger>
+          {isAdmin && <TabsTrigger value="contrato">📄 Contrato</TabsTrigger>}
         </TabsList>
 
         {/* BRIEFING */}
@@ -290,6 +306,20 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
             initialRefs={(refsLab ?? []) as ReferenciaLaboratorio[]}
           />
         </TabsContent>
+
+        {/* CONTRATO — admin only */}
+        {isAdmin && (
+          <TabsContent value="contrato" className="mt-4">
+            <ContratoTab
+              clientId={id}
+              clientNome={c.nome}
+              contratoNome={c.contrato_nome ?? null}
+              contratoInicio={c.contrato_inicio ?? null}
+              contratoDuracaoMeses={c.contrato_duracao_meses ?? null}
+              contratoDownloadUrl={contratoDownloadUrl}
+            />
+          </TabsContent>
+        )}
 
         {/* CONTATO */}
         <TabsContent value="contato" className="mt-4">

@@ -33,6 +33,10 @@ export interface Client {
   posts_mensais: number
   meta_posts_semana: number
   status: ClientStatus
+  contrato_path: string | null
+  contrato_nome: string | null
+  contrato_inicio: string | null
+  contrato_duracao_meses: number | null
   created_at: string
   updated_at: string
 }
