@@ -7,13 +7,15 @@ import { ProjetoCliente } from "@/components/projeto-cliente"
 import { CalendarioMes } from "@/components/calendario-mes"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
-import type { Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
+import type { Post, Profile, ReferenciaLaboratorio, ServicoAdicional } from "@/lib/types"
 
 interface ContratoInfo {
   nome: string | null
   inicio: string | null
   duracaoMeses: number | null
+  valor: number | null
   downloadUrl: string | null
+  servicosAdicionais: ServicoAdicional[]
 }
 
 interface ProjetoViewProps {
@@ -79,7 +81,9 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
           contratoNome={contrato.nome}
           contratoInicio={contrato.inicio}
           contratoDuracaoMeses={contrato.duracaoMeses}
+          contratoValor={contrato.valor}
           contratoDownloadUrl={contrato.downloadUrl}
+          servicosAdicionais={contrato.servicosAdicionais}
         />
       )}
     </div>

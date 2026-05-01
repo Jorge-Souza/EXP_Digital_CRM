@@ -11,7 +11,7 @@ import {
   CheckCircle2, Clock, AlertTriangle, TrendingUp
 } from "lucide-react"
 import Link from "next/link"
-import type { Client, Post, ReferenciaLaboratorio } from "@/lib/types"
+import type { Client, Post, ReferenciaLaboratorio, ServicoAdicional } from "@/lib/types"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -73,14 +73,23 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
 
   const c = client as Client
 
-  // Gera URL de download do contrato (só para admin)
+  // Gera URL de download do contrato e busca serviços adicionais (só para admin)
   let contratoDownloadUrl: string | null = null
-  if (isAdmin && c.contrato_path) {
+  let servicosAdicionais: ServicoAdicional[] = []
+  if (isAdmin) {
     const adminClient = createAdminClient()
-    const { data: signed } = await adminClient.storage
-      .from("contratos")
-      .createSignedUrl(c.contrato_path, 60 * 60) // 1 hora
-    contratoDownloadUrl = signed?.signedUrl ?? null
+    if (c.contrato_path) {
+      const { data: signed } = await adminClient.storage
+        .from("contratos")
+        .createSignedUrl(c.contrato_path, 60 * 60)
+      contratoDownloadUrl = signed?.signedUrl ?? null
+    }
+    const { data: servicosData } = await adminClient
+      .from("contrato_servicos_adicionais")
+      .select("*")
+      .eq("client_id", id)
+      .order("created_at", { ascending: true })
+    servicosAdicionais = (servicosData ?? []) as ServicoAdicional[]
   }
   const s = statusConfig[c.status]
 
@@ -316,7 +325,9 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
               contratoNome={c.contrato_nome ?? null}
               contratoInicio={c.contrato_inicio ?? null}
               contratoDuracaoMeses={c.contrato_duracao_meses ?? null}
+              contratoValor={c.contrato_valor ?? null}
               contratoDownloadUrl={contratoDownloadUrl}
+              servicosAdicionais={servicosAdicionais}
             />
           </TabsContent>
         )}

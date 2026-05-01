@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, path, nome: file.name })
 }
 
-// PATCH — atualiza dados do contrato (datas, duração) sem trocar arquivo
+// PATCH — atualiza dados do contrato (datas, duração, valor) sem trocar arquivo
 export async function PATCH(req: NextRequest) {
   const user = await assertAdmin()
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
-  const { client_id, contrato_inicio, contrato_duracao_meses } = await req.json()
+  const { client_id, contrato_inicio, contrato_duracao_meses, contrato_valor } = await req.json()
   if (!client_id) return NextResponse.json({ error: "client_id obrigatório" }, { status: 400 })
 
   const adminClient = createAdminClient()
@@ -77,6 +77,7 @@ export async function PATCH(req: NextRequest) {
     .update({
       contrato_inicio: contrato_inicio || null,
       contrato_duracao_meses: contrato_duracao_meses ? Number(contrato_duracao_meses) : null,
+      contrato_valor: contrato_valor ? Number(contrato_valor) : null,
     })
     .eq("id", client_id)
 

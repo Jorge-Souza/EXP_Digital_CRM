@@ -37,6 +37,7 @@ export interface Client {
   contrato_nome: string | null
   contrato_inicio: string | null
   contrato_duracao_meses: number | null
+  contrato_valor: number | null
   created_at: string
   updated_at: string
 }
@@ -107,6 +108,15 @@ export interface Profile {
   telefone: string | null
   endereco: string | null
   data_admissao: string | null
+  created_at: string
+}
+
+export interface ServicoAdicional {
+  id: string
+  client_id: string
+  descricao: string
+  valor: number
+  data: string | null
   created_at: string
 }
 

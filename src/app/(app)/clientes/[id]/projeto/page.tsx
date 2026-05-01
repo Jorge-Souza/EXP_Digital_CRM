@@ -7,7 +7,7 @@ import { ArrowLeft, Pencil, CalendarRange } from "lucide-react"
 import Link from "next/link"
 import { StatsSection } from "@/components/stats-section"
 import { ProjetoView } from "@/components/projeto-view"
-import type { Client, Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
+import type { Client, Post, Profile, ReferenciaLaboratorio, ServicoAdicional } from "@/lib/types"
 import { FileText } from "lucide-react"
 
 const clientStatusConfig = {
@@ -32,11 +32,14 @@ export default async function ProjetoPage({
   const { data: isAdminData } = await supabase.rpc("current_user_is_admin")
   const isAdmin = isAdminData === true
 
-  const [{ data: client }, { data: posts }, { data: refsLab }, { data: profiles }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: refsLab }, { data: profiles }, { data: servicosData }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
     supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
     adminClient.from("profiles").select("id, nome").eq("status", "ativo").order("nome"),
+    isAdmin
+      ? adminClient.from("contrato_servicos_adicionais").select("*").eq("client_id", id).order("created_at", { ascending: true })
+      : Promise.resolve({ data: [] }),
   ])
 
   if (!client) notFound()
@@ -125,7 +128,9 @@ export default async function ProjetoPage({
           nome: c.contrato_nome ?? null,
           inicio: c.contrato_inicio ?? null,
           duracaoMeses: c.contrato_duracao_meses ?? null,
+          valor: c.contrato_valor ?? null,
           downloadUrl: contratoDownloadUrl,
+          servicosAdicionais: (servicosData ?? []) as ServicoAdicional[],
         }}
       />
     </div>
