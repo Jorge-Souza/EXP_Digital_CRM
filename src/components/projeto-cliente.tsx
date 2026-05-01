@@ -14,29 +14,10 @@ import { ChevronDown, ChevronRight, Plus, ExternalLink, Loader2, CalendarRange }
 import Link from "next/link"
 import { toast } from "sonner"
 import type { Post, PostStatus, PostType, Profile } from "@/lib/types"
-import { statusConfig, groupOrder } from "@/lib/post-status"
+import { statusConfig, groupOrder, typeColors, typeLabels } from "@/lib/post-status"
 
 export { statusConfig, groupOrder }
 
-const typeLabels: Record<string, string> = {
-  feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
-}
-
-const typeColors: Record<string, string> = {
-  feed:      "border-l-4 border-l-blue-400 bg-blue-50/50 dark:bg-blue-950/20",
-  reels:     "border-l-4 border-l-pink-400 bg-pink-50/50 dark:bg-pink-950/20",
-  story:     "border-l-4 border-l-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
-  carrossel: "border-l-4 border-l-violet-400 bg-violet-50/50 dark:bg-violet-950/20",
-  tiktok:    "border-l-4 border-l-cyan-400 bg-cyan-50/50 dark:bg-cyan-950/20",
-}
-
-const typeBadgeColors: Record<string, string> = {
-  feed:      "bg-blue-100 text-blue-700 border-blue-200",
-  reels:     "bg-pink-100 text-pink-700 border-pink-200",
-  story:     "bg-amber-100 text-amber-700 border-amber-200",
-  carrossel: "bg-violet-100 text-violet-700 border-violet-200",
-  tiktok:    "bg-cyan-100 text-cyan-700 border-cyan-200",
-}
 
 const typeOptions = ["feed", "reels", "story", "carrossel", "tiktok"]
 
@@ -229,10 +210,10 @@ export function ProjetoCliente({ clientId, posts, profiles }: ProjetoClienteProp
                           <div
                             key={post.id}
                             onClick={() => openEdit(post)}
-                            className={`grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:brightness-95 transition-all cursor-pointer ${typeColors[post.tipo] ?? "border-l-4 border-l-gray-300 bg-gray-50/50"}`}
+                            className={`grid grid-cols-[1fr_90px_100px_110px_32px] gap-2 items-center px-4 py-2.5 border-b last:border-0 hover:brightness-95 transition-all cursor-pointer border-l-4 ${typeColors[post.tipo]?.border ?? "border-l-gray-300 bg-gray-50/50"}`}
                           >
                             <p className="text-sm font-semibold truncate">{post.titulo}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${typeBadgeColors[post.tipo] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${typeColors[post.tipo]?.badge ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
                               {typeLabels[post.tipo] ?? post.tipo}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -335,7 +316,7 @@ export function ProjetoCliente({ clientId, posts, profiles }: ProjetoClienteProp
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Responsável</Label>
               <Select
                 value={editForm.responsavel_id || "none"}
-                onValueChange={(v) => setField("responsavel_id", v === "none" ? "" : v)}
+                onValueChange={(v) => setField("responsavel_id", !v || v === "none" ? "" : v)}
               >
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Sem responsável" />

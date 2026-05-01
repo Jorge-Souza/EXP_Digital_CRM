@@ -17,21 +17,18 @@ export default async function AppLayout({
 
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { data: adminData }, clientsRes, clientsExtraRes] = await Promise.all([
+  const [{ data: profile }, { data: adminData }, { data: clientsData }] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", user.id).single(),
     supabase.rpc("current_user_is_admin"),
-    supabase.from("clients").select("id, nome, status").order("nome"),
-    supabase.from("clients").select("id, avatar_emoji, cor").order("nome"),
+    supabase.from("clients").select("id, nome, status, avatar_emoji, cor").order("nome"),
   ])
 
   const isAdmin = adminData === true
-
-  const clientsBase = clientsRes.data ?? []
-  const clientsExtra = clientsExtraRes.data ?? []
-  const clients = clientsBase.map((c) => {
-    const extra = clientsExtra.find((e) => e.id === c.id)
-    return { ...c, avatar_emoji: extra?.avatar_emoji ?? "🏢", cor: extra?.cor ?? "#6366f1" }
-  })
+  const clients = (clientsData ?? []).map((c) => ({
+    ...c,
+    avatar_emoji: c.avatar_emoji ?? "🏢",
+    cor: c.cor ?? "#6366f1",
+  }))
 
   return (
     <SidebarProvider>

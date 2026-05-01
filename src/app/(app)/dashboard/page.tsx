@@ -2,25 +2,14 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { statusConfig } from "@/lib/post-status"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  const [
-    { count: totalClients },
-    { count: activeClients },
-    { count: totalPosts },
-    { count: publishedPosts },
-    { count: storiesTotal },
-    { count: storiesPublicados },
-    { data: pendingPosts },
-  ] = await Promise.all([
-    supabase.from("clients").select("*", { count: "exact", head: true }),
-    supabase.from("clients").select("*", { count: "exact", head: true }).eq("status", "ativo"),
-    supabase.from("posts").select("*", { count: "exact", head: true }).neq("tipo", "story"),
-    supabase.from("posts").select("*", { count: "exact", head: true }).neq("tipo", "story").eq("status", "publicado"),
-    supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story"),
-    supabase.from("posts").select("*", { count: "exact", head: true }).eq("tipo", "story").eq("status", "publicado"),
+  const [{ data: allClients }, { data: allPosts }, { data: pendingPosts }] = await Promise.all([
+    supabase.from("clients").select("id, status"),
+    supabase.from("posts").select("id, tipo, status"),
     supabase
       .from("posts")
       .select("id, titulo, tipo, status, data_publicacao, clients(nome)")
@@ -29,29 +18,38 @@ export default async function DashboardPage() {
       .limit(5),
   ])
 
-  const storiesPendentes = (storiesTotal ?? 0) - (storiesPublicados ?? 0)
+  const totalClients   = allClients?.length ?? 0
+  const activeClients  = allClients?.filter((c) => c.status === "ativo").length ?? 0
+  const nonStories     = allPosts?.filter((p) => p.tipo !== "story") ?? []
+  const totalPosts     = nonStories.length
+  const publishedPosts = nonStories.filter((p) => p.status === "publicado").length
+  const stories        = allPosts?.filter((p) => p.tipo === "story") ?? []
+  const storiesTotal      = stories.length
+  const storiesPublicados = stories.filter((p) => p.status === "publicado").length
+
+  const storiesPendentes = storiesTotal - storiesPublicados
 
   const stats = [
     {
       emoji: "👥",
       title: "Clientes Ativos",
-      value: activeClients ?? 0,
-      sub: `${totalClients ?? 0} total`,
+      value: activeClients,
+      sub: `${totalClients} total`,
       gradient: "from-violet-500 to-purple-600",
       bg: "bg-violet-50 dark:bg-violet-950/40",
     },
     {
       emoji: "✅",
       title: "Posts Publicados",
-      value: publishedPosts ?? 0,
-      sub: `de ${totalPosts ?? 0} criados (sem stories)`,
+      value: publishedPosts,
+      sub: `de ${totalPosts} criados (sem stories)`,
       gradient: "from-emerald-500 to-green-600",
       bg: "bg-emerald-50 dark:bg-emerald-950/40",
     },
     {
       emoji: "🎬",
       title: "Em Produção",
-      value: (totalPosts ?? 0) - (publishedPosts ?? 0),
+      value: totalPosts - publishedPosts,
       sub: "feed · reels · carrossel · tiktok",
       gradient: "from-orange-500 to-amber-500",
       bg: "bg-orange-50 dark:bg-orange-950/40",
@@ -59,23 +57,12 @@ export default async function DashboardPage() {
     {
       emoji: "📱",
       title: "Stories",
-      value: storiesTotal ?? 0,
-      sub: `${storiesPublicados ?? 0} publicados · ${storiesPendentes} pendentes`,
+      value: storiesTotal,
+      sub: `${storiesPublicados} publicados · ${storiesPendentes} pendentes`,
       gradient: "from-amber-400 to-yellow-500",
       bg: "bg-amber-50 dark:bg-amber-950/40",
     },
   ]
-
-  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    planejado:       { label: "Planejado",            variant: "outline" },
-    a_fazer:         { label: "A Fazer",              variant: "outline" },
-    falta_insumo:    { label: "Falta Insumo",        variant: "destructive" },
-    producao:        { label: "Em Produção",          variant: "secondary" },
-    aprovado_design: { label: "Aprovação Design",    variant: "secondary" },
-    aprovado:        { label: "P/ Aprovação Cliente", variant: "default" },
-    agendado:        { label: "Agendado",             variant: "secondary" },
-    publicado:       { label: "Postado",              variant: "default" },
-  }
 
   return (
     <div className="space-y-8">
@@ -121,7 +108,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {pendingPosts.map((post) => {
-                const s = statusLabels[post.status] ?? { label: post.status, variant: "outline" as const }
+                const s = statusConfig[post.status as keyof typeof statusConfig] ?? { label: post.status, badge: "outline" as const }
                 const client = (post.clients as unknown) as { nome: string } | null
                 return (
                   <div key={post.id} className="flex items-center justify-between rounded-xl border bg-muted/30 p-3 gap-3">
@@ -137,7 +124,7 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant={s.variant} className="shrink-0">{s.label}</Badge>
+                    <Badge variant={s.badge} className="shrink-0">{s.label}</Badge>
                   </div>
                 )
               })}

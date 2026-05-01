@@ -58,10 +58,9 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [{ data: client }, { data: posts }, { data: postsThisMonth }, { data: refsLab }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: refsLab }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
-    supabase.from("posts").select("id, status").eq("client_id", id).gte("created_at", startOfMonth),
     supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
   ])
 
@@ -75,8 +74,9 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   const inProgressCount = allPosts.filter((p) => p.status === "producao" || p.status === "aprovado").length
   const plannedCount = allPosts.filter((p) => p.status === "planejado").length
 
-  const thisMonthTotal = postsThisMonth?.length ?? 0
-  const thisMonthPublished = postsThisMonth?.filter((p) => p.status === "publicado").length ?? 0
+  const postsThisMonth = allPosts.filter((p) => p.created_at >= startOfMonth)
+  const thisMonthTotal = postsThisMonth.length
+  const thisMonthPublished = postsThisMonth.filter((p) => p.status === "publicado").length
   const deliveryPercent = c.posts_mensais > 0 ? Math.round((thisMonthPublished / c.posts_mensais) * 100) : 0
   const pending = Math.max(0, c.posts_mensais - thisMonthPublished)
 
