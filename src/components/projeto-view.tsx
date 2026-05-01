@@ -2,11 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { LayoutList, CalendarDays, CalendarRange, FlaskConical } from "lucide-react"
+import { LayoutList, CalendarDays, CalendarRange, FlaskConical, FileText } from "lucide-react"
 import { ProjetoCliente } from "@/components/projeto-cliente"
 import { CalendarioMes } from "@/components/calendario-mes"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
+import { ContratoTab } from "@/components/contrato-tab"
 import type { Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
+
+interface ContratoInfo {
+  nome: string | null
+  inicio: string | null
+  duracaoMeses: number | null
+  downloadUrl: string | null
+}
 
 interface ProjetoViewProps {
   clientId: string
@@ -14,10 +22,12 @@ interface ProjetoViewProps {
   posts: Post[]
   initialRefs: ReferenciaLaboratorio[]
   profiles: Pick<Profile, "id" | "nome">[]
+  isAdmin?: boolean
+  contrato?: ContratoInfo
 }
 
-export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles }: ProjetoViewProps) {
-  const [view, setView] = useState<"lista" | "calendario" | "laboratorio">("lista")
+export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles, isAdmin, contrato }: ProjetoViewProps) {
+  const [view, setView] = useState<"lista" | "calendario" | "laboratorio" | "contrato">("lista")
 
   const btnClass = (v: typeof view) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
@@ -47,6 +57,12 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
           <FlaskConical className="h-4 w-4" />
           Laboratório
         </button>
+        {isAdmin && (
+          <button onClick={() => setView("contrato")} className={btnClass("contrato")}>
+            <FileText className="h-4 w-4" />
+            Contrato
+          </button>
+        )}
       </div>
 
       {view === "lista" && <ProjetoCliente clientId={clientId} posts={posts} profiles={profiles} />}
@@ -55,6 +71,16 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
       )}
       {view === "laboratorio" && (
         <LaboratorioTab clientId={clientId} clientNome={clientNome} initialRefs={initialRefs} />
+      )}
+      {view === "contrato" && isAdmin && contrato && (
+        <ContratoTab
+          clientId={clientId}
+          clientNome={clientNome}
+          contratoNome={contrato.nome}
+          contratoInicio={contrato.inicio}
+          contratoDuracaoMeses={contrato.duracaoMeses}
+          contratoDownloadUrl={contrato.downloadUrl}
+        />
       )}
     </div>
   )

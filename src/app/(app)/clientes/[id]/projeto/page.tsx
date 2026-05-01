@@ -8,6 +8,7 @@ import Link from "next/link"
 import { StatsSection } from "@/components/stats-section"
 import { ProjetoView } from "@/components/projeto-view"
 import type { Client, Post, Profile, ReferenciaLaboratorio } from "@/lib/types"
+import { FileText } from "lucide-react"
 
 const clientStatusConfig = {
   ativo:   { label: "Ativo",     variant: "default" as const },
@@ -28,6 +29,9 @@ export default async function ProjetoPage({
   const supabase = await createClient()
   const adminClient = createAdminClient()
 
+  const { data: isAdminData } = await supabase.rpc("current_user_is_admin")
+  const isAdmin = isAdminData === true
+
   const [{ data: client }, { data: posts }, { data: refsLab }, { data: profiles }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
@@ -39,6 +43,15 @@ export default async function ProjetoPage({
 
   const c = client as Client
   const allPosts = (posts ?? []) as Post[]
+
+  // Signed URL do contrato (admin only)
+  let contratoDownloadUrl: string | null = null
+  if (isAdmin && c.contrato_path) {
+    const { data: signed } = await adminClient.storage
+      .from("contratos")
+      .createSignedUrl(c.contrato_path, 60 * 60)
+    contratoDownloadUrl = signed?.signedUrl ?? null
+  }
   const s = clientStatusConfig[c.status]
 
   const now = new Date()
@@ -107,6 +120,13 @@ export default async function ProjetoPage({
         posts={allPosts}
         initialRefs={(refsLab ?? []) as ReferenciaLaboratorio[]}
         profiles={(profiles ?? []) as Pick<Profile, "id" | "nome">[]}
+        isAdmin={isAdmin}
+        contrato={{
+          nome: c.contrato_nome ?? null,
+          inicio: c.contrato_inicio ?? null,
+          duracaoMeses: c.contrato_duracao_meses ?? null,
+          downloadUrl: contratoDownloadUrl,
+        }}
       />
     </div>
   )
