@@ -10,6 +10,7 @@ import {
   ChevronUp,
   FolderKanban,
   UserCog,
+  GraduationCap,
 } from "lucide-react"
 import {
   Sidebar,
@@ -126,6 +127,16 @@ export function AppSidebar({ userEmail, userName, isAdmin, clients }: AppSidebar
                   >
                     <UserCog className="h-4 w-4" />
                     <span>Usuários</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href="/assessoria" />}
+                    isActive={pathname.startsWith("/assessoria")}
+                    className="text-white/70 hover:text-white hover:bg-white/10 data-[active=true]:bg-purple-600/30 data-[active=true]:text-white font-medium"
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    <span>Assessoria</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

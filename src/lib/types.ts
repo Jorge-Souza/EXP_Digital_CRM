@@ -1,4 +1,33 @@
 export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
+
+// --- Assessoria ---
+export type SessaoStatus = 'agendada' | 'realizada' | 'cancelada'
+
+export interface Assessorado {
+  id: string
+  nome: string
+  email: string | null
+  telefone: string | null
+  data_contratacao: string
+  valor_assessoria: number | null
+  observacoes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SessaoAssessoria {
+  id: string
+  assessorado_id: string
+  data_sessao: string
+  duracao_minutos: number
+  titulo: string
+  descricao: string | null
+  link_reuniao: string | null
+  google_event_id: string | null
+  google_event_link: string | null
+  status: SessaoStatus
+  created_at: string
+}
 export type ClientServico = 'social_media' | 'trafego_pago' | 'ambos'
 export type ClientRedeSocial = 'instagram' | 'tiktok' | 'insta_tiktok' | 'youtube' | 'linkedin'
 export type ClientAds = 'meta_ads' | 'google_ads' | 'meta_google' | 'tiktok_ads' | 'ambos'
