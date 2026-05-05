@@ -15,6 +15,12 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   cancelada: { label: "Cancelada", className: "bg-red-500/10 text-red-400 border-red-400/30" },
 }
 
+const pilarStatusConfig: Record<string, { label: string; className: string }> = {
+  nao_iniciado: { label: "Não Iniciado", className: "bg-muted text-muted-foreground border-border" },
+  em_andamento: { label: "Em Andamento", className: "bg-blue-500/10 text-blue-400 border-blue-400/30" },
+  concluido: { label: "Concluído", className: "bg-green-500/10 text-green-400 border-green-400/30" },
+}
+
 export default async function AssessoradoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -55,6 +61,30 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Info */}
         <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Jornada (Pilares)</CardTitle></CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Estrutura</span>
+                <Badge variant="outline" className={pilarStatusConfig[a.status_estrutura]?.className || ""}>
+                  {pilarStatusConfig[a.status_estrutura]?.label || "Não Iniciado"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Exposição</span>
+                <Badge variant="outline" className={pilarStatusConfig[a.status_exposicao]?.className || ""}>
+                  {pilarStatusConfig[a.status_exposicao]?.label || "Não Iniciado"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Expansão</span>
+                <Badge variant="outline" className={pilarStatusConfig[a.status_expansao]?.className || ""}>
+                  {pilarStatusConfig[a.status_expansao]?.label || "Não Iniciado"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader><CardTitle className="text-sm">Dados</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
@@ -119,8 +149,9 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{s.titulo}</p>
+                            <p className="font-medium">{s.titulo} {s.numero_sessao ? `(Encontro ${s.numero_sessao})` : ""}</p>
                             <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
+                            {s.pilar_foco && <Badge variant="secondary">{s.pilar_foco}</Badge>}
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1.5">
@@ -133,6 +164,12 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                             </span>
                           </div>
                           {s.descricao && <p className="text-sm text-muted-foreground">{s.descricao}</p>}
+                          {s.plano_de_acao && (
+                            <div className="mt-2 p-3 bg-muted/50 rounded-md text-sm">
+                              <p className="font-semibold mb-1">Plano de Ação:</p>
+                              <p className="text-muted-foreground whitespace-pre-wrap">{s.plano_de_acao}</p>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {s.google_event_link && (

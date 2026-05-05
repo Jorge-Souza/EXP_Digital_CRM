@@ -2,6 +2,8 @@ export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
 
 // --- Assessoria ---
 export type SessaoStatus = 'agendada' | 'realizada' | 'cancelada'
+export type PilarStatus = 'nao_iniciado' | 'em_andamento' | 'concluido'
+export type PilarFoco = 'Estrutura' | 'Exposição' | 'Expansão' | 'Geral'
 
 export interface Assessorado {
   id: string
@@ -11,6 +13,10 @@ export interface Assessorado {
   data_contratacao: string
   valor_assessoria: number | null
   observacoes: string | null
+  status_estrutura: PilarStatus
+  status_exposicao: PilarStatus
+  status_expansao: PilarStatus
+  notas_jornada: string | null
   created_at: string
   updated_at: string
 }
@@ -26,6 +32,9 @@ export interface SessaoAssessoria {
   google_event_id: string | null
   google_event_link: string | null
   status: SessaoStatus
+  numero_sessao: number | null
+  pilar_foco: PilarFoco | null
+  plano_de_acao: string | null
   created_at: string
 }
 export type ClientServico = 'social_media' | 'trafego_pago' | 'ambos'
