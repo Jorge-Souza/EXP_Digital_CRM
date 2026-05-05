@@ -18,9 +18,7 @@ create table public.assessorados (
 alter table public.assessorados enable row level security;
 
 create policy "Admins gerenciam assessorados"
-  on public.assessorados for all using (
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-  );
+  on public.assessorados for all using (current_user_is_admin());
 
 -- Sessões de assessoria (agenda/encontros)
 create table public.sessoes_assessoria (
@@ -40,9 +38,7 @@ create table public.sessoes_assessoria (
 alter table public.sessoes_assessoria enable row level security;
 
 create policy "Admins gerenciam sessoes"
-  on public.sessoes_assessoria for all using (
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-  );
+  on public.sessoes_assessoria for all using (current_user_is_admin());
 
 -- Tokens Google Calendar do admin
 create table public.google_calendar_tokens (
