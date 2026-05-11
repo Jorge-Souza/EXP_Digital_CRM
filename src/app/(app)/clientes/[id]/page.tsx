@@ -16,6 +16,7 @@ import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { CreateDriveFolderButton } from "@/components/create-drive-folder-button"
+import { CopyLinkButton } from "@/components/copy-link-button"
 
 const statusConfig = {
   ativo: { label: "Ativo", variant: "default" as const },
@@ -125,6 +126,7 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <CopyLinkButton />
           <CreateDriveFolderButton
             clientId={id}
             clientName={c.nome}
