@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
-  const { clientName } = await request.json()
+  const { clientName, clientId } = await request.json()
 
   if (!clientName) {
     return NextResponse.json({ error: 'clientName obrigatório' }, { status: 400 })
@@ -22,6 +23,15 @@ export async function POST(request: NextRequest) {
 
   if (!data.success) {
     return NextResponse.json({ error: data.error ?? 'Erro ao criar pasta' }, { status: 500 })
+  }
+
+  // Salva a URL de volta no cliente se clientId foi fornecido
+  if (clientId && data.folderUrl) {
+    const supabase = createAdminClient()
+    await supabase
+      .from('clients')
+      .update({ drive_folder_url: data.folderUrl })
+      .eq('id', clientId)
   }
 
   return NextResponse.json({ folderUrl: data.folderUrl })

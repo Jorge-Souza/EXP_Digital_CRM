@@ -15,6 +15,7 @@ import type { Client, Post, ReferenciaLaboratorio, ServicoAdicional } from "@/li
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { CreateDriveFolderButton } from "@/components/create-drive-folder-button"
 
 const statusConfig = {
   ativo: { label: "Ativo", variant: "default" as const },
@@ -123,10 +124,17 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
             <p className="text-muted-foreground text-sm">{c.nicho || "—"}</p>
           </div>
         </div>
-        <Link href={`/clientes/${id}/editar`} className={buttonVariants({ variant: "outline" })}>
-          <Pencil className="mr-2 h-4 w-4" />
-          Editar
-        </Link>
+        <div className="flex items-center gap-2">
+          <CreateDriveFolderButton
+            clientId={id}
+            clientName={c.nome}
+            folderUrl={c.drive_folder_url}
+          />
+          <Link href={`/clientes/${id}/editar`} className={buttonVariants({ variant: "outline" })}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Controle de Entregas */}
