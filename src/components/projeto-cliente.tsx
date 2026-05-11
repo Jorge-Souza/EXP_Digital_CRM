@@ -296,6 +296,7 @@ export function ProjetoCliente({ clientId, posts, profiles }: ProjetoClienteProp
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="planejado">Planejado</SelectItem>
+                    <SelectItem value="a_fazer">A Fazer</SelectItem>
                     <SelectItem value="falta_insumo">Falta Insumo</SelectItem>
                     <SelectItem value="producao">Em Produção</SelectItem>
                     <SelectItem value="aprovado_design">Aprovação Design</SelectItem>
