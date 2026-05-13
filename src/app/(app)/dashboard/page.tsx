@@ -4,26 +4,44 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { statusConfig } from "@/lib/post-status"
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ semana?: string }>
+}) {
   const supabase = await createClient()
+  const { semana: semanaParam } = await searchParams
+  const semana = semanaParam ? parseInt(semanaParam) : null
 
   const now = new Date()
   const cy = now.getFullYear()
   const cm = now.getMonth()
-  const firstDay = new Date(cy, cm, 1).toISOString().slice(0, 10)
-  const lastDay  = new Date(cy, cm + 1, 0).toISOString().slice(0, 10)
-  const daysInMonth  = new Date(cy, cm + 1, 0).getDate()
-  const dayOfMonth   = now.getDate()
-  const monthProgress = dayOfMonth / daysInMonth // 0–1
+  const firstDay    = new Date(cy, cm, 1).toISOString().slice(0, 10)
+  const lastDay     = new Date(cy, cm + 1, 0).toISOString().slice(0, 10)
+  const daysInMonth = new Date(cy, cm + 1, 0).getDate()
+  const dayOfMonth  = now.getDate()
+  const monthProgress = dayOfMonth / daysInMonth
 
   const monthLabel = now.toLocaleString("pt-BR", { month: "long", year: "numeric" })
 
+  // Calcula o intervalo de datas conforme o filtro de semana
+  let filterStart = firstDay
+  let filterEnd   = lastDay
+  let usandoMeta: "mensal" | "semanal" = "mensal"
+  if (semana && semana >= 1 && semana <= 4) {
+    const weekStart = (semana - 1) * 7 + 1
+    const weekEnd   = semana === 4 ? daysInMonth : semana * 7
+    filterStart = new Date(cy, cm, weekStart).toISOString().slice(0, 10)
+    filterEnd   = new Date(cy, cm, Math.min(weekEnd, daysInMonth)).toISOString().slice(0, 10)
+    usandoMeta  = "semanal"
+  }
+
   const [{ data: allClients }, { data: allPosts }, { data: monthPosts }, { data: pendingPosts }] = await Promise.all([
-    supabase.from("clients").select("id, nome, avatar_emoji, cor, posts_mensais, nicho, status").order("nome"),
+    supabase.from("clients").select("id, nome, avatar_emoji, cor, posts_mensais, meta_posts_semana, nicho, status").order("nome"),
     supabase.from("posts").select("id, tipo, status, client_id"),
     supabase.from("posts").select("id, client_id, status, tipo")
-      .gte("data_publicacao", firstDay)
-      .lte("data_publicacao", lastDay),
+      .gte("data_publicacao", filterStart)
+      .lte("data_publicacao", filterEnd),
     supabase
       .from("posts")
       .select("id, titulo, tipo, status, data_publicacao, clients(nome)")
@@ -42,22 +60,25 @@ export default async function DashboardPage() {
   const storiesPublicados = stories.filter((p) => p.status === "publicado").length
   const storiesPendentes  = storiesTotal - storiesPublicados
 
-  // Visão por cliente — mês atual
+  // Visão por cliente — exclui stories do cálculo
   type ClientHealth = "concluido" | "em_dia" | "atencao" | "atrasado" | "sem_meta"
   const clientRows = activeClients.map((c) => {
-    const clientMonthPosts = monthPosts?.filter((p) => p.client_id === c.id) ?? []
+    const clientMonthPosts = monthPosts?.filter((p) => p.client_id === c.id && p.tipo !== "story") ?? []
     const published  = clientMonthPosts.filter((p) => p.status === "publicado").length
     const inProgress = clientMonthPosts.filter((p) =>
       ["producao", "aprovado_design", "aprovado", "agendado", "falta_insumo"].includes(p.status)
     ).length
-    const meta = c.posts_mensais ?? 0
+    const meta = usandoMeta === "semanal"
+      ? (c.meta_posts_semana ?? 0)
+      : (c.posts_mensais ?? 0)
 
     let health: ClientHealth = "sem_meta"
     if (meta > 0) {
       if (published >= meta) {
         health = "concluido"
       } else {
-        const expected = Math.ceil(meta * monthProgress)
+        const progress = usandoMeta === "semanal" ? 1 : monthProgress
+        const expected = Math.ceil(meta * progress)
         if (published >= expected) health = "em_dia"
         else if (published >= Math.ceil(expected * 0.5)) health = "atencao"
         else health = "atrasado"
@@ -140,14 +161,38 @@ export default async function DashboardPage() {
 
       {/* Meta por cliente */}
       <Card className="border-0 shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div>
-            <CardTitle className="text-lg font-bold">🎯 Meta por Cliente</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5 capitalize">{monthLabel} · dia {dayOfMonth} de {daysInMonth}</p>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <CardTitle className="text-lg font-bold">🎯 Meta por Cliente</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                {semana ? `Semana ${semana} · ` : ""}{monthLabel}
+                {!semana && ` · dia ${dayOfMonth} de ${daysInMonth}`}
+                {usandoMeta === "semanal" && " · meta semanal"}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {([
+                { label: "Mês todo", href: "/dashboard", ativo: !semana },
+                { label: "Sem 1",  href: "/dashboard?semana=1", ativo: semana === 1 },
+                { label: "Sem 2",  href: "/dashboard?semana=2", ativo: semana === 2 },
+                { label: "Sem 3",  href: "/dashboard?semana=3", ativo: semana === 3 },
+                { label: "Sem 4",  href: "/dashboard?semana=4", ativo: semana === 4 },
+              ] as const).map((f) => (
+                <Link
+                  key={f.href}
+                  href={f.href}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    f.ativo
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {f.label}
+                </Link>
+              ))}
+            </div>
           </div>
-          <Link href="/clientes" className="text-sm text-primary hover:underline font-medium">
-            Ver clientes →
-          </Link>
         </CardHeader>
         <CardContent>
           {clientRows.length === 0 ? (
