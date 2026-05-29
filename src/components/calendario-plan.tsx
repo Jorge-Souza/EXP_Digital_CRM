@@ -190,7 +190,7 @@ export function CalendarioPlan({
                         {TYPE_LABELS[post.tipo] ?? post.tipo}
                       </p>
                       <p
-                        className="text-[10px] leading-snug mt-0.5"
+                        className="text-[10px] leading-snug mt-0.5 line-clamp-3"
                         style={{ color: tc.text }}
                       >
                         {post.tema || post.titulo}
