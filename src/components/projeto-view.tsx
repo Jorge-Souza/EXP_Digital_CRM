@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { LayoutList, CalendarDays, CalendarRange, FlaskConical, FileText } from "lucide-react"
-import { ProjetoCliente } from "@/components/projeto-cliente"
+import { LayoutKanban, CalendarDays, CalendarRange, FlaskConical, FileText } from "lucide-react"
 import { CalendarioMes } from "@/components/calendario-mes"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
-import type { Post, Profile, ReferenciaLaboratorio, ServicoAdicional } from "@/lib/types"
+import { PublicacoesKanban } from "@/components/publicacoes-kanban"
+import type { Post, Profile, ReferenciaLaboratorio, ServicoAdicional, Client } from "@/lib/types"
+
+type PostWithClient = Post & { clients: Pick<Client, "id" | "nome"> | null }
 
 interface ContratoInfo {
   nome: string | null
@@ -29,20 +31,33 @@ interface ProjetoViewProps {
 }
 
 export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles, isAdmin, contrato }: ProjetoViewProps) {
-  const [view, setView] = useState<"lista" | "calendario" | "laboratorio" | "contrato">("lista")
+  const [view, setView] = useState<"kanban" | "calendario" | "laboratorio" | "contrato">("calendario")
 
   const btnClass = (v: typeof view) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
       view === v ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
     }`
 
+  // Posts aprovados para o Calendário Oficial
+  const postsOficiais = posts.filter(p => p.aprovado && p.status !== "planejado")
+
+  // Posts com cliente embutido para o Kanban
+  const postsWithClient: PostWithClient[] = posts.map(p => ({
+    ...p,
+    clients: { id: clientId, nome: clientNome },
+  }))
+
   return (
     <div className="space-y-4">
       {/* Toggle de visualização */}
       <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit flex-wrap">
-        <button onClick={() => setView("lista")} className={btnClass("lista")}>
-          <LayoutList className="h-4 w-4" />
-          Lista
+        <button onClick={() => setView("calendario")} className={btnClass("calendario")}>
+          <CalendarDays className="h-4 w-4" />
+          Calendário Oficial
+        </button>
+        <button onClick={() => setView("kanban")} className={btnClass("kanban")}>
+          <LayoutKanban className="h-4 w-4" />
+          Kanban
         </button>
         <Link
           href={`/clientes/${clientId}/planejamento`}
@@ -51,10 +66,6 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
           <CalendarRange className="h-4 w-4" />
           Planejamento
         </Link>
-        <button onClick={() => setView("calendario")} className={btnClass("calendario")}>
-          <CalendarDays className="h-4 w-4" />
-          Calendário Oficial
-        </button>
         <button onClick={() => setView("laboratorio")} className={btnClass("laboratorio")}>
           <FlaskConical className="h-4 w-4" />
           Laboratório
@@ -67,13 +78,22 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
         )}
       </div>
 
-      {view === "lista" && <ProjetoCliente clientId={clientId} posts={posts} profiles={profiles} />}
       {view === "calendario" && (
-        <CalendarioMes posts={posts.filter(p => p.aprovado && p.status !== "planejado")} clientId={clientId} />
+        <CalendarioMes posts={postsOficiais} clientId={clientId} />
       )}
+
+      {view === "kanban" && (
+        <PublicacoesKanban
+          posts={postsWithClient}
+          clients={[{ id: clientId, nome: clientNome }]}
+          profiles={profiles}
+        />
+      )}
+
       {view === "laboratorio" && (
         <LaboratorioTab clientId={clientId} clientNome={clientNome} initialRefs={initialRefs} />
       )}
+
       {view === "contrato" && isAdmin && contrato && (
         <ContratoTab
           clientId={clientId}
