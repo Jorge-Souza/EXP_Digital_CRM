@@ -16,6 +16,29 @@ const TYPE_LABELS: Record<string, string> = {
   feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
 }
 
+const TYPE_LABELS_PDF: Record<string, string> = {
+  feed: "ESTÁTICO", reels: "REELS", story: "STORY", tiktok: "TIKTOK", carrossel: "CARROSSEL",
+}
+
+const TYPE_COLORS_PDF: Record<string, { bg: string; text: string }> = {
+  feed:      { bg: "#fef9c3", text: "#854d0e" },
+  reels:     { bg: "#fce7f3", text: "#9d174d" },
+  story:     { bg: "#dcfce7", text: "#166534" },
+  tiktok:    { bg: "#fee2e2", text: "#991b1b" },
+  carrossel: { bg: "#ede9fe", text: "#5b21b6" },
+}
+
+const DATA_PALETTE_PDF = [
+  { bg: "#fbbf24", text: "#78350f" },
+  { bg: "#f43f5e", text: "#fff" },
+  { bg: "#16a34a", text: "#fff" },
+  { bg: "#7c3aed", text: "#fff" },
+  { bg: "#dc2626", text: "#fff" },
+  { bg: "#0891b2", text: "#fff" },
+  { bg: "#ea580c", text: "#fff" },
+  { bg: "#db2777", text: "#fff" },
+]
+
 const STATUS_LABELS: Record<string, string> = {
   planejado: "Planejado", falta_insumo: "Falta Insumo", producao: "Em Produção",
   aprovado_design: "Aprovação Design", aprovado: "P/ Aprovação", agendado: "Agendado", publicado: "Postado",
@@ -120,43 +143,68 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
     ]
     while (celulas.length % 7 !== 0) celulas.push(null)
 
+    // Mapa de eventos (datas comemorativas ativas → cor)
+    const datasAtivas = planejamento.datas_comemorativas.filter(d => d.ativo)
+    const eventoMapPDF = new Map<string, { nome: string; bg: string; text: string }>()
+    datasAtivas.forEach((d, idx) => {
+      const p = DATA_PALETTE_PDF[idx % DATA_PALETTE_PDF.length]
+      eventoMapPDF.set(d.data, { nome: d.nome, bg: p.bg, text: p.text })
+    })
+
+    // Datas principais acima do calendário
+    const datasHeaderHTML = datasAtivas.length === 0 ? "" : `
+      <div class="datas-principais">
+        ${datasAtivas.map((d, idx) => {
+          const p = DATA_PALETTE_PDF[idx % DATA_PALETTE_PDF.length]
+          const fmt = new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")
+          return `<span class="data-pill" style="background:${p.bg};color:${p.text}">${d.nome} · ${fmt}</span>`
+        }).join("")}
+      </div>`
+
     // Calendar cells HTML
     const calendarCells = celulas.map((dia, idx) => {
       if (dia === null) {
-        return `<div class="cal-cell empty"></div>`
+        return `<div class="cal-cell cal-empty"></div>`
       }
       const key = `${ano}-${String(mesIndex + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`
       const feriado = feriados.get(key)
+      const evento = eventoMapPDF.get(key)
       const dayPosts = postsByDate.get(key) ?? []
       const colIdx = (inicioCelula + dia - 1) % 7
       const isWeekend = colIdx === 5 || colIdx === 6
 
-      let cellClass = "cal-cell"
-      if (feriado) cellClass += " feriado"
-      else if (isWeekend) cellClass += " weekend"
-
-      const postsHTML = dayPosts.slice(0, 4).map(p => {
-        const bg = STATUS_BG[p.status] ?? "#e5e7eb"
-        const color = STATUS_COLOR[p.status] ?? "#374151"
-        return `<div class="cal-post" style="background:${bg};color:${color}">${p.titulo}</div>`
-      }).join("")
-
-      const maisHTML = dayPosts.length > 4
-        ? `<div class="cal-mais">+${dayPosts.length - 4} mais</div>`
+      const headerBg = evento ? evento.bg : feriado ? "#bae6fd" : isWeekend ? "#f1f5f9" : "#ffffff"
+      const headerText = evento ? evento.text : feriado ? "#075985" : "#6b7280"
+      const eventLabel = evento
+        ? `<span class="cal-evento-label" style="color:${evento.text}">${evento.nome}</span>`
+        : feriado
+        ? `<span class="cal-evento-label" style="color:#075985">${feriado}</span>`
         : ""
 
-      const feriadoHTML = feriado
-        ? `<div class="cal-feriado">${feriado}</div>`
+      const postsHTML = dayPosts.slice(0, 3).map(p => {
+        const tc = TYPE_COLORS_PDF[p.tipo] ?? { bg: "#f3f4f6", text: "#374151" }
+        const desc = (p.tema || p.titulo).substring(0, 120)
+        return `
+          <div class="cal-post-card" style="background:${tc.bg}">
+            <div class="cal-type-label" style="color:${tc.text}">${TYPE_LABELS_PDF[p.tipo] ?? p.tipo}</div>
+            <div class="cal-desc" style="color:${tc.text}">${desc}</div>
+          </div>`
+      }).join("")
+
+      const maisHTML = dayPosts.length > 3
+        ? `<div class="cal-mais">+${dayPosts.length - 3} mais</div>`
         : ""
 
       return `
-        <div class="${cellClass}">
-          <div class="cal-day-header">
-            <span class="cal-day-num">${dia}</span>
-            ${feriadoHTML}
+        <div class="cal-cell${isWeekend && !evento ? " cal-weekend" : ""}">
+          <div class="cal-day-hdr" style="background:${headerBg}">
+            <span class="cal-day-num" style="color:${headerText}">${dia}</span>
+            ${eventLabel}
           </div>
-          ${postsHTML}
-          ${maisHTML}
+          <div class="cal-posts-area">
+            ${postsHTML}
+            ${maisHTML}
+          </div>
         </div>`
     }).join("")
 
@@ -374,108 +422,111 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
       font-size: 12px;
     }
 
-    /* ─── CALENDÁRIO ─── */
-    .calendar-wrap {
-      page-break-inside: avoid;
+    /* ─── DATAS PRINCIPAIS ─── */
+    .datas-principais {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
     }
+    .data-pill {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    /* ─── CALENDÁRIO ─── */
+    .calendar-wrap { page-break-inside: avoid; }
     .cal-header-row {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      background: #1e1b4b;
-      border-radius: 8px 8px 0 0;
+      background: #1f2937;
+      border-radius: 6px 6px 0 0;
       overflow: hidden;
     }
     .cal-header-cell {
-      padding: 8px 4px;
+      padding: 7px 4px;
       text-align: center;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      color: rgba(255,255,255,0.8);
-      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      border-right: 1px solid rgba(255,255,255,0.1);
     }
+    .cal-header-cell:last-child { border-right: none; }
     .cal-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border: 1px solid #e5e7eb;
-      border-top: none;
-      border-radius: 0 0 8px 8px;
+      border-left: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+      border-radius: 0 0 6px 6px;
       overflow: hidden;
     }
     .cal-cell {
-      min-height: 90px;
-      padding: 6px;
+      min-height: 95px;
       border-right: 1px solid #e5e7eb;
-      border-bottom: 1px solid #e5e7eb;
+      border-top: 1px solid #e5e7eb;
       background: #fff;
       display: flex;
       flex-direction: column;
-      gap: 3px;
-    }
-    .cal-cell:nth-child(7n) { border-right: none; }
-    .cal-cell.empty { background: #f9fafb; }
-    .cal-cell.weekend { background: #f8f9ff; }
-    .cal-cell.feriado { background: #f3e8ff; }
-    .cal-day-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 4px;
-      margin-bottom: 2px;
-    }
-    .cal-day-num {
-      font-size: 11px;
-      font-weight: 800;
-      color: #374151;
-      min-width: 18px;
-    }
-    .cal-feriado {
-      font-size: 8px;
-      font-weight: 600;
-      color: #7c3aed;
-      line-height: 1.2;
-      flex: 1;
-    }
-    .cal-post {
-      font-size: 8.5px;
-      font-weight: 600;
-      padding: 2px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.4;
     }
-    .cal-mais {
-      font-size: 8px;
-      color: #9ca3af;
-      padding: 0 2px;
-    }
-
-    /* ─── LEGENDA ─── */
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-top: none;
-      border-radius: 0 0 8px 8px;
-      margin-top: -1px;
-    }
-    .legend-item {
+    .cal-empty { background: #f9fafb; }
+    .cal-weekend { background: #f9fafb; }
+    .cal-day-hdr {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 9.5px;
-      color: #4b5563;
+      gap: 3px;
+      padding: 3px 5px;
     }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      display: inline-block;
-      flex-shrink: 0;
+    .cal-day-num {
+      font-size: 10px;
+      font-weight: 900;
+      min-width: 16px;
+      text-align: center;
+    }
+    .cal-evento-label {
+      font-size: 7.5px;
+      font-weight: 700;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cal-posts-area {
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+    .cal-post-card {
+      border-radius: 3px;
+      padding: 2px 4px;
+    }
+    .cal-type-label {
+      font-size: 7px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+    .cal-desc {
+      font-size: 8px;
+      line-height: 1.3;
+      margin-top: 1px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .cal-mais {
+      font-size: 7.5px;
+      color: #9ca3af;
+      padding: 0 4px;
     }
 
     /* ─── TABELA DE POSTS ─── */
@@ -571,10 +622,55 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
       color: #9ca3af;
     }
 
+    /* ─── HEADER COMPACTO ─── */
+    .compact-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%);
+      color: #fff;
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+    .compact-agency {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 6px;
+    }
+    .compact-client {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .compact-period {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 3px;
+      text-transform: capitalize;
+    }
+    .compact-stats {
+      display: flex;
+      gap: 28px;
+      text-align: center;
+    }
+    .compact-stat-num {
+      display: block;
+      font-size: 26px;
+      font-weight: 900;
+    }
+    .compact-stat-label {
+      font-size: 9px;
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
     /* ─── PRINT ─── */
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .cover { page-break-after: always; }
       .calendar-wrap { page-break-before: always; }
       .posts-section { page-break-before: always; }
       @page { margin: 0; size: A4; }
@@ -583,27 +679,27 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
 </head>
 <body>
 
-  <!-- CAPA -->
-  <div class="cover">
-    <div class="cover-badge">✨ EXP Digital CRM</div>
-    <div class="cover-client">${client.avatar_emoji ?? "🏢"} ${client.nome}</div>
-    <div class="cover-mes">Planejamento de Conteúdo · ${mesNome} ${ano}</div>
-    <div class="cover-divider"></div>
-    <div class="cover-stats">
-      <div class="cover-stat">
-        <span class="cover-stat-num">${posts.length}</span>
-        <span class="cover-stat-label">Conteúdos</span>
+  <!-- HEADER COMPACTO -->
+  <div class="compact-header">
+    <div>
+      <div class="compact-agency">EXP Digital CRM</div>
+      <div class="compact-client">${client.avatar_emoji ?? "🏢"} ${client.nome}</div>
+      <div class="compact-period">Planejamento de Conteúdo · ${mesNome} ${ano}</div>
+    </div>
+    <div class="compact-stats">
+      <div>
+        <span class="compact-stat-num">${posts.length}</span>
+        <span class="compact-stat-label">Conteúdos</span>
       </div>
-      <div class="cover-stat">
-        <span class="cover-stat-num">${postsComData.length}</span>
-        <span class="cover-stat-label">Com Data</span>
+      <div>
+        <span class="compact-stat-num">${postsComData.length}</span>
+        <span class="compact-stat-label">Com Data</span>
       </div>
-      <div class="cover-stat">
-        <span class="cover-stat-num">${datasAtivas.length}</span>
-        <span class="cover-stat-label">Datas Ativas</span>
+      <div>
+        <span class="compact-stat-num">${datasAtivas.length}</span>
+        <span class="compact-stat-label">Datas</span>
       </div>
     </div>
-    <div class="cover-meta" style="margin-top:40px">Gerado em ${hoje} · EXP Digital CRM</div>
   </div>
 
   <!-- CONTEÚDO -->
@@ -644,15 +740,12 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
     <!-- Calendário -->
     <div class="section calendar-wrap">
       <div class="section-title"><span>📆</span> Calendário de Publicações — ${mesNome} ${ano}</div>
+      ${datasHeaderHTML}
       <div class="cal-header-row">
         ${DIAS_SEMANA_CURTO.map(d => `<div class="cal-header-cell">${d}</div>`).join("")}
       </div>
       <div class="cal-grid">
         ${calendarCells}
-      </div>
-      <div class="legend">
-        ${legendItems}
-        <span class="legend-item"><span class="legend-dot" style="background:#f3e8ff;border:1px solid #d8b4fe"></span>Feriado</span>
       </div>
     </div>
 

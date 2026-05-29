@@ -67,6 +67,8 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [sugestoes, setSugestoes] = useState(planejamento.sugestoes_acoes ?? "")
   const [referencias, setReferencias] = useState<Referencia[]>(planejamento.referencias)
   const [datas, setDatas] = useState<DataComemorativa[]>(planejamento.datas_comemorativas)
+  const [newDataDate, setNewDataDate] = useState("")
+  const [newDataNome, setNewDataNome] = useState("")
 
   // Post extra fields
   const [postFields, setPostFields] = useState<Record<string, { plataforma: string; referencia_url: string; aprovado: boolean }>>(
@@ -122,6 +124,22 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
   async function toggleAtivo(idx: number) {
     const updated = datas.map((d, i) => (i === idx ? { ...d, ativo: !d.ativo } : d))
+    setDatas(updated)
+    await saveField("datas_comemorativas", updated)
+  }
+
+  async function addData() {
+    if (!newDataDate.trim() || !newDataNome.trim()) return
+    const nova: DataComemorativa = { data: newDataDate, nome: newDataNome.trim(), ideia: "", ativo: true }
+    const updated = [...datas, nova].sort((a, b) => a.data.localeCompare(b.data))
+    setDatas(updated)
+    setNewDataDate("")
+    setNewDataNome("")
+    await saveField("datas_comemorativas", updated)
+  }
+
+  async function removeData(idx: number) {
+    const updated = datas.filter((_, i) => i !== idx)
     setDatas(updated)
     await saveField("datas_comemorativas", updated)
   }
@@ -329,11 +347,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
-      {/* Datas Comemorativas — compacto com expand por item */}
+      {/* Datas Comemorativas */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            📅 Datas Comemorativas
+            📅 Datas Importantes
             <span className="text-xs font-normal bg-muted px-2 py-0.5 rounded-full">
               {datas.filter(d => d.ativo).length} ativas
             </span>
@@ -341,55 +359,62 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardHeader>
         <CardContent className="p-0">
           {datas.length === 0 ? (
-            <p className="px-5 py-4 text-sm text-muted-foreground italic">Nenhuma data comemorativa neste mês.</p>
+            <p className="px-5 py-4 text-sm text-muted-foreground italic">Nenhuma data para este mês.</p>
           ) : (
             <div className="divide-y">
               {datas.map((d, idx) => (
-                <div key={d.data} className={`transition-opacity ${d.ativo ? "" : "opacity-40"}`}>
-                  <div className="flex items-center gap-3 px-4 py-2.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleAtivo(idx)}
-                      className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        d.ativo ? "bg-primary border-primary" : "border-muted-foreground/40"
-                      }`}
-                    >
-                      {d.ativo && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <span className="font-semibold text-sm">{d.nome}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleDataExpanded(idx)}
-                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1"
-                      title="Ver sugestão de conteúdo"
-                    >
-                      {expandedDatas.has(idx)
-                        ? <ChevronUp className="h-4 w-4" />
-                        : <ChevronDown className="h-4 w-4" />
-                      }
-                    </button>
-                  </div>
-                  {expandedDatas.has(idx) && (
-                    <div className="px-4 pb-3 border-t bg-muted/20 space-y-2 pt-2">
-                      <Label className="text-xs text-muted-foreground">Sugestão de ideia</Label>
-                      <Textarea
-                        value={d.ideia}
-                        onChange={(e) => handleIdeiaChange(idx, e.target.value)}
-                        rows={3}
-                        className="resize-none text-sm"
-                        placeholder="Descreva a ideia de conteúdo para esta data..."
-                      />
-                    </div>
-                  )}
+                <div key={`${d.data}-${idx}`} className={`flex items-center gap-3 px-4 py-2.5 transition-opacity ${d.ativo ? "" : "opacity-40"}`}>
+                  <button
+                    type="button"
+                    onClick={() => toggleAtivo(idx)}
+                    className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      d.ativo ? "bg-primary border-primary" : "border-muted-foreground/40"
+                    }`}
+                  >
+                    {d.ativo && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                  </button>
+                  <span className="font-semibold text-sm flex-1 min-w-0 truncate">{d.nome}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeData(idx)}
+                    className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
           )}
+          {/* Form para adicionar nova data */}
+          <div className="border-t px-4 py-3 space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Adicionar feriado ou evento</Label>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={newDataDate}
+                onChange={(e) => setNewDataDate(e.target.value)}
+                className="text-sm w-36 shrink-0"
+              />
+              <Input
+                value={newDataNome}
+                onChange={(e) => setNewDataNome(e.target.value)}
+                placeholder="Ex: Jogo do Brasil, Festa Junina..."
+                className="text-sm flex-1"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addData() } }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={addData}
+                disabled={!newDataDate || !newDataNome.trim() || savingField === "datas_comemorativas"}
+              >
+                {savingField === "datas_comemorativas" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
