@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { LayoutKanban, CalendarDays, CalendarRange, FlaskConical, FileText } from "lucide-react"
+import { KanbanSquare, CalendarDays, CalendarRange, FlaskConical, FileText } from "lucide-react"
 import { CalendarioMes } from "@/components/calendario-mes"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
@@ -56,7 +56,7 @@ export function ProjetoView({ clientId, clientNome, posts, initialRefs, profiles
           Calendário Oficial
         </button>
         <button onClick={() => setView("kanban")} className={btnClass("kanban")}>
-          <LayoutKanban className="h-4 w-4" />
+          <KanbanSquare className="h-4 w-4" />
           Kanban
         </button>
         <Link
