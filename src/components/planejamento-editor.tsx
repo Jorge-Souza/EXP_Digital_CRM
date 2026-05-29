@@ -60,6 +60,9 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [ano, month] = mes.split("-").map(Number)
   const mesIndex = month - 1 // 0-based
 
+  // Posts local (para atualizar otimisticamente ao mover no calendário)
+  const [localPosts, setLocalPosts] = useState(posts)
+
   // Planning fields
   const [objetivo, setObjetivo] = useState(planejamento.objetivo_mes ?? "")
   const [oportunidades, setOportunidades] = useState(planejamento.oportunidades ?? "")
@@ -295,6 +298,23 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
       router.refresh()
     }
     setSavingPost(false)
+  }
+
+  async function handleMovePost(postId: string, newDate: string) {
+    setLocalPosts((prev) =>
+      prev.map((p) => p.id === postId ? { ...p, data_publicacao: newDate } : p)
+    )
+    const { error } = await supabase
+      .from("posts")
+      .update({ data_publicacao: newDate })
+      .eq("id", postId)
+    if (error) {
+      toast.error("Erro ao mover post")
+      setLocalPosts(posts) // reverte
+    } else {
+      toast.success("Data atualizada!")
+      router.refresh()
+    }
   }
 
   const savingIndicator = (field: string) =>
@@ -561,12 +581,13 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardHeader>
         <CardContent className="p-0 overflow-hidden">
           <CalendarioPlan
-            posts={posts}
+            posts={localPosts}
             ano={ano}
             mes={mesIndex}
             datas={datas}
             onPostClick={openPostEdit}
             onNewPost={openNewPost}
+            onMovePost={handleMovePost}
           />
         </CardContent>
       </Card>

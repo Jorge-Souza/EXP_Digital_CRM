@@ -120,6 +120,24 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
     setSaving(false)
   }
 
+  async function handleMovePost(postId: string, newDate: string) {
+    setPosts((prev) =>
+      prev.map((p) => p.id === postId ? { ...p, data_publicacao: newDate } : p)
+    )
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("posts")
+      .update({ data_publicacao: newDate })
+      .eq("id", postId)
+    if (error) {
+      toast.error("Erro ao mover post")
+      setPosts(initialPosts)
+    } else {
+      toast.success("Data atualizada!")
+      router.refresh()
+    }
+  }
+
   async function handleDelete() {
     if (!editingPost || !confirm("Remover esta publicação?")) return
     setSaving(true)
@@ -157,6 +175,7 @@ export function CalendarioMes({ posts: initialPosts, clientId }: CalendarioMesPr
           mes={mes}
           showLegend={true}
           onPostClick={openEdit}
+          onMovePost={handleMovePost}
         />
       </div>
 
