@@ -128,6 +128,8 @@ export interface Planejamento {
   client_id: string
   mes: string  // YYYY-MM
   objetivo_mes: string | null
+  oportunidades: string | null
+  riscos: string | null
   sugestoes_acoes: string | null
   referencias: Referencia[]
   datas_comemorativas: DataComemorativa[]

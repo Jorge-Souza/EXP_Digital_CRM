@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { CalendarioPlan } from "@/components/calendario-plan"
+import { BaixarPlanejamentoPDF } from "@/components/baixar-planejamento-pdf"
 import type { Client, Planejamento, DataComemorativa, Referencia, Post, PostStatus, PostType } from "@/lib/types"
 
 const MESES = [
@@ -61,6 +62,8 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
   // Planning fields
   const [objetivo, setObjetivo] = useState(planejamento.objetivo_mes ?? "")
+  const [oportunidades, setOportunidades] = useState(planejamento.oportunidades ?? "")
+  const [riscos, setRiscos] = useState(planejamento.riscos ?? "")
   const [sugestoes, setSugestoes] = useState(planejamento.sugestoes_acoes ?? "")
   const [referencias, setReferencias] = useState<Referencia[]>(planejamento.referencias)
   const [datas, setDatas] = useState<DataComemorativa[]>(planejamento.datas_comemorativas)
@@ -82,7 +85,8 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   const [copied, setCopied] = useState(false)
   const [expandedDatas, setExpandedDatas] = useState<Set<number>>(new Set())
 
-  // Post edit sheet
+  // Post edit/create sheet
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [editingPost, setEditingPost] = useState<Post | null>(null)
   const [editForm, setEditForm] = useState<PostEditForm>({
     titulo: "", tipo: "feed", status: "planejado",
@@ -191,7 +195,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
     }
   }
 
-  // Post edit functions
+  // Post edit/create functions
   function openPostEdit(post: Post) {
     setEditingPost(post)
     setEditForm({
@@ -204,6 +208,22 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
       tema: post.tema ?? "",
       aprovado: post.aprovado ?? false,
     })
+    setSheetOpen(true)
+  }
+
+  function openNewPost(date: string) {
+    setEditingPost(null)
+    setEditForm({
+      titulo: "",
+      tipo: "feed",
+      status: "planejado",
+      data_publicacao: date,
+      drive_file_url: "",
+      notas: "",
+      tema: "",
+      aprovado: false,
+    })
+    setSheetOpen(true)
   }
 
   function setEditField(field: keyof PostEditForm, value: string | boolean) {
@@ -211,27 +231,35 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
   }
 
   async function handleSavePost() {
-    if (!editingPost) return
     setSavingPost(true)
-    const { error } = await supabase
-      .from("posts")
-      .update({
-        titulo: editForm.titulo,
-        tipo: editForm.tipo as PostType,
-        status: editForm.status as PostStatus,
-        data_publicacao: editForm.data_publicacao || null,
-        drive_file_url: editForm.drive_file_url || null,
-        notas: editForm.notas || null,
-        tema: editForm.tema || null,
-        aprovado: editForm.aprovado,
-      })
-      .eq("id", editingPost.id)
-    if (error) {
-      toast.error("Erro ao salvar: " + error.message)
+    const payload = {
+      titulo: editForm.titulo,
+      tipo: editForm.tipo as PostType,
+      status: editForm.status as PostStatus,
+      data_publicacao: editForm.data_publicacao || null,
+      drive_file_url: editForm.drive_file_url || null,
+      notas: editForm.notas || null,
+      tema: editForm.tema || null,
+      aprovado: editForm.aprovado,
+    }
+    if (editingPost) {
+      const { error } = await supabase.from("posts").update(payload).eq("id", editingPost.id)
+      if (error) {
+        toast.error("Erro ao salvar: " + error.message)
+      } else {
+        toast.success("Publicação atualizada!")
+        setSheetOpen(false)
+        router.refresh()
+      }
     } else {
-      toast.success("Publicação atualizada!")
-      setEditingPost(null)
-      router.refresh()
+      const { error } = await supabase.from("posts").insert({ ...payload, client_id: client.id })
+      if (error) {
+        toast.error("Erro ao criar: " + error.message)
+      } else {
+        toast.success("Conteúdo criado!")
+        setSheetOpen(false)
+        router.refresh()
+      }
     }
     setSavingPost(false)
   }
@@ -245,7 +273,7 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
       toast.error("Erro ao remover: " + error.message)
     } else {
       toast.success("Publicação removida!")
-      setEditingPost(null)
+      setSheetOpen(false)
       router.refresh()
     }
     setSavingPost(false)
@@ -267,10 +295,18 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
-        <Button variant="outline" size="sm" onClick={copyShareUrl} className="gap-2">
-          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Link2 className="h-4 w-4" />}
-          {copied ? "Copiado!" : "Compartilhar link"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <BaixarPlanejamentoPDF
+            planejamento={planejamento}
+            client={client}
+            posts={posts}
+            mes={mes}
+          />
+          <Button variant="outline" size="sm" onClick={copyShareUrl} className="gap-2">
+            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Link2 className="h-4 w-4" />}
+            {copied ? "Copiado!" : "Compartilhar link"}
+          </Button>
+        </div>
       </div>
 
       {/* Objetivo do Mês */}
@@ -354,6 +390,46 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Oportunidades */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">🚀 Oportunidades do Mês</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            value={oportunidades}
+            onChange={(e) => setOportunidades(e.target.value)}
+            placeholder="Ex: Datas sazonais para explorar, tendências do nicho, promoções possíveis, parcerias, crescimento orgânico..."
+            rows={3}
+            className="resize-none text-sm"
+          />
+          <Button size="sm" onClick={() => saveField("oportunidades", oportunidades)} disabled={savingField === "oportunidades"}>
+            {savingIndicator("oportunidades") ?? null}
+            {savingField === "oportunidades" ? "Salvando..." : "Salvar oportunidades"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Riscos */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">⚠️ Riscos e Pontos de Atenção</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            value={riscos}
+            onChange={(e) => setRiscos(e.target.value)}
+            placeholder="Ex: Datas de entrega apertadas, falta de insumos, concorrência alta, período de baixa demanda, cliente sem aprovação rápida..."
+            rows={3}
+            className="resize-none text-sm"
+          />
+          <Button size="sm" onClick={() => saveField("riscos", riscos)} disabled={savingField === "riscos"}>
+            {savingIndicator("riscos") ?? null}
+            {savingField === "riscos" ? "Salvando..." : "Salvar riscos"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -445,6 +521,28 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
           <Button size="sm" onClick={() => saveField("sugestoes_acoes", sugestoes)} disabled={savingField === "sugestoes_acoes"}>
             {savingField === "sugestoes_acoes" ? "Salvando..." : "Salvar sugestões"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Calendário — todos os posts com data */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {posts.filter((p) => p.data_publicacao).length} com data · passe o mouse num dia para adicionar
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 overflow-hidden">
+          <CalendarioPlan
+            posts={posts}
+            ano={ano}
+            mes={mesIndex}
+            datas={datas}
+            onPostClick={openPostEdit}
+            onNewPost={openNewPost}
+          />
         </CardContent>
       </Card>
 
@@ -563,31 +661,13 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
-      {/* Calendário — todos os posts com data */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">📆 Calendário de Publicações</CardTitle>
-            <span className="text-xs text-muted-foreground">
-              {posts.filter((p) => p.data_publicacao).length} com data · clique para editar
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 overflow-hidden">
-          <CalendarioPlan
-            posts={posts}
-            ano={ano}
-            mes={mesIndex}
-            onPostClick={openPostEdit}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Sheet de edição de post */}
-      <Sheet open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+      {/* Sheet de edição / criação de post */}
+      <Sheet open={sheetOpen} onOpenChange={(open) => { if (!open) { setSheetOpen(false); setEditingPost(null) } }}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
           <SheetHeader className="px-5 py-4 border-b shrink-0">
-            <SheetTitle className="text-base font-semibold">Editar Publicação</SheetTitle>
+            <SheetTitle className="text-base font-semibold">
+              {editingPost ? "Editar Publicação" : "Nova Publicação"}
+            </SheetTitle>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
@@ -696,11 +776,16 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
 
           <SheetFooter className="px-5 py-4 border-t shrink-0 flex-row gap-2">
             <Button onClick={handleSavePost} disabled={savingPost} className="flex-1">
-              {savingPost ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : "Salvar alterações"}
+              {savingPost
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
+                : editingPost ? "Salvar alterações" : "Criar conteúdo"
+              }
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDeletePost} disabled={savingPost} className="text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10">
-              Remover
-            </Button>
+            {editingPost && (
+              <Button variant="outline" size="sm" onClick={handleDeletePost} disabled={savingPost} className="text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10">
+                Remover
+              </Button>
+            )}
           </SheetFooter>
         </SheetContent>
       </Sheet>
