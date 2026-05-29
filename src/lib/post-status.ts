@@ -14,9 +14,9 @@ export const groupOrder = [
 ] as const
 
 export const typeLabels: Record<string, string> = {
-  feed: "Feed",
+  feed: "Estático",
   reels: "Reels",
-  story: "Story",
+  story: "Stories",
   tiktok: "TikTok",
   carrossel: "Carrossel",
 }
