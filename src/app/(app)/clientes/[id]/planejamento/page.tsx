@@ -99,6 +99,7 @@ export default async function PlanejamentoPage({
       </div>
 
       <PlanejamentoEditor
+        key={mes}
         planejamento={planejamento}
         client={client}
         posts={posts}
