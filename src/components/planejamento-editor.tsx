@@ -25,7 +25,7 @@ const MESES = [
 ]
 
 const TYPE_LABELS: Record<string, string> = {
-  feed: "Feed", reels: "Reels", story: "Story", tiktok: "TikTok", carrossel: "Carrossel",
+  feed: "Estático", reels: "Reels", story: "Stories", tiktok: "TikTok", carrossel: "Carrossel",
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -707,9 +707,9 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
                 <Select value={editForm.tipo} onValueChange={(v) => v && setEditField("tipo", v)}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="feed">Feed</SelectItem>
+                    <SelectItem value="feed">Estático</SelectItem>
                     <SelectItem value="reels">Reels</SelectItem>
-                    <SelectItem value="story">Story</SelectItem>
+                    <SelectItem value="story">Stories</SelectItem>
                     <SelectItem value="carrossel">Carrossel</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                   </SelectContent>

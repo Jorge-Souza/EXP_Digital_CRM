@@ -7,7 +7,7 @@ import type { DataComemorativa, Post } from "@/lib/types"
 const TYPE_LABELS: Record<string, string> = {
   feed:      "ESTÁTICO",
   reels:     "REELS",
-  story:     "STORY",
+  story:     "STORIES",
   tiktok:    "TIKTOK",
   carrossel: "CARROSSEL",
 }
@@ -15,9 +15,9 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   feed:      { bg: "#fef9c3", text: "#854d0e" },
   reels:     { bg: "#fce7f3", text: "#9d174d" },
-  story:     { bg: "#dcfce7", text: "#166534" },
+  story:     { bg: "#ede9fe", text: "#6b21a8" },
   tiktok:    { bg: "#fee2e2", text: "#991b1b" },
-  carrossel: { bg: "#ede9fe", text: "#5b21b6" },
+  carrossel: { bg: "#dbeafe", text: "#1e40af" },
 }
 
 const DATA_PALETTE = [
