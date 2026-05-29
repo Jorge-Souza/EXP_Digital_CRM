@@ -231,8 +231,7 @@ export function BaixarPlanejamentoPDF({ planejamento, client, posts, mes }: Prop
         </tr>`
     }).join("")
 
-    // Datas comemorativas ativas
-    const datasAtivas = planejamento.datas_comemorativas.filter(d => d.ativo)
+    // Datas comemorativas ativas (datasAtivas já declarado acima)
     const datasHTML = datasAtivas.length === 0
       ? `<p class="empty-text">Nenhuma data comemorativa ativa para este mês.</p>`
       : datasAtivas.map(d => {
