@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { Users, ShoppingBag } from "lucide-react"
-import { HubLogoutButton } from "@/components/hub-logout-button" from "lucide-react"
+import { HubLogoutButton } from "@/components/hub-logout-button"
 
 export default async function HubPage() {
   const supabase = await createClient()
