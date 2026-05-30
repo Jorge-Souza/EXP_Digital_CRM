@@ -137,7 +137,7 @@ function ProdutoForm({ form, set }: { form: FormState; set: (k: string, v: strin
       </div>
       <div className="space-y-1">
         <Label>Tipo</Label>
-        <Select value={form.tipo} onValueChange={(v) => set("tipo", v)}>
+        <Select value={form.tipo ?? "lowticket"} onValueChange={(v) => set("tipo", v)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             {Object.entries(tipoLabel).map(([k, v]) => (
