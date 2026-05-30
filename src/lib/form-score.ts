@@ -2,12 +2,12 @@ import type { ScoreLabel } from "@/lib/types"
 export type { ScoreLabel }
 
 export interface FormRespostaInput {
-  tipo_venda?: string
-  faturamento?: string
-  executa_missoes?: string
-  tempo_execucao?: string
-  interesse_297?: string
-  interesse_4500?: string
+  tipo_venda?: string | null
+  faturamento?: string | null
+  executa_missoes?: string | null
+  tempo_execucao?: string | null
+  interesse_297?: string | null
+  interesse_4500?: string | null
 }
 
 export function calcularScore(r: FormRespostaInput): number {
