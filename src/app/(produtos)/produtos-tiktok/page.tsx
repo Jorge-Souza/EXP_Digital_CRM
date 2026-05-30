@@ -33,7 +33,7 @@ export default async function ProdutosTiktokPage() {
 
   const porProduto: Record<string, { nome: string; vendas: number; receita: number }> = {}
   for (const c of vendasPorProduto ?? []) {
-    const pt = c.produtos_tiktok as { nome: string; tipo: string } | null
+    const pt = (c as unknown as { produtos_tiktok: { nome: string; tipo: string } | null }).produtos_tiktok
     const nome = pt?.nome ?? "Produto removido"
     if (!porProduto[nome]) porProduto[nome] = { nome, vendas: 0, receita: 0 }
     porProduto[nome].vendas++
