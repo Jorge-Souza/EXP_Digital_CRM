@@ -347,6 +347,12 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </div>
       </div>
 
+      {/* Layout duas colunas: campos à esquerda, calendário à direita */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-5 items-start">
+
+      {/* ── Coluna esquerda: campos de planejamento ── */}
+      <div className="space-y-4">
+
       {/* Objetivo do Mês */}
       <Card>
         <CardHeader className="pb-3">
@@ -569,6 +575,11 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
         </CardContent>
       </Card>
 
+      </div>{/* fim coluna esquerda */}
+
+      {/* ── Coluna direita: calendário + lista ── */}
+      <div className="space-y-4">
+
       {/* Calendário — todos os posts com data */}
       <Card>
         <CardHeader className="pb-3">
@@ -706,6 +717,9 @@ export function PlanejamentoEditor({ planejamento, client, posts, mes }: Props) 
           )}
         </CardContent>
       </Card>
+
+      </div>{/* fim coluna direita */}
+      </div>{/* fim grid duas colunas */}
 
       {/* Sheet de edição / criação de post */}
       <Sheet open={sheetOpen} onOpenChange={(open) => { if (!open) { setSheetOpen(false); setEditingPost(null) } }}>

@@ -151,6 +151,90 @@ export interface Profile {
   created_at: string
 }
 
+// --- TikTok Shop CRM ---
+export type AlunoEtapa = 'lead' | 'entrada' | 'core' | 'avancado'
+export type ScoreLabel = 'quente' | 'morno' | 'frio' | 'sem_dados'
+export type ProdutoTipoTiktok = 'lowticket' | 'core' | 'mentoria' | 'outro'
+export type CompraStatus = 'ativo' | 'reembolsado' | 'chargeback'
+
+export interface ProdutoTiktok {
+  id: string
+  nome: string
+  tipo: ProdutoTipoTiktok
+  preco: number | null
+  kiwify_product_id: string | null
+  ativo: boolean
+  created_at: string
+}
+
+export interface Aluno {
+  id: string
+  nome: string
+  email: string
+  telefone: string | null
+  kiwify_customer_id: string | null
+  etapa: AlunoEtapa
+  tags: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CompraAluno {
+  id: string
+  aluno_id: string
+  produto_id: string | null
+  status: CompraStatus
+  kiwify_order_id: string | null
+  valor: number | null
+  data_compra: string
+  produto?: ProdutoTiktok
+}
+
+export interface CarrinhoAbandonado {
+  id: string
+  aluno_id: string
+  produto_id: string | null
+  kiwify_checkout_id: string | null
+  data_abandono: string
+  produto?: ProdutoTiktok
+}
+
+export interface RespostaFormulario {
+  id: string
+  aluno_id: string
+  timestamp_resposta: string | null
+  nome: string | null
+  whatsapp: string | null
+  instagram: string | null
+  email: string
+  ja_vende_plataforma: string | null
+  nicho: string | null
+  tipo_venda: string | null
+  faturamento: string | null
+  cria_videos: string | null
+  dificuldade_tiktok: string | null
+  dor_tiktok: string | null
+  nichos_que_vende: string | null
+  nivel_tecnico: string | null
+  executa_missoes: string | null
+  tempo_execucao: string | null
+  interesse_297: string | null
+  interesse_4500: string | null
+  mural_futuro: string | null
+  score: number
+  created_at: string
+  updated_at: string
+}
+
+export interface NotaAluno {
+  id: string
+  aluno_id: string
+  texto: string
+  admin_id: string | null
+  created_at: string
+  admin?: Profile
+}
+
 export interface ServicoAdicional {
   id: string
   client_id: string

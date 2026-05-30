@@ -18,7 +18,9 @@ export default async function PlanejamentoPage({
   const { mes: mesParam } = await searchParams
 
   const now = new Date()
-  const mes = mesParam ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  // Default: próximo mês (planejamento é sempre adiantado)
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const mes = mesParam ?? `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`
   const [year, month] = mes.split("-").map(Number)
   const mesIndex = month - 1 // 0-based
 
@@ -78,7 +80,7 @@ export default async function PlanejamentoPage({
   })
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">

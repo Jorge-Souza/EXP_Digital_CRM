@@ -11,6 +11,7 @@ import {
   FolderKanban,
   UserCog,
   GraduationCap,
+  ArrowLeft,
 } from "lucide-react"
 import {
   Sidebar,
@@ -84,8 +85,15 @@ export function AppSidebar({ userEmail, userName, isAdmin, clients }: AppSidebar
           </div>
           <div>
             <p className="text-sm font-bold text-white">EXP Digital</p>
-            <p className="text-[10px] text-white/40 tracking-wider uppercase">Sistema CRM</p>
+            <p className="text-[10px] text-white/40 tracking-wider uppercase">CRM Serviços</p>
           </div>
+        </div>
+        <div className="px-2 pb-3">
+          <Link href="/hub"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors text-xs">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Voltar ao Hub
+          </Link>
         </div>
       </SidebarHeader>
 
