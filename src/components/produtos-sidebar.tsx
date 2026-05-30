@@ -118,11 +118,9 @@ export function ProdutosSidebar({ userEmail, userName }: ProdutosSidebarProps) {
                 <ChevronUp className="ml-auto h-4 w-4 text-white/40" />
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href="/hub" className="cursor-pointer">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar ao Hub
-                  </Link>
+                <DropdownMenuItem onClick={() => window.location.href = '/hub'} className="cursor-pointer">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar ao Hub
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
