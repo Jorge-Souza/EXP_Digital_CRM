@@ -25,6 +25,7 @@ function parseCSVLine(line: string): string[] {
 }
 
 export async function POST() {
+  try {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
@@ -33,14 +34,13 @@ export async function POST() {
   if (!isAdmin) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&tq=select+*`
-  const res = await fetch(url, { headers: { "Accept": "text/csv" } })
+  const res = await fetch(url)
   if (!res.ok) return NextResponse.json({ error: `Erro ao buscar planilha: ${res.status}` }, { status: 500 })
-  const contentType = res.headers.get("content-type") ?? ""
-  if (!contentType.includes("text/csv") && !contentType.includes("text/plain") && !contentType.includes("application/octet")) {
-    return NextResponse.json({ error: "Planilha não acessível publicamente. Verifique as permissões de compartilhamento." }, { status: 500 })
-  }
 
   const csv = await res.text()
+  if (!csv || csv.trim().startsWith("<")) {
+    return NextResponse.json({ error: "Planilha não acessível. Certifique-se de que está compartilhada como 'Qualquer pessoa com o link pode ver'." }, { status: 500 })
+  }
   const lines = csv.split("\n").slice(1).filter((l) => l.trim())
 
   const admin = createAdminClient()
@@ -110,4 +110,8 @@ export async function POST() {
   }
 
   return NextResponse.json({ upserted, errors, total: lines.length })
+  } catch (err) {
+    console.error("Sync error:", err)
+    return NextResponse.json({ error: `Erro interno: ${(err as Error).message}` }, { status: 500 })
+  }
 }
