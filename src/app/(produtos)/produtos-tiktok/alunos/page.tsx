@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SyncFormulariosButton } from "@/components/sync-formularios-button"
+import { AlunoSearch } from "@/components/aluno-search"
 import { SCORE_DISPLAY } from "@/lib/form-score"
 import type { Aluno, AlunoEtapa, ScoreLabel } from "@/lib/types"
 
@@ -56,6 +57,8 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
         </div>
         <SyncFormulariosButton />
       </div>
+
+      <AlunoSearch />
 
       <div className="flex flex-wrap gap-2">
         <Link
