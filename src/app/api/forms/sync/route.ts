@@ -32,9 +32,13 @@ export async function POST() {
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
   if (!isAdmin) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&id=${SHEET_ID}`
-  const res = await fetch(url)
-  if (!res.ok) return NextResponse.json({ error: "Erro ao buscar planilha" }, { status: 500 })
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&tq=select+*`
+  const res = await fetch(url, { headers: { "Accept": "text/csv" } })
+  if (!res.ok) return NextResponse.json({ error: `Erro ao buscar planilha: ${res.status}` }, { status: 500 })
+  const contentType = res.headers.get("content-type") ?? ""
+  if (!contentType.includes("text/csv") && !contentType.includes("text/plain") && !contentType.includes("application/octet")) {
+    return NextResponse.json({ error: "Planilha não acessível publicamente. Verifique as permissões de compartilhamento." }, { status: 500 })
+  }
 
   const csv = await res.text()
   const lines = csv.split("\n").slice(1).filter((l) => l.trim())
