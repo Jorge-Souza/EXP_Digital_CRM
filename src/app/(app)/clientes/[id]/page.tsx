@@ -14,6 +14,7 @@ import Link from "next/link"
 import type { Client, Post, ReferenciaLaboratorio, ServicoAdicional } from "@/lib/types"
 import { LaboratorioTab } from "@/components/laboratorio-tab"
 import { ContratoTab } from "@/components/contrato-tab"
+import { ConteudoTab } from "@/components/conteudo-tab"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 const statusConfig = {
@@ -64,10 +65,11 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
   const cy = now.getFullYear()
   const cm = now.getMonth()
 
-  const [{ data: client }, { data: posts }, { data: refsLab }] = await Promise.all([
+  const [{ data: client }, { data: posts }, { data: refsLab }, { data: conteudoPosts }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("posts").select("*").eq("client_id", id).order("data_publicacao", { ascending: true }),
     supabase.from("referencias_laboratorio").select("*").eq("client_id", id).order("created_at", { ascending: false }),
+    supabase.from("conteudo_posts").select("*").eq("client_id", id).order("dia").order("horario"),
   ])
 
   if (!client) notFound()
@@ -195,11 +197,12 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
 
       {/* Tabs */}
       <Tabs defaultValue="briefing">
-        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-5" : "grid-cols-4"}`}>
+        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-6" : "grid-cols-5"}`}>
           <TabsTrigger value="briefing">Manual do Cliente</TabsTrigger>
           <TabsTrigger value="publicacoes">
             Publicações ({allPosts.length})
           </TabsTrigger>
+          <TabsTrigger value="conteudo">🎬 Conteúdo</TabsTrigger>
           <TabsTrigger value="laboratorio">Laboratório</TabsTrigger>
           <TabsTrigger value="contato">Contato</TabsTrigger>
           {isAdmin && <TabsTrigger value="contrato">📄 Contrato</TabsTrigger>}
@@ -310,6 +313,14 @@ export default async function ClientePage({ params }: { params: Promise<{ id: st
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* CONTEÚDO ESTRATÉGICO */}
+        <TabsContent value="conteudo" className="mt-4">
+          <ConteudoTab
+            posts={(conteudoPosts ?? []) as Parameters<typeof ConteudoTab>[0]["posts"]}
+            isAdmin={isAdmin}
+          />
         </TabsContent>
 
         {/* LABORATÓRIO */}
