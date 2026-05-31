@@ -32,7 +32,7 @@ export async function POST() {
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
   if (!isAdmin) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&range=A:S`
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&id=${SHEET_ID}`
   const res = await fetch(url)
   if (!res.ok) return NextResponse.json({ error: "Erro ao buscar planilha" }, { status: 500 })
 
