@@ -53,7 +53,7 @@ export async function POST() {
     if (!email) continue
 
     const respostaData = {
-      timestamp_resposta: cols[0] ? new Date(cols[0].replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$2-$1")).toISOString() : null,
+      timestamp_resposta: cols[0] ? (() => { try { const d = new Date(cols[0].replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$2-$1")); return isNaN(d.getTime()) ? null : d.toISOString() } catch { return null } })() : null,
       nome: cols[1] || null,
       whatsapp: cols[2] || null,
       instagram: cols[3] || null,
