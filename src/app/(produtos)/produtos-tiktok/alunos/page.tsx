@@ -23,7 +23,7 @@ const etapaLabel: Record<AlunoEtapa, string> = {
   avancado: "Avançado",
 }
 
-export default async function AlunosPage({ searchParams }: { searchParams: Promise<{ etapa?: string; score?: string; q?: string }> }) {
+export default async function AlunosPage({ searchParams }: { searchParams: Promise<{ etapa?: string; score?: string; q?: string; origem?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -39,6 +39,8 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
   if (params.etapa) query = query.eq("etapa", params.etapa)
   if (params.score) query = query.eq("score_label", params.score)
   if (params.q) query = query.or(`nome.ilike.%${params.q}%,email.ilike.%${params.q}%`)
+  if (params.origem === "formulario") query = query.eq("tem_formulario", true)
+  if (params.origem === "kiwify") query = query.eq("tem_formulario", false)
 
   const { data: alunos } = await query
 
@@ -77,6 +79,19 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
           </Link>
         ))}
         <span className="text-gray-600 text-xs px-1 self-center">|</span>
+        <Link
+          href={`/produtos-tiktok/alunos?origem=formulario`}
+          className={`text-xs px-3 py-1 rounded-full border transition-colors ${params.origem === "formulario" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
+        >
+          📋 Com formulário
+        </Link>
+        <Link
+          href={`/produtos-tiktok/alunos?origem=kiwify`}
+          className={`text-xs px-3 py-1 rounded-full border transition-colors ${params.origem === "kiwify" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
+        >
+          🛒 Só Kiwify
+        </Link>
+        <span className="text-gray-600 text-xs px-1 self-center">|</span>
         {["lead", "entrada", "core", "avancado"].map((etapa) => (
           <Link
             key={etapa}
@@ -107,7 +122,7 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {(alunos as (Aluno & { score: number; score_label: ScoreLabel; whatsapp?: string })[]).map((aluno) => {
+              {(alunos as (Aluno & { score: number; score_label: ScoreLabel; whatsapp?: string; tem_formulario?: boolean; kiwify_customer_id?: string })[]).map((aluno) => {
                 const scoreInfo = SCORE_DISPLAY[aluno.score_label ?? 'sem_dados']
                 return (
                   <tr key={aluno.id} className="hover:bg-muted/30 transition-colors">
@@ -118,6 +133,14 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
                         {aluno.whatsapp && (
                           <div className="text-xs text-muted-foreground">{aluno.whatsapp}</div>
                         )}
+                        <div className="flex gap-1 mt-1">
+                          {aluno.tem_formulario && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">📋 Formulário</span>
+                          )}
+                          {aluno.kiwify_customer_id && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">🛒 Kiwify</span>
+                          )}
+                        </div>
                       </Link>
                     </td>
                     <td className="px-4 py-3">
