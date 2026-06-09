@@ -235,33 +235,6 @@ export interface NotaAluno {
   admin?: Profile
 }
 
-// --- TikTok Shop Produtos (clientes da agência) ---
-export type TikTokProdutoStatus = 'rascunho' | 'ativo' | 'inativo'
-
-export interface TikTokProduto {
-  id: string
-  client_id: string | null
-  nome: string
-  descricao: string | null
-  sku: string | null
-  ncm: string | null
-  preco: number | null
-  margem: number | null
-  unidade: string | null
-  estoque: number
-  marca: string | null
-  comprimento: number | null
-  largura: number | null
-  altura: number | null
-  peso: number | null
-  nicho: string | null
-  subnicho: string | null
-  status: TikTokProdutoStatus
-  created_at: string
-  updated_at: string
-  client?: Pick<Client, 'id' | 'nome' | 'avatar_emoji' | 'cor'>
-}
-
 export interface ServicoAdicional {
   id: string
   client_id: string
