@@ -125,6 +125,122 @@ function FileUpload({
   )
 }
 
+// ─── Exemplos de documento (SVG) ─────────────────────────────
+const EXEMPLO_DOC = (
+  <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
+    <rect x="2" y="2" width="156" height="96" rx="8" fill="#1e1730" stroke="#5B3F8A" strokeWidth="1.5"/>
+    <rect x="2" y="2" width="156" height="18" rx="8" fill="#2d2050"/>
+    <rect x="2" y="10" width="156" height="10" fill="#2d2050"/>
+    <text x="80" y="16" fontSize="7" fill="rgba(255,255,255,0.5)" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold">IDENTIDADE  /  CNH  /  PASSAPORTE</text>
+    <rect x="10" y="26" width="38" height="48" rx="4" fill="#2d2050" stroke="#5B3F8A" strokeWidth="1"/>
+    <ellipse cx="29" cy="40" rx="9" ry="10" fill="#5B3F8A"/>
+    <path d="M14 74 Q29 62 44 74" fill="#5B3F8A"/>
+    <rect x="56" y="28" width="92" height="6" rx="3" fill="#5B3F8A" opacity="0.9"/>
+    <rect x="56" y="40" width="68" height="5" rx="2.5" fill="#4a3d6b" opacity="0.7"/>
+    <rect x="56" y="51" width="78" height="5" rx="2.5" fill="#4a3d6b" opacity="0.7"/>
+    <rect x="56" y="62" width="56" height="5" rx="2.5" fill="#4a3d6b" opacity="0.7"/>
+    <text x="80" y="93" fontSize="8" fill="rgba(255,255,255,0.25)" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold">EXEMPLO</text>
+  </svg>
+)
+
+const EXEMPLO_SELFIE = (
+  <svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
+    <rect width="120" height="130" fill="#1a1525"/>
+    <ellipse cx="60" cy="48" rx="24" ry="28" fill="#3d3060"/>
+    <ellipse cx="51" cy="44" rx="4" ry="5" fill="#1a1525"/>
+    <ellipse cx="69" cy="44" rx="4" ry="5" fill="#1a1525"/>
+    <ellipse cx="51" cy="43" rx="2" ry="2.5" fill="#5B3F8A"/>
+    <ellipse cx="69" cy="43" rx="2" ry="2.5" fill="#5B3F8A"/>
+    <path d="M52 60 Q60 66 68 60" stroke="#1a1525" strokeWidth="2" fill="none" strokeLinecap="round"/>
+    <path d="M10 130 Q22 92 60 88 Q98 92 110 130Z" fill="#3d3060"/>
+    <text x="60" y="124" fontSize="8" fill="rgba(255,255,255,0.25)" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold">EXEMPLO</text>
+  </svg>
+)
+
+const EXEMPLO_SELFIE_DOC = (
+  <svg viewBox="0 0 150 130" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
+    <rect width="150" height="130" fill="#1a1525"/>
+    <ellipse cx="75" cy="36" rx="20" ry="22" fill="#3d3060"/>
+    <ellipse cx="67" cy="32" rx="3.5" ry="4" fill="#1a1525"/>
+    <ellipse cx="83" cy="32" rx="3.5" ry="4" fill="#1a1525"/>
+    <ellipse cx="67" cy="31" rx="1.8" ry="2" fill="#5B3F8A"/>
+    <ellipse cx="83" cy="31" rx="1.8" ry="2" fill="#5B3F8A"/>
+    <path d="M67 48 Q75 53 83 48" stroke="#1a1525" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+    <path d="M20 130 Q32 82 75 78 Q118 82 130 130Z" fill="#3d3060"/>
+    <rect x="22" y="86" width="106" height="36" rx="7" fill="#2d2050" stroke="#5B3F8A" strokeWidth="1.5"/>
+    <rect x="28" y="92" width="28" height="24" rx="3" fill="#3d3060" stroke="#5B3F8A" strokeWidth="1"/>
+    <ellipse cx="42" cy="100" rx="6" ry="7" fill="#5B3F8A"/>
+    <path d="M30 116 Q42 108 56 116" fill="#5B3F8A"/>
+    <rect x="64" y="95" width="56" height="4" rx="2" fill="#5B3F8A" opacity="0.8"/>
+    <rect x="64" y="104" width="40" height="3.5" rx="2" fill="#4a3d6b" opacity="0.6"/>
+    <rect x="64" y="112" width="48" height="3.5" rx="2" fill="#4a3d6b" opacity="0.6"/>
+    <text x="75" y="125" fontSize="7" fill="rgba(255,255,255,0.25)" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold">EXEMPLO</text>
+  </svg>
+)
+
+// ─── Upload com imagem de exemplo ────────────────────────────
+function DocUploadExample({
+  label, example, value, onUpload, uploading,
+}: {
+  label: string
+  example: React.ReactNode
+  value: string
+  onUpload: (file: File) => Promise<void>
+  uploading: boolean
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div>
+      <label style={FIELD_LABEL}>{label} {RED}</label>
+      <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 12, alignItems: "stretch" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+          <span style={{
+            fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>Amostra</span>
+          <div style={{
+            width: "100%", borderRadius: 8, overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            {example}
+          </div>
+        </div>
+        <div
+          onClick={() => !uploading && ref.current?.click()}
+          style={{
+            border: "1.5px dashed rgba(255,255,255,0.15)", borderRadius: 10,
+            padding: "16px 12px", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 6,
+            cursor: uploading ? "wait" : "pointer",
+            background: value ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.03)",
+            minHeight: 90,
+          }}
+        >
+          {uploading ? (
+            <Loader2 size={20} style={{ color: "#EC4899", animation: "spin 1s linear infinite" }} />
+          ) : value ? (
+            <>
+              <span style={{ fontSize: 18 }}>✅</span>
+              <span style={{ color: "#34D399", fontSize: 12, fontWeight: 600 }}>Enviado</span>
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Clique para substituir</span>
+            </>
+          ) : (
+            <>
+              <Upload size={20} style={{ color: "rgba(255,255,255,0.3)" }} />
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, textAlign: "center" }}>
+                Clique para carregar
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>JPG ou PNG</span>
+            </>
+          )}
+        </div>
+        <input ref={ref} type="file" accept="image/*" style={{ display: "none" }}
+          onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])} />
+      </div>
+    </div>
+  )
+}
+
 // ─── Progress steps ───────────────────────────────────────────
 function Steps({ current }: { current: number }) {
   const steps = [
@@ -246,6 +362,10 @@ export default function FormularioPage() {
   const [certificadoUrl, setCertificadoUrl] = useState("")
   const [senhaCertificado, setSenhaCertificado] = useState("")
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [tipoDocumento, setTipoDocumento] = useState("RG")
+  const [docFrenteUrl, setDocFrenteUrl] = useState("")
+  const [selfieUrl, setSelfieUrl] = useState("")
+  const [selfieDocUrl, setSelfieDocUrl] = useState("")
 
   // Etapa 3 – Produtos
   const [produtos, setProdutos] = useState<Produto[]>([produtoVazio()])
@@ -286,6 +406,10 @@ export default function FormularioPage() {
       if (hab.subnicho) setSubnicho(hab.subnicho)
       if (hab.certificado_url) setCertificadoUrl(hab.certificado_url)
       if (hab.senha_certificado) setSenhaCertificado(hab.senha_certificado)
+      if (hab.tipo_documento) setTipoDocumento(hab.tipo_documento)
+      if (hab.doc_frente_url) setDocFrenteUrl(hab.doc_frente_url)
+      if (hab.selfie_url) setSelfieUrl(hab.selfie_url)
+      if (hab.selfie_doc_url) setSelfieDocUrl(hab.selfie_doc_url)
       if (hab.produtos?.length) setProdutos(hab.produtos)
 
       setVerificando(false)
@@ -302,8 +426,20 @@ export default function FormularioPage() {
       .from("habilitacao")
       .upload(path, file, { upsert: true })
     if (error) throw error
+    // Tenta URL pública primeiro; se o bucket for privado, gera signed URL (1 ano)
     const { data: urlData } = supabase.storage.from("habilitacao").getPublicUrl(data.path)
-    return urlData.publicUrl
+    const publicUrl = urlData.publicUrl
+    // Verifica se a URL pública é acessível (bucket pode ser privado)
+    try {
+      const check = await fetch(publicUrl, { method: "HEAD" })
+      if (check.ok) return publicUrl
+    } catch { /* ignora erro de rede */ }
+    // Fallback: signed URL válida por 1 ano
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("habilitacao")
+      .createSignedUrl(data.path, 60 * 60 * 24 * 365)
+    if (signErr || !signed) throw signErr ?? new Error("Erro ao gerar URL")
+    return signed.signedUrl
   }
 
   async function handleUpload(file: File, campo: string, setter: (url: string) => void) {
@@ -392,6 +528,10 @@ export default function FormularioPage() {
     await salvarEtapa({
       inscricao_estadual: inscricaoEstadual, nicho, subnicho,
       certificado_url: certificadoUrl, senha_certificado: senhaCertificado,
+      tipo_documento: tipoDocumento,
+      doc_frente_url: docFrenteUrl,
+      selfie_url: selfieUrl,
+      selfie_doc_url: selfieDocUrl,
     }, 3)
     setLoading(false)
     setStep(3)
@@ -647,6 +787,67 @@ export default function FormularioPage() {
               </div>
             </div>
 
+            {/* Documentos de identidade */}
+            <div style={CARD}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <span style={{ fontSize: 22 }}>🪪</span>
+                <div>
+                  <p style={{ color: "#fff", fontWeight: 700, fontSize: 15, margin: 0 }}>Documentos de Identidade</p>
+                  <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>Necessários para validar o representante legal no TikTok Shop</p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <Field label="Qual documento você irá usar para a habilitação?" required>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {["RG", "CNH", "Passaporte"].map(doc => {
+                      const ativo = tipoDocumento === doc
+                      return (
+                        <button
+                          key={doc} type="button"
+                          onClick={() => setTipoDocumento(doc)}
+                          style={{
+                            padding: "9px 20px",
+                            background: ativo
+                              ? "linear-gradient(135deg,#EC4899,#8B5CF6)"
+                              : "rgba(255,255,255,0.06)",
+                            border: ativo ? "none" : "1px solid rgba(255,255,255,0.12)",
+                            borderRadius: 8, cursor: "pointer",
+                            color: ativo ? "#fff" : "rgba(255,255,255,0.4)",
+                            fontSize: 14, fontWeight: 600,
+                          }}
+                        >{doc}</button>
+                      )
+                    })}
+                  </div>
+                </Field>
+
+                <DocUploadExample
+                  label={`Carregue uma imagem bem posicionada do ${tipoDocumento} (parte da frente)`}
+                  example={EXEMPLO_DOC}
+                  value={docFrenteUrl}
+                  uploading={uploadingField === "doc_frente"}
+                  onUpload={f => handleUpload(f, "doc_frente", setDocFrenteUrl)}
+                />
+
+                <DocUploadExample
+                  label={`Selfie do titular da ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
+                  example={EXEMPLO_SELFIE}
+                  value={selfieUrl}
+                  uploading={uploadingField === "selfie"}
+                  onUpload={f => handleUpload(f, "selfie", setSelfieUrl)}
+                />
+
+                <DocUploadExample
+                  label={`Selfie com o documento de ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
+                  example={EXEMPLO_SELFIE_DOC}
+                  value={selfieDocUrl}
+                  uploading={uploadingField === "selfie_doc"}
+                  onUpload={f => handleUpload(f, "selfie_doc", setSelfieDocUrl)}
+                />
+              </div>
+            </div>
+
             <NavButtons
               step={2} loading={loading}
               onVoltar={() => { setStep(1); window.scrollTo(0, 0) }}
@@ -836,7 +1037,8 @@ export default function FormularioPage() {
                             {foto ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={foto} alt={`Foto ${fi + 1}`}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
                             ) : isUploading ? (
                               <Loader2 size={18} style={{ color: "#EC4899", animation: "spin 1s linear infinite" }} />
                             ) : (
