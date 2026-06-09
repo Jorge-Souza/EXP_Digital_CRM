@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone } from "lucide-react"
+import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -25,10 +25,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 
 const navItems = [
-  { title: "Dashboard",  url: "/produtos-tiktok",           icon: LayoutDashboard, emoji: "📊" },
-  { title: "Alunos",     url: "/produtos-tiktok/alunos",    icon: GraduationCap,   emoji: "🎓" },
-  { title: "Produtos",   url: "/produtos-tiktok/produtos",  icon: Package,         emoji: "📦" },
-  { title: "Conteúdo",   url: "/produtos-tiktok/conteudo",  icon: Megaphone,       emoji: "🎬" },
+  { title: "Dashboard",     url: "/produtos-tiktok",                   icon: LayoutDashboard, emoji: "📊" },
+  { title: "Alunos",        url: "/produtos-tiktok/alunos",            icon: GraduationCap,   emoji: "🎓" },
+  { title: "Produtos",      url: "/produtos-tiktok/produtos",          icon: Package,         emoji: "📦" },
+  { title: "Conteúdo",      url: "/produtos-tiktok/conteudo",          icon: Megaphone,       emoji: "🎬" },
+  { title: "Habilitações",  url: "/produtos-tiktok/habilitacoes",      icon: ClipboardList,   emoji: "📋" },
 ]
 
 interface ProdutosSidebarProps {

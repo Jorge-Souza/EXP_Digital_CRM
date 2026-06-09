@@ -70,21 +70,22 @@ const RED = <span style={{ color: "#EC4899" }}>*</span>
 function FieldRow({ children }: { children: React.ReactNode }) {
   return <div style={GRID2}>{children}</div>
 }
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label style={FIELD_LABEL}>{label} {required && RED}</label>
       {children}
+      {error && <p style={{ color: "#EC4899", fontSize: 12, margin: "5px 0 0" }}>{error}</p>}
     </div>
   )
 }
 
 // ─── Upload de arquivo ────────────────────────────────────────
 function FileUpload({
-  label, hint, accept, value, onUpload, uploading,
+  label, hint, accept, value, onUpload, uploading, error,
 }: {
   label: string; hint: string; accept: string
-  value: string; onUpload: (file: File) => Promise<void>; uploading: boolean
+  value: string; onUpload: (file: File) => Promise<void>; uploading: boolean; error?: string
 }) {
   const ref = useRef<HTMLInputElement>(null)
   return (
@@ -93,11 +94,11 @@ function FileUpload({
       <div
         onClick={() => !uploading && ref.current?.click()}
         style={{
-          border: "1.5px dashed rgba(255,255,255,0.15)",
+          border: error ? "1.5px dashed rgba(236,72,153,0.5)" : "1.5px dashed rgba(255,255,255,0.15)",
           borderRadius: 10, padding: "22px 16px",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
           cursor: uploading ? "wait" : "pointer",
-          background: value ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.03)",
+          background: value ? "rgba(16,185,129,0.06)" : error ? "rgba(236,72,153,0.04)" : "rgba(255,255,255,0.03)",
           transition: "all 0.2s",
         }}
       >
@@ -119,6 +120,7 @@ function FileUpload({
           </>
         )}
       </div>
+      {error && <p style={{ color: "#EC4899", fontSize: 12, margin: "5px 0 0" }}>{error}</p>}
       <input ref={ref} type="file" accept={accept} style={{ display: "none" }}
         onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])} />
     </div>
@@ -180,13 +182,14 @@ const EXEMPLO_SELFIE_DOC = (
 
 // ─── Upload com imagem de exemplo ────────────────────────────
 function DocUploadExample({
-  label, example, value, onUpload, uploading,
+  label, example, value, onUpload, uploading, error,
 }: {
   label: string
   example: React.ReactNode
   value: string
   onUpload: (file: File) => Promise<void>
   uploading: boolean
+  error?: string
 }) {
   const ref = useRef<HTMLInputElement>(null)
   return (
@@ -208,11 +211,12 @@ function DocUploadExample({
         <div
           onClick={() => !uploading && ref.current?.click()}
           style={{
-            border: "1.5px dashed rgba(255,255,255,0.15)", borderRadius: 10,
+            border: error ? "1.5px dashed rgba(236,72,153,0.5)" : "1.5px dashed rgba(255,255,255,0.15)",
+            borderRadius: 10,
             padding: "16px 12px", display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 6,
             cursor: uploading ? "wait" : "pointer",
-            background: value ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.03)",
+            background: value ? "rgba(16,185,129,0.06)" : error ? "rgba(236,72,153,0.04)" : "rgba(255,255,255,0.03)",
             minHeight: 90,
           }}
         >
@@ -237,6 +241,7 @@ function DocUploadExample({
         <input ref={ref} type="file" accept="image/*" style={{ display: "none" }}
           onChange={e => e.target.files?.[0] && onUpload(e.target.files[0])} />
       </div>
+      {error && <p style={{ color: "#EC4899", fontSize: 12, margin: "5px 0 0" }}>{error}</p>}
     </div>
   )
 }
@@ -340,7 +345,12 @@ export default function FormularioPage() {
   const [habId, setHabId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [uploadingField, setUploadingField] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const router = useRouter()
+
+  function clearError(key: string) {
+    setErrors(prev => { const n = { ...prev }; delete n[key]; return n })
+  }
 
   // Etapa 1 – Empresa
   const [nomeEmpresa, setNomeEmpresa] = useState("")
@@ -502,10 +512,17 @@ export default function FormularioPage() {
 
   // ─── Navegação ─────────────────────────────────────────────
   async function avancarEtapa1() {
-    if (!nomeEmpresa || !cnpj || !dataConst || !endComercial || !repNome || !repNascimento || !repNacionalidade || !repEndereco) {
-      alert("Preencha todos os campos obrigatórios.")
-      return
-    }
+    const erros: Record<string, string> = {}
+    if (!nomeEmpresa) erros.nomeEmpresa = "Campo obrigatório"
+    if (!cnpj) erros.cnpj = "Campo obrigatório"
+    if (!dataConst) erros.dataConst = "Campo obrigatório"
+    if (!endComercial) erros.endComercial = "Campo obrigatório"
+    if (!repNome) erros.repNome = "Campo obrigatório"
+    if (!repNascimento) erros.repNascimento = "Campo obrigatório"
+    if (!repNacionalidade) erros.repNacionalidade = "Campo obrigatório"
+    if (!repEndereco) erros.repEndereco = "Campo obrigatório"
+    if (Object.keys(erros).length > 0) { setErrors(erros); return }
+    setErrors({})
     setLoading(true)
     await salvarEtapa({
       nome_empresa: nomeEmpresa, cnpj, data_constituicao: dataConst,
@@ -520,10 +537,16 @@ export default function FormularioPage() {
   }
 
   async function avancarEtapa2() {
-    if (!inscricaoEstadual || !nicho || !subnicho || !senhaCertificado) {
-      alert("Preencha todos os campos obrigatórios.")
-      return
-    }
+    const erros: Record<string, string> = {}
+    if (!inscricaoEstadual) erros.inscricaoEstadual = "Campo obrigatório"
+    if (!nicho) erros.nicho = "Campo obrigatório"
+    if (!subnicho) erros.subnicho = "Campo obrigatório"
+    if (!senhaCertificado) erros.senhaCertificado = "Campo obrigatório"
+    if (!docFrenteUrl) erros.docFrenteUrl = "Envie uma foto do documento"
+    if (!selfieUrl) erros.selfieUrl = "Envie uma selfie"
+    if (!selfieDocUrl) erros.selfieDocUrl = "Envie uma selfie com o documento"
+    if (Object.keys(erros).length > 0) { setErrors(erros); return }
+    setErrors({})
     setLoading(true)
     await salvarEtapa({
       inscricao_estadual: inscricaoEstadual, nicho, subnicho,
@@ -539,11 +562,20 @@ export default function FormularioPage() {
   }
 
   async function enviarFormulario() {
-    const prodInvalido = produtos.find(p => !p.nome || !p.ncm || !p.preco || !p.unidade || !p.estoque)
-    if (prodInvalido) {
-      alert("Preencha todos os campos obrigatórios dos produtos (nome, NCM, preço, unidade, estoque).")
-      return
-    }
+    const erros: Record<string, string> = {}
+    produtos.forEach((p, pi) => {
+      if (!p.nome) erros[`produto_${pi}_nome`] = "Campo obrigatório"
+      if (!p.ncm) erros[`produto_${pi}_ncm`] = "Campo obrigatório"
+      if (!p.preco) erros[`produto_${pi}_preco`] = "Campo obrigatório"
+      if (!p.unidade) erros[`produto_${pi}_unidade`] = "Selecione uma unidade"
+      if (!p.estoque) erros[`produto_${pi}_estoque`] = "Campo obrigatório"
+      if (!p.comprimento) erros[`produto_${pi}_comprimento`] = "Obrigatório"
+      if (!p.largura) erros[`produto_${pi}_largura`] = "Obrigatório"
+      if (!p.altura) erros[`produto_${pi}_altura`] = "Obrigatório"
+      if (!p.peso) erros[`produto_${pi}_peso`] = "Obrigatório"
+    })
+    if (Object.keys(erros).length > 0) { setErrors(erros); return }
+    setErrors({})
     setLoading(true)
     const supabase = createClient()
     await supabase.from("habilitacoes").update({
@@ -633,23 +665,27 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Nome da empresa" required>
-                  <input style={INPUT} value={nomeEmpresa} onChange={e => setNomeEmpresa(e.target.value)}
+                <Field label="Nome da empresa" required error={errors.nomeEmpresa}>
+                  <input style={{ ...INPUT, borderColor: errors.nomeEmpresa ? "rgba(236,72,153,0.5)" : undefined }}
+                    value={nomeEmpresa} onChange={e => { setNomeEmpresa(e.target.value); clearError("nomeEmpresa") }}
                     placeholder="Razão social completa" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="CNPJ" required>
-                    <input style={INPUT} value={cnpj} onChange={e => setCnpj(e.target.value)}
+                  <Field label="CNPJ" required error={errors.cnpj}>
+                    <input style={{ ...INPUT, borderColor: errors.cnpj ? "rgba(236,72,153,0.5)" : undefined }}
+                      value={cnpj} onChange={e => { setCnpj(e.target.value); clearError("cnpj") }}
                       placeholder="00.000.000/0001-00" />
                   </Field>
-                  <Field label="Data de constituição" required>
-                    <input style={INPUT} type="date" value={dataConst} onChange={e => setDataConst(e.target.value)} />
+                  <Field label="Data de constituição" required error={errors.dataConst}>
+                    <input style={{ ...INPUT, borderColor: errors.dataConst ? "rgba(236,72,153,0.5)" : undefined }}
+                      type="date" value={dataConst} onChange={e => { setDataConst(e.target.value); clearError("dataConst") }} />
                   </Field>
                 </FieldRow>
 
-                <Field label="Endereço comercial principal" required>
-                  <input style={INPUT} value={endComercial} onChange={e => setEndComercial(e.target.value)}
+                <Field label="Endereço comercial principal" required error={errors.endComercial}>
+                  <input style={{ ...INPUT, borderColor: errors.endComercial ? "rgba(236,72,153,0.5)" : undefined }}
+                    value={endComercial} onChange={e => { setEndComercial(e.target.value); clearError("endComercial") }}
                     placeholder="Rua, número, bairro, cidade – UF, CEP" />
                 </Field>
 
@@ -675,23 +711,27 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Nome civil completo" required>
-                  <input style={INPUT} value={repNome} onChange={e => setRepNome(e.target.value)}
+                <Field label="Nome civil completo" required error={errors.repNome}>
+                  <input style={{ ...INPUT, borderColor: errors.repNome ? "rgba(236,72,153,0.5)" : undefined }}
+                    value={repNome} onChange={e => { setRepNome(e.target.value); clearError("repNome") }}
                     placeholder="Conforme documento oficial (RG/CNH)" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="Data de nascimento" required>
-                    <input style={INPUT} type="date" value={repNascimento} onChange={e => setRepNascimento(e.target.value)} />
+                  <Field label="Data de nascimento" required error={errors.repNascimento}>
+                    <input style={{ ...INPUT, borderColor: errors.repNascimento ? "rgba(236,72,153,0.5)" : undefined }}
+                      type="date" value={repNascimento} onChange={e => { setRepNascimento(e.target.value); clearError("repNascimento") }} />
                   </Field>
-                  <Field label="Nacionalidade" required>
-                    <input style={INPUT} value={repNacionalidade} onChange={e => setRepNacionalidade(e.target.value)}
+                  <Field label="Nacionalidade" required error={errors.repNacionalidade}>
+                    <input style={{ ...INPUT, borderColor: errors.repNacionalidade ? "rgba(236,72,153,0.5)" : undefined }}
+                      value={repNacionalidade} onChange={e => { setRepNacionalidade(e.target.value); clearError("repNacionalidade") }}
                       placeholder="Ex: Brasileira" />
                   </Field>
                 </FieldRow>
 
-                <Field label="Endereço residencial" required>
-                  <input style={INPUT} value={repEndereco} onChange={e => setRepEndereco(e.target.value)}
+                <Field label="Endereço residencial" required error={errors.repEndereco}>
+                  <input style={{ ...INPUT, borderColor: errors.repEndereco ? "rgba(236,72,153,0.5)" : undefined }}
+                    value={repEndereco} onChange={e => { setRepEndereco(e.target.value); clearError("repEndereco") }}
                     placeholder="Rua, número, bairro, cidade – UF, CEP" />
                 </Field>
 
@@ -725,18 +765,21 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Inscrição estadual" required>
-                  <input style={INPUT} value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)}
+                <Field label="Inscrição estadual" required error={errors.inscricaoEstadual}>
+                  <input style={{ ...INPUT, borderColor: errors.inscricaoEstadual ? "rgba(236,72,153,0.5)" : undefined }}
+                    value={inscricaoEstadual} onChange={e => { setInscricaoEstadual(e.target.value); clearError("inscricaoEstadual") }}
                     placeholder="Número da inscrição estadual" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="Nicho" required>
-                    <input style={INPUT} value={nicho} onChange={e => setNicho(e.target.value)}
+                  <Field label="Nicho" required error={errors.nicho}>
+                    <input style={{ ...INPUT, borderColor: errors.nicho ? "rgba(236,72,153,0.5)" : undefined }}
+                      value={nicho} onChange={e => { setNicho(e.target.value); clearError("nicho") }}
                       placeholder="Ex: Moda, Eletrônicos, Beleza" />
                   </Field>
-                  <Field label="Subnicho" required>
-                    <input style={INPUT} value={subnicho} onChange={e => setSubnicho(e.target.value)}
+                  <Field label="Subnicho" required error={errors.subnicho}>
+                    <input style={{ ...INPUT, borderColor: errors.subnicho ? "rgba(236,72,153,0.5)" : undefined }}
+                      value={subnicho} onChange={e => { setSubnicho(e.target.value); clearError("subnicho") }}
                       placeholder="Ex: Moda Feminina, Skincare" />
                   </Field>
                 </FieldRow>
@@ -750,13 +793,13 @@ export default function FormularioPage() {
                   onUpload={f => handleUpload(f, "certificado", setCertificadoUrl)}
                 />
 
-                <Field label="Senha do certificado digital" required>
+                <Field label="Senha do certificado digital" required error={errors.senhaCertificado}>
                   <div style={{ position: "relative" }}>
                     <input
                       type={mostrarSenha ? "text" : "password"}
-                      style={{ ...INPUT, paddingRight: 44 }}
+                      style={{ ...INPUT, paddingRight: 44, borderColor: errors.senhaCertificado ? "rgba(236,72,153,0.5)" : undefined }}
                       value={senhaCertificado}
-                      onChange={e => setSenhaCertificado(e.target.value)}
+                      onChange={e => { setSenhaCertificado(e.target.value); clearError("senhaCertificado") }}
                       placeholder="Senha de acesso ao arquivo .PFX"
                     />
                     <button
@@ -827,7 +870,8 @@ export default function FormularioPage() {
                   example={EXEMPLO_DOC}
                   value={docFrenteUrl}
                   uploading={uploadingField === "doc_frente"}
-                  onUpload={f => handleUpload(f, "doc_frente", setDocFrenteUrl)}
+                  onUpload={f => { handleUpload(f, "doc_frente", setDocFrenteUrl); clearError("docFrenteUrl") }}
+                  error={errors.docFrenteUrl}
                 />
 
                 <DocUploadExample
@@ -835,7 +879,8 @@ export default function FormularioPage() {
                   example={EXEMPLO_SELFIE}
                   value={selfieUrl}
                   uploading={uploadingField === "selfie"}
-                  onUpload={f => handleUpload(f, "selfie", setSelfieUrl)}
+                  onUpload={f => { handleUpload(f, "selfie", setSelfieUrl); clearError("selfieUrl") }}
+                  error={errors.selfieUrl}
                 />
 
                 <DocUploadExample
@@ -843,7 +888,8 @@ export default function FormularioPage() {
                   example={EXEMPLO_SELFIE_DOC}
                   value={selfieDocUrl}
                   uploading={uploadingField === "selfie_doc"}
-                  onUpload={f => handleUpload(f, "selfie_doc", setSelfieDocUrl)}
+                  onUpload={f => { handleUpload(f, "selfie_doc", setSelfieDocUrl); clearError("selfieDocUrl") }}
+                  error={errors.selfieDocUrl}
                 />
               </div>
             </div>
@@ -901,9 +947,10 @@ export default function FormularioPage() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  <Field label="Nome" required>
-                    <input style={INPUT} value={p.nome}
-                      onChange={e => updateProduto(pi, "nome", e.target.value)}
+                  <Field label="Nome" required error={errors[`produto_${pi}_nome`]}>
+                    <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_nome`] ? "rgba(236,72,153,0.5)" : undefined }}
+                      value={p.nome}
+                      onChange={e => { updateProduto(pi, "nome", e.target.value); clearError(`produto_${pi}_nome`) }}
                       placeholder="Nome do produto" />
                   </Field>
 
@@ -919,18 +966,20 @@ export default function FormularioPage() {
                         onChange={e => updateProduto(pi, "sku", e.target.value)}
                         placeholder="Sugestivo ou defina o seu" />
                     </Field>
-                    <Field label="NCM" required>
-                      <input style={INPUT} value={p.ncm}
-                        onChange={e => updateProduto(pi, "ncm", e.target.value)}
+                    <Field label="NCM" required error={errors[`produto_${pi}_ncm`]}>
+                      <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_ncm`] ? "rgba(236,72,153,0.5)" : undefined }}
+                        value={p.ncm}
+                        onChange={e => { updateProduto(pi, "ncm", e.target.value); clearError(`produto_${pi}_ncm`) }}
                         placeholder="Ex: 6203.42.00" />
                     </Field>
                   </FieldRow>
 
                   <FieldRow>
-                    <Field label="Preço de venda (R$)" required>
+                    <Field label="Preço de venda (R$)" required error={errors[`produto_${pi}_preco`]}>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <input style={{ ...INPUT, flex: 1 }} value={p.preco}
-                          onChange={e => updateProduto(pi, "preco", e.target.value)}
+                        <input style={{ ...INPUT, flex: 1, borderColor: errors[`produto_${pi}_preco`] ? "rgba(236,72,153,0.5)" : undefined }}
+                          value={p.preco}
+                          onChange={e => { updateProduto(pi, "preco", e.target.value); clearError(`produto_${pi}_preco`) }}
                           placeholder="Ex: 89,90" />
                         <button
                           type="button"
@@ -960,9 +1009,10 @@ export default function FormularioPage() {
                         </div>
                       )}
                     </Field>
-                    <Field label="Unidade" required>
-                      <select style={SELECT} value={p.unidade}
-                        onChange={e => updateProduto(pi, "unidade", e.target.value)}>
+                    <Field label="Unidade" required error={errors[`produto_${pi}_unidade`]}>
+                      <select style={{ ...SELECT, borderColor: errors[`produto_${pi}_unidade`] ? "rgba(236,72,153,0.5)" : undefined }}
+                        value={p.unidade}
+                        onChange={e => { updateProduto(pi, "unidade", e.target.value); clearError(`produto_${pi}_unidade`) }}>
                         <option value="" style={{ background: "#1a1a1a" }}>Selecione</option>
                         {["UN", "PC", "KG", "CX", "PR", "L", "M"].map(u => (
                           <option key={u} value={u} style={{ background: "#1a1a1a" }}>{u}</option>
@@ -972,9 +1022,10 @@ export default function FormularioPage() {
                   </FieldRow>
 
                   <FieldRow>
-                    <Field label="Estoque atual" required>
-                      <input style={INPUT} value={p.estoque} type="number"
-                        onChange={e => updateProduto(pi, "estoque", e.target.value)}
+                    <Field label="Estoque atual" required error={errors[`produto_${pi}_estoque`]}>
+                      <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_estoque`] ? "rgba(236,72,153,0.5)" : undefined }}
+                        value={p.estoque} type="number"
+                        onChange={e => { updateProduto(pi, "estoque", e.target.value); clearError(`produto_${pi}_estoque`) }}
                         placeholder="Ex: 50" />
                     </Field>
                     <Field label="Marca">
@@ -996,17 +1047,22 @@ export default function FormularioPage() {
                         ["largura", "Largura (cm)"],
                         ["altura", "Altura (cm)"],
                         ["peso", "Peso (kg)"],
-                      ] as [keyof Produto, string][]).map(([campo, label]) => (
-                        <div key={campo}>
-                          <label style={{ ...FIELD_LABEL, fontSize: 11 }}>
-                            {label} {RED}
-                          </label>
-                          <input style={{ ...INPUT, fontSize: 13 }}
-                            value={p[campo] as string}
-                            onChange={e => updateProduto(pi, campo, e.target.value)}
-                            placeholder="Ex: 30" type="number" />
-                        </div>
-                      ))}
+                      ] as [keyof Produto, string][]).map(([campo, label]) => {
+                        const errKey = `produto_${pi}_${campo}`
+                        return (
+                          <div key={campo}>
+                            <label style={{ ...FIELD_LABEL, fontSize: 11 }}>
+                              {label} {RED}
+                            </label>
+                            <input
+                              style={{ ...INPUT, fontSize: 13, borderColor: errors[errKey] ? "rgba(236,72,153,0.5)" : undefined }}
+                              value={p[campo] as string}
+                              onChange={e => { updateProduto(pi, campo, e.target.value); clearError(errKey) }}
+                              placeholder="Ex: 30" type="number" />
+                            {errors[errKey] && <p style={{ color: "#EC4899", fontSize: 11, margin: "3px 0 0" }}>{errors[errKey]}</p>}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
 
