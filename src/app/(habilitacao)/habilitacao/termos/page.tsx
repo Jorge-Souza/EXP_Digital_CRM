@@ -117,33 +117,51 @@ export default function TermosPage() {
     verificar()
   }, [router])
 
+  const [erro, setErro] = useState("")
   const todosAceitos = Object.values(aceitos).every(Boolean)
 
   async function handleAceitar() {
     if (!todosAceitos) return
+    setErro("")
     setLoading(true)
     const supabase = createClient()
+
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push("/habilitacao"); return }
+    if (!user) {
+      setErro("Sessão expirada. Faça login novamente.")
+      setLoading(false)
+      return
+    }
 
     const agora = new Date().toISOString()
     const { data: hab } = await supabase.from("habilitacoes").select("id").maybeSingle()
 
     if (!hab) {
-      await supabase.from("habilitacoes").insert({
-        user_id: user.id, email: user.email,
+      const { error } = await supabase.from("habilitacoes").insert({
+        user_id: user.id,
+        email: user.email ?? "",
         termos_aceitos_at: agora,
         aceito_privacidade: aceitos.privacidade,
         aceito_uso_imagem: aceitos.uso_imagem,
         aceito_divulgacao: aceitos.divulgacao,
       })
+      if (error) {
+        setErro(`Erro ao salvar: ${error.message}`)
+        setLoading(false)
+        return
+      }
     } else {
-      await supabase.from("habilitacoes").update({
+      const { error } = await supabase.from("habilitacoes").update({
         termos_aceitos_at: agora,
         aceito_privacidade: aceitos.privacidade,
         aceito_uso_imagem: aceitos.uso_imagem,
         aceito_divulgacao: aceitos.divulgacao,
       }).eq("id", hab.id)
+      if (error) {
+        setErro(`Erro ao salvar: ${error.message}`)
+        setLoading(false)
+        return
+      }
     }
 
     router.push("/habilitacao/formulario")
@@ -378,6 +396,17 @@ export default function TermosPage() {
             </label>
           ))}
         </div>
+
+        {/* Erro */}
+        {erro && (
+          <div style={{
+            background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+            borderRadius: 10, padding: "12px 16px", marginBottom: 12,
+            color: "#F87171", fontSize: 13, lineHeight: 1.5,
+          }}>
+            ⚠️ {erro}
+          </div>
+        )}
 
         {/* Botão aceitar */}
         <button
