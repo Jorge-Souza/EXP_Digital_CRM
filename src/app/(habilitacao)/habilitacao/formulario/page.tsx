@@ -870,7 +870,7 @@ export default function FormularioPage() {
                   example={EXEMPLO_DOC}
                   value={docFrenteUrl}
                   uploading={uploadingField === "doc_frente"}
-                  onUpload={f => { handleUpload(f, "doc_frente", setDocFrenteUrl); clearError("docFrenteUrl") }}
+                  onUpload={f => { clearError("docFrenteUrl"); return handleUpload(f, "doc_frente", setDocFrenteUrl) }}
                   error={errors.docFrenteUrl}
                 />
 
@@ -879,7 +879,7 @@ export default function FormularioPage() {
                   example={EXEMPLO_SELFIE}
                   value={selfieUrl}
                   uploading={uploadingField === "selfie"}
-                  onUpload={f => { handleUpload(f, "selfie", setSelfieUrl); clearError("selfieUrl") }}
+                  onUpload={f => { clearError("selfieUrl"); return handleUpload(f, "selfie", setSelfieUrl) }}
                   error={errors.selfieUrl}
                 />
 
@@ -888,7 +888,7 @@ export default function FormularioPage() {
                   example={EXEMPLO_SELFIE_DOC}
                   value={selfieDocUrl}
                   uploading={uploadingField === "selfie_doc"}
-                  onUpload={f => { handleUpload(f, "selfie_doc", setSelfieDocUrl); clearError("selfieDocUrl") }}
+                  onUpload={f => { clearError("selfieDocUrl"); return handleUpload(f, "selfie_doc", setSelfieDocUrl) }}
                   error={errors.selfieDocUrl}
                 />
               </div>
