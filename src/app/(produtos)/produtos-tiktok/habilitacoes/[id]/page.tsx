@@ -1,9 +1,10 @@
-import React from "react"
 import { redirect, notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import Link from "next/link"
-import { ArrowLeft, Download, ExternalLink, Package } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, Download, ExternalLink } from "lucide-react"
 
 type Produto = {
   nome: string; descricao?: string; sku?: string; ncm: string
@@ -32,61 +33,49 @@ function fmt(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
 }
 
-function Section({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl p-5 mb-4"
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">{emoji}</span>
-        <h2 className="text-white font-semibold text-base">{title}</h2>
-      </div>
-      <div className="grid grid-cols-2 gap-x-8 gap-y-3">{children}</div>
-    </div>
-  )
-}
-
-function Field({ label, value }: { label: string; value: string | null | undefined }) {
+function FieldItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-0.5">{label}</p>
-      <p className="text-white/80 text-sm">{value ?? <span className="text-white/25 italic">Não preenchido</span>}</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-sm">{value ?? <span className="text-muted-foreground italic">Não preenchido</span>}</p>
     </div>
   )
 }
 
 function FileLink({ label, url }: { label: string; url: string | null | undefined }) {
-  if (!url) return (
-    <div>
-      <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-0.5">{label}</p>
-      <p className="text-white/25 text-sm italic">Não enviado</p>
-    </div>
-  )
   return (
     <div>
-      <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1">{label}</p>
-      <div className="flex gap-2">
-        <a href={url} target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)", color: "#C084FC" }}>
-          <ExternalLink size={12} />
-          Visualizar
-        </a>
-        <a href={url} download
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          style={{ background: "rgba(52,211,153,0.10)", border: "1px solid rgba(52,211,153,0.25)", color: "#34D399" }}>
-          <Download size={12} />
-          Baixar
-        </a>
-      </div>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
+      {url ? (
+        <div className="flex gap-2">
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-purple-500/10 text-purple-700 border-purple-500/30 hover:bg-purple-500/20 transition-colors">
+            <ExternalLink size={12} />
+            Visualizar
+          </a>
+          <a href={url} download
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-green-500/10 text-green-700 border-green-500/30 hover:bg-green-500/20 transition-colors">
+            <Download size={12} />
+            Baixar
+          </a>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground italic">Não enviado</p>
+      )}
     </div>
   )
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  enviado: "Enviado", em_analise: "Em análise", aprovado: "Aprovado", reprovado: "Reprovado", pendente: "Pendente",
+const STATUS_COR: Record<string, string> = {
+  enviado:    "bg-green-500/15 text-green-700 border-green-500/30",
+  em_analise: "bg-yellow-500/15 text-yellow-700 border-yellow-500/30",
+  aprovado:   "bg-green-500/15 text-green-700 border-green-500/30",
+  reprovado:  "bg-red-500/15 text-red-600 border-red-500/30",
+  pendente:   "bg-gray-500/10 text-gray-500 border-gray-400/20",
 }
-const STATUS_COLORS: Record<string, string> = {
-  enviado: "#34D399", em_analise: "#FBBF24", aprovado: "#34D399", reprovado: "#F87171", pendente: "rgba(255,255,255,0.4)",
+const STATUS_LABEL: Record<string, string> = {
+  enviado: "Enviado", em_analise: "Em análise", aprovado: "Aprovado",
+  reprovado: "Reprovado", pendente: "Pendente",
 }
 
 export default async function HabilitacaoDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -104,189 +93,198 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
   if (!data) notFound()
 
   const h = data as Hab
-  const statusColor = STATUS_COLORS[h.status ?? "pendente"] ?? STATUS_COLORS.pendente
-  const statusLabel = STATUS_LABELS[h.status ?? "pendente"] ?? "Pendente"
+  const statusKey = h.status ?? "pendente"
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Back + header */}
-      <div className="mb-6">
+    <div className="space-y-5 max-w-4xl">
+      {/* Voltar + cabeçalho */}
+      <div>
         <Link href="/produtos-tiktok/habilitacoes"
-          className="inline-flex items-center gap-1.5 text-white/40 hover:text-white/70 text-sm mb-4 transition-colors">
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-4 transition-colors">
           <ArrowLeft size={14} />
           Voltar para Habilitações
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
-              {h.nome_empresa ?? <span className="text-white/40 italic">Empresa sem nome</span>}
+            <h1 className="text-2xl font-bold mb-1">
+              {h.nome_empresa ?? <span className="text-muted-foreground italic font-normal">Empresa sem nome</span>}
             </h1>
-            <p className="text-white/40 text-sm">{h.email}</p>
+            <p className="text-sm text-muted-foreground">{h.email}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style={{ color: statusColor, background: `${statusColor}18`, border: `1px solid ${statusColor}40` }}>
-              {statusLabel}
-            </span>
-            <span className="text-white/30 text-xs">
-              Cadastro: {fmt(h.created_at)}
-            </span>
+            <Badge variant="outline" className={`${STATUS_COR[statusKey] ?? STATUS_COR.pendente}`}>
+              {STATUS_LABEL[statusKey] ?? "Pendente"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">Cadastro: {fmt(h.created_at)}</span>
           </div>
         </div>
       </div>
 
       {/* Empresa */}
-      <Section title="Informações da Empresa" emoji="🏢">
-        <Field label="Razão social" value={h.nome_empresa} />
-        <Field label="CNPJ" value={h.cnpj} />
-        <Field label="Data de constituição" value={h.data_constituicao} />
-        <Field label="Endereço comercial" value={h.endereco_comercial} />
-        <div className="col-span-2">
-          <FileLink label="Comprovante CNPJ" url={h.cnpj_doc_url} />
-        </div>
-      </Section>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">🏢 Informações da Empresa</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <FieldItem label="Razão social" value={h.nome_empresa} />
+          <FieldItem label="CNPJ" value={h.cnpj} />
+          <FieldItem label="Data de constituição" value={h.data_constituicao} />
+          <FieldItem label="Endereço comercial" value={h.endereco_comercial} />
+          <div className="col-span-2">
+            <FileLink label="Comprovante CNPJ" url={h.cnpj_doc_url} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Representante */}
-      <Section title="Representante Legal" emoji="👤">
-        <Field label="Nome civil completo" value={h.rep_nome} />
-        <Field label="Data de nascimento" value={h.rep_data_nascimento} />
-        <Field label="Nacionalidade" value={h.rep_nacionalidade} />
-        <Field label="Endereço residencial" value={h.rep_endereco} />
-        <div className="col-span-2">
-          <FileLink label="Comprovante de residência" url={h.rep_comprovante_url} />
-        </div>
-      </Section>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">👤 Representante Legal</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <FieldItem label="Nome civil completo" value={h.rep_nome} />
+          <FieldItem label="Data de nascimento" value={h.rep_data_nascimento} />
+          <FieldItem label="Nacionalidade" value={h.rep_nacionalidade} />
+          <FieldItem label="Endereço residencial" value={h.rep_endereco} />
+          <div className="col-span-2">
+            <FileLink label="Comprovante de residência" url={h.rep_comprovante_url} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Documentos de identidade */}
-      <Section title="Documentos de Identidade" emoji="🪪">
-        <Field label="Tipo de documento" value={h.tipo_documento} />
-        <div />
-        <FileLink label={`${h.tipo_documento ?? "Documento"} – frente`} url={h.doc_frente_url} />
-        <FileLink label="Selfie do titular" url={h.selfie_url} />
-        <div className="col-span-2">
-          <FileLink label="Selfie com o documento" url={h.selfie_doc_url} />
-        </div>
-      </Section>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">🪪 Documentos de Identidade</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <FieldItem label="Tipo de documento" value={h.tipo_documento} />
+          <div />
+          <FileLink label={`${h.tipo_documento ?? "Documento"} – frente`} url={h.doc_frente_url} />
+          <FileLink label="Selfie do titular" url={h.selfie_url} />
+          <div className="col-span-2">
+            <FileLink label="Selfie com o documento" url={h.selfie_doc_url} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Loja */}
-      <Section title="Dados da Loja" emoji="🏪">
-        <Field label="Inscrição estadual" value={h.inscricao_estadual} />
-        <Field label="Nicho" value={h.nicho} />
-        <Field label="Subnicho" value={h.subnicho} />
-        <div />
-        <FileLink label="Certificado digital A1" url={h.certificado_url} />
-        <div>
-          <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-0.5">Senha do certificado</p>
-          {h.senha_certificado ? (
-            <p className="text-white/80 text-sm font-mono">{h.senha_certificado}</p>
-          ) : (
-            <p className="text-white/25 text-sm italic">Não informado</p>
-          )}
-        </div>
-      </Section>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">🏪 Dados da Loja</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <FieldItem label="Inscrição estadual" value={h.inscricao_estadual} />
+          <FieldItem label="Nicho" value={h.nicho} />
+          <FieldItem label="Subnicho" value={h.subnicho} />
+          <div />
+          <FileLink label="Certificado digital A1" url={h.certificado_url} />
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Senha do certificado</p>
+            {h.senha_certificado
+              ? <p className="text-sm font-mono bg-muted px-2 py-1 rounded w-fit">{h.senha_certificado}</p>
+              : <p className="text-sm text-muted-foreground italic">Não informado</p>
+            }
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Termos */}
-      <Section title="Aceite de termos" emoji="✅">
-        <Field label="Termos aceitos em" value={fmt(h.termos_aceitos_at)} />
-        <Field label="Etapa atual" value={h.etapa_atual != null ? `Etapa ${h.etapa_atual} de 3` : "—"} />
-      </Section>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">✅ Aceite de Termos</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <FieldItem label="Termos aceitos em" value={fmt(h.termos_aceitos_at)} />
+          <FieldItem label="Etapa atual" value={h.etapa_atual != null ? `Etapa ${h.etapa_atual} de 3` : "—"} />
+        </CardContent>
+      </Card>
 
       {/* Produtos */}
-      {h.produtos && h.produtos.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Package size={18} className="text-pink-400" />
-            <h2 className="text-white font-semibold text-base">Produtos ({h.produtos.length})</h2>
-          </div>
-
+      {h.produtos && h.produtos.length > 0 ? (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold">📦 Produtos ({h.produtos.length})</h2>
           {h.produtos.map((p, i) => (
-            <div key={i} className="rounded-xl p-5 mb-3"
-              style={{ background: "rgba(236,72,153,0.03)", border: "1px solid rgba(236,72,153,0.12)" }}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-pink-400 font-bold text-sm px-3 py-1 rounded-md"
-                  style={{ background: "rgba(236,72,153,0.12)" }}>
-                  Produto #{i + 1}
-                </span>
-              </div>
+            <Card key={i} className="border-pink-500/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <span className="bg-pink-500/15 text-pink-700 border border-pink-500/30 rounded px-2 py-0.5 text-xs font-bold">
+                    Produto #{i + 1}
+                  </span>
+                  {p.nome}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                  <FieldItem label="Nome" value={p.nome} />
+                  <FieldItem label="NCM" value={p.ncm} />
+                  <FieldItem label="SKU" value={p.sku} />
+                  <FieldItem label="Marca" value={p.marca} />
+                  <FieldItem label="Preço de venda" value={p.preco ? `R$ ${p.preco}` : null} />
+                  <FieldItem label="Custo" value={p.custo ? `R$ ${p.custo}` : null} />
+                  <FieldItem label="Unidade" value={p.unidade} />
+                  <FieldItem label="Estoque" value={p.estoque} />
+                  <FieldItem label="Comprimento" value={p.comprimento ? `${p.comprimento} cm` : null} />
+                  <FieldItem label="Largura" value={p.largura ? `${p.largura} cm` : null} />
+                  <FieldItem label="Altura" value={p.altura ? `${p.altura} cm` : null} />
+                  <FieldItem label="Peso" value={p.peso ? `${p.peso} kg` : null} />
+                  {p.descricao && (
+                    <div className="col-span-2">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Descrição</p>
+                      <p className="text-sm leading-relaxed">{p.descricao}</p>
+                    </div>
+                  )}
+                </div>
 
-              <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-4">
-                <Field label="Nome" value={p.nome} />
-                <Field label="NCM" value={p.ncm} />
-                <Field label="SKU" value={p.sku} />
-                <Field label="Marca" value={p.marca} />
-                <Field label="Preço de venda" value={p.preco ? `R$ ${p.preco}` : null} />
-                <Field label="Custo" value={p.custo ? `R$ ${p.custo}` : null} />
-                <Field label="Unidade" value={p.unidade} />
-                <Field label="Estoque" value={p.estoque} />
-                <Field label="Comprimento" value={p.comprimento ? `${p.comprimento} cm` : null} />
-                <Field label="Largura" value={p.largura ? `${p.largura} cm` : null} />
-                <Field label="Altura" value={p.altura ? `${p.altura} cm` : null} />
-                <Field label="Peso" value={p.peso ? `${p.peso} kg` : null} />
-                {p.descricao && (
-                  <div className="col-span-2">
-                    <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-0.5">Descrição</p>
-                    <p className="text-white/70 text-sm leading-relaxed">{p.descricao}</p>
+                {/* Fotos */}
+                {p.fotos && p.fotos.filter(Boolean).length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                      Fotos ({p.fotos.filter(Boolean).length})
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {p.fotos.filter(Boolean).map((url, fi) => (
+                        <a key={fi} href={url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-purple-500/10 text-purple-700 border-purple-500/25 hover:bg-purple-500/20 transition-colors">
+                          <ExternalLink size={11} />
+                          {fi === 0 ? "Capa" : `Foto ${fi + 1}`}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
 
-              {/* Fotos */}
-              {p.fotos && p.fotos.filter(Boolean).length > 0 && (
-                <div className="mb-4">
-                  <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2">Fotos</p>
-                  <div className="flex flex-wrap gap-2">
-                    {p.fotos.filter(Boolean).map((url, fi) => (
-                      <a key={fi} href={url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.2)", color: "#C084FC" }}>
-                        <ExternalLink size={11} />
-                        Foto {fi + 1}{fi === 0 ? " (capa)" : ""}
-                      </a>
-                    ))}
-                    <a href={p.fotos.filter(Boolean).join("\n")}
-                      download={`fotos-produto-${i + 1}.txt`}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium"
-                      style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "#34D399" }}>
-                      <Download size={11} />
-                      URLs das fotos
-                    </a>
+                {/* Variações */}
+                {p.tem_variacao && p.variacoes && p.variacoes.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Variações</p>
+                    <div className="space-y-1.5">
+                      {p.variacoes.map((v, vi) => (
+                        <div key={vi} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border bg-muted/50 text-sm">
+                          <span className="font-medium text-muted-foreground">{v.tipo}:</span>
+                          <span>{v.itens || "—"}</span>
+                          {v.preco && <span className="text-muted-foreground">R$ {v.preco}</span>}
+                          {v.imagem_url && (
+                            <a href={v.imagem_url} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-purple-700 hover:underline">
+                              <ExternalLink size={10} /> Imagem
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Variações */}
-              {p.tem_variacao && p.variacoes && p.variacoes.length > 0 && (
-                <div>
-                  <p className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2">Variações</p>
-                  <div className="flex flex-col gap-2">
-                    {p.variacoes.map((v, vi) => (
-                      <div key={vi} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg text-sm"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                        <span className="text-white/50 font-medium">{v.tipo}:</span>
-                        <span className="text-white/80">{v.itens || "—"}</span>
-                        {v.preco && <span className="text-white/50">R$ {v.preco}</span>}
-                        {v.imagem_url && (
-                          <a href={v.imagem_url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs"
-                            style={{ color: "#C084FC" }}>
-                            <ExternalLink size={10} /> Imagem
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
-      )}
-
-      {(!h.produtos || h.produtos.length === 0) && (
-        <div className="rounded-xl p-6 text-center text-white/25 text-sm"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          Nenhum produto cadastrado ainda.
-        </div>
+      ) : (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground text-sm">
+            Nenhum produto cadastrado ainda.
+          </CardContent>
+        </Card>
       )}
     </div>
   )

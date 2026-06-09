@@ -1,9 +1,10 @@
-import React from "react"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import Link from "next/link"
-import { ClipboardList, ChevronRight, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ClipboardList, ChevronRight } from "lucide-react"
 
 type Habilitacao = {
   id: string
@@ -15,12 +16,17 @@ type Habilitacao = {
   termos_aceitos_at: string | null
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  enviado:    { label: "Enviado",    color: "#34D399", bg: "rgba(52,211,153,0.1)",    icon: <CheckCircle2 size={14} /> },
-  em_analise: { label: "Em análise", color: "#FBBF24", bg: "rgba(251,191,36,0.1)",   icon: <Clock size={14} /> },
-  aprovado:   { label: "Aprovado",   color: "#34D399", bg: "rgba(52,211,153,0.1)",   icon: <CheckCircle2 size={14} /> },
-  reprovado:  { label: "Reprovado",  color: "#F87171", bg: "rgba(248,113,113,0.1)",  icon: <XCircle size={14} /> },
-  pendente:   { label: "Pendente",   color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.06)", icon: <AlertCircle size={14} /> },
+const STATUS_COR: Record<string, string> = {
+  enviado:    "bg-green-500/15 text-green-700 border-green-500/30",
+  em_analise: "bg-yellow-500/15 text-yellow-700 border-yellow-500/30",
+  aprovado:   "bg-green-500/15 text-green-700 border-green-500/30",
+  reprovado:  "bg-red-500/15 text-red-600 border-red-500/30",
+  pendente:   "bg-gray-500/10 text-gray-500 border-gray-400/20",
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  enviado: "Enviado", em_analise: "Em análise", aprovado: "Aprovado",
+  reprovado: "Reprovado", pendente: "Pendente",
 }
 
 function fmt(iso: string) {
@@ -42,7 +48,6 @@ export default async function HabilitacoesPage() {
     .order("created_at", { ascending: false })
 
   const lista = (habs ?? []) as Habilitacao[]
-
   const totais = {
     total: lista.length,
     enviados: lista.filter(h => h.status === "enviado" || h.status === "aprovado").length,
@@ -50,87 +55,89 @@ export default async function HabilitacoesPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: "linear-gradient(135deg, #EC4899, #8B5CF6)" }}>
           <ClipboardList className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Habilitações</h1>
-          <p className="text-sm text-white/40">Cadastros de clientes para TikTok Shop</p>
+          <h1 className="text-2xl font-bold">Habilitações</h1>
+          <p className="text-sm text-muted-foreground">Cadastros de clientes para TikTok Shop</p>
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {[
-          { label: "Total", value: totais.total, color: "#8B5CF6" },
-          { label: "Enviados", value: totais.enviados, color: "#34D399" },
-          { label: "Pendentes", value: totais.pendentes, color: "#FBBF24" },
-        ].map(c => (
-          <div key={c.label} className="rounded-xl p-4"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-1">{c.label}</p>
-            <p className="text-3xl font-bold" style={{ color: c.color }}>{c.value}</p>
-          </div>
-        ))}
+      {/* Cards resumo */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total</p>
+            <p className="text-3xl font-bold text-purple-600">{totais.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Enviados</p>
+            <p className="text-3xl font-bold text-green-600">{totais.enviados}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Pendentes</p>
+            <p className="text-3xl font-bold text-yellow-600">{totais.pendentes}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="grid grid-cols-[1fr_160px_100px_80px_36px] gap-4 px-4 py-3 text-xs font-semibold text-white/30 uppercase tracking-wider"
-          style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <span>Cliente / Empresa</span>
-          <span>Data</span>
-          <span>Etapa</span>
-          <span>Status</span>
-          <span />
-        </div>
-
-        {lista.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-white/30">
-            <ClipboardList size={40} className="mb-3 opacity-30" />
-            <p className="text-sm">Nenhuma habilitação registrada ainda.</p>
+      {/* Tabela */}
+      <Card>
+        <CardContent className="p-0">
+          {/* Cabeçalho */}
+          <div className="grid grid-cols-[1fr_140px_110px_100px_32px] gap-4 px-5 py-3 border-b">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Cliente / Empresa</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Progresso</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
+            <span />
           </div>
-        )}
 
-        {lista.map((h, i) => {
-          const statusKey = h.status ?? "pendente"
-          const cfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.pendente
-          return (
-            <Link key={h.id} href={`/produtos-tiktok/habilitacoes/${h.id}`}
-              className="grid grid-cols-[1fr_160px_100px_80px_36px] gap-4 px-4 py-4 items-center hover:bg-white/5 transition-colors"
-              style={{ borderBottom: i < lista.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-              <div className="min-w-0">
-                <p className="text-white font-medium text-sm truncate">
-                  {h.nome_empresa ?? <span className="text-white/30 italic">Empresa não preenchida</span>}
-                </p>
-                <p className="text-white/40 text-xs truncate">{h.email}</p>
-              </div>
-              <p className="text-white/50 text-sm">{fmt(h.created_at)}</p>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3].map(n => (
-                  <div key={n} className="h-1.5 flex-1 rounded-full"
-                    style={{
-                      background: (h.etapa_atual ?? 0) >= n
-                        ? "linear-gradient(90deg,#EC4899,#8B5CF6)"
-                        : "rgba(255,255,255,0.1)",
-                    }} />
-                ))}
-                <span className="text-white/30 text-xs ml-1">{h.etapa_atual ?? 0}/3</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold w-fit"
-                style={{ color: cfg.color, background: cfg.bg }}>
-                {cfg.icon}
-                <span>{cfg.label}</span>
-              </div>
-              <ChevronRight size={16} className="text-white/20" />
-            </Link>
-          )
-        })}
-      </div>
+          {lista.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <ClipboardList size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">Nenhuma habilitação registrada ainda.</p>
+            </div>
+          )}
+
+          {lista.map((h, i) => {
+            const statusKey = h.status ?? "pendente"
+            const corBadge = STATUS_COR[statusKey] ?? STATUS_COR.pendente
+            const labelBadge = STATUS_LABEL[statusKey] ?? "Pendente"
+            const etapa = h.etapa_atual ?? 0
+            return (
+              <Link key={h.id} href={`/produtos-tiktok/habilitacoes/${h.id}`}
+                className={`grid grid-cols-[1fr_140px_110px_100px_32px] gap-4 px-5 py-4 items-center hover:bg-accent transition-colors ${i < lista.length - 1 ? "border-b" : ""}`}>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {h.nome_empresa ?? <span className="text-muted-foreground italic text-xs">Empresa não preenchida</span>}
+                  </p>
+                  <p className="text-muted-foreground text-xs truncate">{h.email}</p>
+                </div>
+                <p className="text-muted-foreground text-sm">{fmt(h.created_at)}</p>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3].map(n => (
+                    <div key={n} className="h-1.5 flex-1 rounded-full"
+                      style={{ background: etapa >= n ? "linear-gradient(90deg,#EC4899,#8B5CF6)" : "rgba(0,0,0,0.1)" }} />
+                  ))}
+                  <span className="text-muted-foreground text-xs ml-1">{etapa}/3</span>
+                </div>
+                <Badge variant="outline" className={`text-xs ${corBadge}`}>{labelBadge}</Badge>
+                <ChevronRight size={15} className="text-muted-foreground" />
+              </Link>
+            )
+          })}
+        </CardContent>
+      </Card>
     </div>
   )
 }
