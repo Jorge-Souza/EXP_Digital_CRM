@@ -23,12 +23,12 @@ const TERMOS = [
   {
     id: "uso_imagem",
     titulo: "Uso de imagem e marca",
-    texto: "Autorizo a EXP Digital a utilizar o nome, logotipo e marca da minha empresa em materiais de marketing e comunicação institucional.",
+    texto: "Autorizo a EXP Digital - TikTok Shop a utilizar o nome, logotipo e marca da minha empresa em materiais de marketing e comunicação institucional.",
   },
   {
     id: "divulgacao",
     titulo: "Divulgação do relacionamento comercial",
-    texto: "Autorizo a EXP Digital a mencionar o relacionamento comercial entre as partes para fins de portfólio e marketing, preservando informações comercialmente sensíveis.",
+    texto: "Autorizo a EXP Digital - TikTok Shop a mencionar o relacionamento comercial entre as partes para fins de portfólio e marketing, preservando informações comercialmente sensíveis.",
   },
 ]
 
@@ -155,15 +155,19 @@ export default function TermosPage() {
               </p>
             </div>
           </div>
-          <button
+          <a
+            href="https://mundodaslives.com.br/termos.html"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "#EC4899", fontSize: 13, fontWeight: 600,
               display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
+              textDecoration: "none",
             }}
           >
             Ler <ExternalLink size={12} />
-          </button>
+          </a>
         </div>
 
         {/* Checkboxes */}

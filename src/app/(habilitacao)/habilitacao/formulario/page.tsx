@@ -1,9 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Loader2, Upload, X, Plus, ChevronDown, ImageIcon } from "lucide-react"
+import { Loader2, Upload, X, Plus, ImageIcon } from "lucide-react"
 
 // ─── Tipos ───────────────────────────────────────────────────
 type Variacao = { tipo: string; itens: string; preco: string; imagem_url: string }
