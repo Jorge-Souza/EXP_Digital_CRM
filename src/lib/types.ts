@@ -151,7 +151,7 @@ export interface Profile {
   created_at: string
 }
 
-// --- TikTok Shop CRM ---
+// --- TikTok Shop CRM (alunos/kiwify) ---
 export type AlunoEtapa = 'lead' | 'entrada' | 'core' | 'avancado'
 export type ScoreLabel = 'quente' | 'morno' | 'frio' | 'sem_dados'
 export type ProdutoTipoTiktok = 'lowticket' | 'core' | 'mentoria' | 'outro'
@@ -233,6 +233,33 @@ export interface NotaAluno {
   admin_id: string | null
   created_at: string
   admin?: Profile
+}
+
+// --- TikTok Shop Produtos (clientes da agência) ---
+export type TikTokProdutoStatus = 'rascunho' | 'ativo' | 'inativo'
+
+export interface TikTokProduto {
+  id: string
+  client_id: string | null
+  nome: string
+  descricao: string | null
+  sku: string | null
+  ncm: string | null
+  preco: number | null
+  margem: number | null
+  unidade: string | null
+  estoque: number
+  marca: string | null
+  comprimento: number | null
+  largura: number | null
+  altura: number | null
+  peso: number | null
+  nicho: string | null
+  subnicho: string | null
+  status: TikTokProdutoStatus
+  created_at: string
+  updated_at: string
+  client?: Pick<Client, 'id' | 'nome' | 'avatar_emoji' | 'cor'>
 }
 
 export interface ServicoAdicional {

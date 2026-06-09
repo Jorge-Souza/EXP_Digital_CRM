@@ -40,6 +40,7 @@ const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, emoji: "📊" },
   { title: "Clientes", url: "/clientes", icon: Users, emoji: "👥" },
   { title: "Publicações", url: "/publicacoes", icon: CalendarDays, emoji: "📅" },
+  { title: "TikTok Shop", url: "/tiktok-shop", icon: LayoutDashboard, emoji: "🛍️" },
 ]
 
 const statusDot: Record<ClientStatus, string> = {
