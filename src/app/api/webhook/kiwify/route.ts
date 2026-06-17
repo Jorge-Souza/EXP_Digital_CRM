@@ -39,13 +39,26 @@ export async function POST(req: NextRequest) {
     const order = payload.order as Record<string, unknown>
     const customer = payload.customer as Record<string, unknown>
     const product = payload.product as Record<string, unknown>
+    const tracking = payload.tracking as Record<string, unknown> | undefined
 
     const email = customer?.email as string
     const nome = customer?.full_name as string
     const telefone = customer?.phone as string | undefined
     const kiwifyCustomerId = customer?.id as string | undefined
     const kiwifyOrderId = order?.id as string
-    const valor = Number(order?.amount ?? 0) / 100
+
+    // Valores financeiros (Kiwify envia em centavos)
+    const valorBruto = Number(order?.amount ?? 0) / 100
+    const valorLiquido = order?.net_amount != null ? Number(order.net_amount) / 100 : null
+    const taxaGateway = order?.gateway_fee != null ? Number(order.gateway_fee) / 100 : null
+    const valorAfiliado = order?.affiliate_value != null ? Number(order.affiliate_value) / 100 : null
+    const imposto = order?.tax_value != null ? Number(order.tax_value) / 100 : null
+    const paymentMethod = order?.payment_method as string | undefined
+    const paymentApprovedAt = order?.approved_date as string | undefined
+
+    const utmSource = tracking?.utm_source as string | undefined
+    const utmMedium = tracking?.utm_medium as string | undefined
+
     const kiwifyProductId = product?.id as string
 
     // Upsert aluno
@@ -67,17 +80,26 @@ export async function POST(req: NextRequest) {
       .eq("kiwify_product_id", kiwifyProductId)
       .single()
 
-    // Registrar compra
+    // Registrar compra com todos os campos financeiros
     await supabase.from("compras_alunos").upsert({
       aluno_id: aluno.id,
       produto_id: produtoRow?.id ?? null,
       status: "ativo",
       kiwify_order_id: kiwifyOrderId,
-      valor,
+      valor: valorBruto,
+      valor_bruto: valorBruto,
+      valor_liquido: valorLiquido,
+      taxa_gateway: taxaGateway,
+      valor_afiliado: valorAfiliado,
+      imposto: imposto,
+      payment_method: paymentMethod ?? null,
+      payment_approved_at: paymentApprovedAt ?? null,
+      utm_source: utmSource ?? null,
+      utm_medium: utmMedium ?? null,
       data_compra: new Date().toISOString(),
     }, { onConflict: "kiwify_order_id" })
 
-    // Recalcular etapa: buscar todos os tipos de compras ativas desse aluno
+    // Recalcular etapa
     const { data: compras } = await supabase
       .from("compras_alunos")
       .select("produto_id, produtos_tiktok(tipo)")
