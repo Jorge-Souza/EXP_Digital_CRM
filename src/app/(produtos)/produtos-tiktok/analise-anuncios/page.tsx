@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Target, DollarSign, ShoppingCart, BarChart2 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -11,20 +13,12 @@ interface Action { action_type: string; value: string }
 interface AdInsight {
   ad_id: string
   ad_name: string
-  campaign_id: string
-  campaign_name: string
-  status?: string
   spend: string
   impressions: string
-  clicks: string
-  cpc: string
-  ctr: string
-  reach: string
   purchase_roas?: { action_type: string; value: string }[]
   actions?: Action[]
   video_p25_watched_actions?: Action[]
   video_p95_watched_actions?: Action[]
-  video_thruplay_watched_actions?: Action[]
 }
 
 interface CampaignInsight {
@@ -33,60 +27,34 @@ interface CampaignInsight {
   spend: string
   impressions: string
   actions?: Action[]
-  video_p25_watched_actions?: Action[]
 }
 
 async function fetchMetaAds(token: string): Promise<{ campaigns: CampaignInsight[]; ads: AdInsight[]; error?: string } | null> {
-  const since = "2026-05-12"
-  const until = "2026-06-16"
-  const timeRange = encodeURIComponent(JSON.stringify({ since, until }))
-
+  const timeRange = encodeURIComponent(JSON.stringify({ since: "2026-05-12", until: "2026-06-16" }))
   const base = `https://graph.facebook.com/v21.0/act_${AD_ACCOUNT_ID}/insights`
 
-  const campFields = "campaign_id,campaign_name,spend,impressions,actions,video_p25_watched_actions"
-  const adFields = "ad_id,ad_name,campaign_id,campaign_name,spend,impressions,clicks,cpc,ctr,reach,actions,purchase_roas,video_p25_watched_actions,video_p95_watched_actions,video_thruplay_watched_actions"
-
   const [campRes, adRes] = await Promise.all([
-    fetch(`${base}?level=campaign&fields=${campFields}&time_range=${timeRange}&sort=spend_descending&access_token=${token}`, { cache: "no-store" }),
-    fetch(`${base}?level=ad&fields=${adFields}&time_range=${timeRange}&sort=spend_descending&limit=50&access_token=${token}`, { cache: "no-store" }),
+    fetch(`${base}?level=campaign&fields=campaign_id,campaign_name,spend,impressions,actions&time_range=${timeRange}&sort=spend_descending&access_token=${token}`, { cache: "no-store" }),
+    fetch(`${base}?level=ad&fields=ad_id,ad_name,spend,impressions,actions,purchase_roas,video_p25_watched_actions,video_p95_watched_actions&time_range=${timeRange}&sort=spend_descending&limit=50&access_token=${token}`, { cache: "no-store" }),
   ])
 
   const [campJson, adJson] = await Promise.all([campRes.json(), adRes.json()])
-
   if (campJson.error || adJson.error) {
-    return { campaigns: [], ads: [], error: campJson.error?.message ?? adJson.error?.message ?? "Erro desconhecido" }
+    return { campaigns: [], ads: [], error: campJson.error?.message ?? adJson.error?.message }
   }
-
   return { campaigns: campJson.data ?? [], ads: adJson.data ?? [] }
 }
 
 function getAction(actions: Action[] | undefined, type: string): number {
-  const a = actions?.find(a => a.action_type === type)
-  return a ? parseFloat(a.value) || 0 : 0
+  return parseFloat(actions?.find(a => a.action_type === type)?.value ?? "0") || 0
 }
 
-function parseNum(v: string | undefined): number {
-  if (!v) return 0
-  return parseFloat(v.replace(",", ".")) || 0
-}
-
-function statusBadge(val: number, meta: number): "ok" | "warn" | "bad" {
-  if (val >= meta) return "ok"
-  if (val >= meta * 0.85) return "warn"
-  return "bad"
-}
-
-function diagLabel(ganchoSt: string, ctaSt: string, roas: number): { label: string; cls: string } {
-  if (ganchoSt === "ok" && ctaSt === "ok") return { label: "ESCALAR", cls: "ok" }
-  if (roas <= 0 || roas < 0.9) return { label: "Matar", cls: "bad" }
-  if (ganchoSt === "ok") return { label: "Reforçar CTA", cls: "warn" }
-  if (ctaSt === "ok") return { label: "Melhor Gancho", cls: "near" }
-  if (roas >= 1.5) return { label: "Pausar/Testar", cls: "warn" }
-  return { label: "Pausar", cls: "bad" }
-}
+function pn(v: string | undefined) { return parseFloat(v?.replace(",", ".") ?? "0") || 0 }
 
 const GANCHO_META = 10
 const CTA_META = 20
+const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+const fmtPct = (n: number) => `${n.toFixed(1)}%`
 
 export default async function AnaliseAnunciosPage() {
   const supabase = await createClient()
@@ -101,13 +69,15 @@ export default async function AnaliseAnunciosPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-6">
-          <p className="font-semibold text-yellow-400 mb-2">Token Meta Ads não configurado</p>
-          <p className="text-sm text-muted-foreground">
-            Adicione a variável <code className="bg-muted px-1 py-0.5 rounded text-xs">FACEBOOK_ACCESS_TOKEN</code> nas
-            configurações do Vercel e faça um novo deploy.
-          </p>
-        </div>
+        <Card className="border-yellow-500/30 bg-yellow-500/10">
+          <CardContent className="pt-6">
+            <p className="font-semibold text-yellow-600 mb-1">Token Meta Ads não configurado</p>
+            <p className="text-sm text-muted-foreground">
+              Adicione <code className="bg-muted px-1 py-0.5 rounded text-xs">FACEBOOK_ACCESS_TOKEN</code> nas
+              Environment Variables do Vercel e faça um novo deploy.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -118,17 +88,18 @@ export default async function AnaliseAnunciosPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6">
-          <p className="font-semibold text-red-400 mb-2">Erro ao buscar dados do Meta Ads</p>
-          <p className="text-sm text-muted-foreground">{data?.error ?? "Verifique se o token é válido e tem permissão ads_read."}</p>
-        </div>
+        <Card className="border-red-500/30 bg-red-500/10">
+          <CardContent className="pt-6">
+            <p className="font-semibold text-red-500 mb-1">Erro ao buscar dados do Meta Ads</p>
+            <p className="text-sm text-muted-foreground">{data?.error ?? "Token inválido ou sem permissão ads_read."}</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  // Campanha com maior gasto
   const camp = data.campaigns[0]
-  const spend = parseNum(camp?.spend)
+  const spend = pn(camp?.spend)
   const vendas = getAction(camp?.actions, "offsite_conversion.fb_pixel_purchase")
   const lpv = getAction(camp?.actions, "landing_page_view")
   const fc = getAction(camp?.actions, "initiate_checkout")
@@ -136,209 +107,239 @@ export default async function AnaliseAnunciosPage() {
   const cpr = vendas > 0 ? spend / vendas : 0
   const cplv = lpv > 0 ? spend / lpv : 0
   const cpfc = fc > 0 ? spend / fc : 0
-  const revenueEst = vendas * TICKET
-  const roas = spend > 0 ? revenueEst / spend : 0
+  const roas = spend > 0 ? (vendas * TICKET) / spend : 0
 
   const metaCplv = TICKET * 0.04
   const metaCpfc = TICKET * 0.23
   const metaCpr = TICKET * 0.45
 
   const ads = data.ads
-    .filter(a => parseNum(a.spend) > 1)
+    .filter(a => pn(a.spend) > 1)
     .map(a => {
-      const spent = parseNum(a.spend)
-      const imp = parseNum(a.impressions)
-      const p25 = parseNum(a.video_p25_watched_actions?.[0]?.value)
-      const p95 = parseNum(a.video_p95_watched_actions?.[0]?.value)
+      const spent = pn(a.spend)
+      const imp = pn(a.impressions)
+      const p25 = pn(a.video_p25_watched_actions?.[0]?.value)
+      const p95 = pn(a.video_p95_watched_actions?.[0]?.value)
       const purchases = getAction(a.actions, "offsite_conversion.fb_pixel_purchase")
       const cprAd = purchases > 0 ? spent / purchases : 0
       const roasRaw = a.purchase_roas?.find(r => r.action_type === "offsite_conversion.fb_pixel_purchase")
       const roasAd = roasRaw ? parseFloat(roasRaw.value) : 0
       const gancho = imp > 0 ? (p25 / imp) * 100 : 0
       const ctaPct = p25 > 0 ? (p95 / p25) * 100 : 0
-      const ganchoSt = statusBadge(gancho, GANCHO_META)
-      const ctaSt = statusBadge(ctaPct, CTA_META)
-      const diag = diagLabel(ganchoSt, ctaSt, roasAd)
-      return { ...a, spent, imp, p25, p95, purchases, cprAd, roasAd, gancho, ctaPct, ganchoSt, ctaSt, diag }
+
+      let diagLabel = "Pausar"
+      let diagCls = "bg-red-500/15 text-red-600 border-red-500/30"
+      if (gancho >= GANCHO_META && ctaPct >= CTA_META) { diagLabel = "Escalar"; diagCls = "bg-green-500/15 text-green-600 border-green-500/30" }
+      else if (roasAd < 0.9 && roasAd > 0) { diagLabel = "Matar"; diagCls = "bg-red-500/15 text-red-600 border-red-500/30" }
+      else if (gancho >= GANCHO_META) { diagLabel = "Reforçar CTA"; diagCls = "bg-yellow-500/15 text-yellow-600 border-yellow-500/30" }
+      else if (ctaPct >= CTA_META) { diagLabel = "Melhor Gancho"; diagCls = "bg-blue-500/15 text-blue-600 border-blue-500/30" }
+      else if (roasAd >= 1.5) { diagLabel = "Testar"; diagCls = "bg-yellow-500/15 text-yellow-600 border-yellow-500/30" }
+
+      return { ...a, spent, imp, p25, p95, purchases, cprAd, roasAd, gancho, ctaPct, diagLabel, diagCls }
     })
     .sort((a, b) => b.spent - a.spent)
 
-  const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-  const fmtPct = (n: number) => `${n.toFixed(1)}%`
-  const fmtRoas = (n: number) => `${n.toFixed(2)}x`
+  const bestAd = ads.length > 0 ? ads.reduce((a, b) => b.roasAd > a.roasAd ? b : a, ads[0]) : null
 
-  function Badge({ cls, children }: { cls: string; children: React.ReactNode }) {
-    const styles: Record<string, React.CSSProperties> = {
-      ok: { background: "rgba(0,200,83,.15)", color: "#00C853" },
-      bad: { background: "rgba(254,44,85,.15)", color: "#FE2C55" },
-      warn: { background: "rgba(255,215,0,.15)", color: "#FFD700" },
-      near: { background: "rgba(37,244,238,.1)", color: "#25F4EE" },
-    }
+  function FunilCard({ label, meta, real, metaLbl, icon: Icon, sem }: {
+    label: string; meta: number; real: number; metaLbl: string; icon: React.ElementType; sem: boolean
+  }) {
+    const acima = !sem && real > meta
+    const pct = !sem && meta > 0 ? Math.round(((real - meta) / meta) * 100) : 0
     return (
-      <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm whitespace-nowrap" style={styles[cls] ?? styles.bad}>
-        {children}
-      </span>
+      <Card className={acima ? "border-red-500/30" : "border-green-500/30"}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{label}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${acima ? "text-red-500" : "text-green-600"}`}>
+            {sem ? "—" : fmt(real)}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Meta ({metaLbl}): {fmt(meta)}
+          </p>
+          {!sem && (
+            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${acima ? "text-red-500" : "text-green-600"}`}>
+              {acima ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {acima ? `+${pct}% acima da meta` : `${Math.abs(pct)}% abaixo da meta`}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     )
   }
 
-  function Bar({ pct, color }: { pct: number; color: string }) {
+  function BarPct({ pct, meta }: { pct: number; meta: number }) {
+    const ratio = Math.min((pct / meta) * 100, 100)
+    const color = pct >= meta ? "bg-green-500" : pct >= meta * 0.85 ? "bg-yellow-500" : "bg-red-500"
     return (
-      <div style={{ width: 56, height: 5, background: "#2A2A2A", borderRadius: 3, display: "inline-block", verticalAlign: "middle", marginRight: 4 }}>
-        <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", borderRadius: 3, background: color }} />
+      <div className="flex items-center gap-2">
+        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className={`h-full rounded-full ${color}`} style={{ width: `${ratio}%` }} />
+        </div>
+        <span className={`text-xs font-medium ${pct >= meta ? "text-green-600" : pct >= meta * 0.85 ? "text-yellow-600" : "text-red-500"}`}>
+          {fmtPct(pct)}
+        </span>
       </div>
     )
   }
 
-  const bestAd = ads.length > 0 ? ads.reduce((a, b) => (b.roasAd > a.roasAd ? b : a), ads[0]) : null
-
   return (
-    <div style={{ color: "#F5F5F5", fontFamily: "Inter, sans-serif" }}>
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
           <p className="text-sm text-muted-foreground">
             CA EXP D BKP · Meta Ads · 12/05 → 16/06/2026
-            {camp?.campaign_name && <span className="ml-2 opacity-60">· {camp.campaign_name.replace(/\[.*?\]\s*/g, "").slice(0, 50)}</span>}
           </p>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full"
-          style={{ background: "rgba(0,200,83,.15)", color: "#00C853" }}>
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500/15 text-green-600 border border-green-500/30">
           Dados ao vivo
         </span>
       </div>
 
+      {/* MÉTRICAS RESUMO */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ROAS</CardTitle>
+            <BarChart2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${roas >= 2.22 ? "text-green-600" : "text-red-500"}`}>
+              {roas.toFixed(2)}x
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Mínimo breakeven: 2,22x</p>
+            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${roas >= 2.22 ? "text-green-600" : "text-red-500"}`}>
+              {roas >= 2.22 ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+              {roas >= 2.22 ? "Lucrativo" : "Abaixo do breakeven"}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vendas</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{vendas}</div>
+            <p className="text-xs text-muted-foreground mt-1">compras no período</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Investido</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{fmt(spend)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Meta Ads no período</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Custo por Venda</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${cpr > metaCpr ? "text-red-500" : "text-green-600"}`}>
+              {cpr > 0 ? fmt(cpr) : "—"}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Meta: {fmt(metaCpr)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* FUNIL */}
-      <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#888" }}>
-        Diagnóstico do Funil — Metas vs Realidade
-      </p>
-      <div className="grid gap-3 sm:grid-cols-3 mb-6">
-        {[
-          { label: "Custo por View Página Destino", meta: metaCplv, real: cplv, metaLbl: "4% ticket", sem: lpv === 0 },
-          { label: "Custo por Finalização de Compra", meta: metaCpfc, real: cpfc, metaLbl: "23% ticket", sem: fc === 0 },
-          { label: "Custo por Resultado (Venda)", meta: metaCpr, real: cpr, metaLbl: "45% ticket", sem: vendas === 0 },
-        ].map(({ label, meta, real, metaLbl, sem }) => (
-          <div key={label} className="relative overflow-hidden rounded-lg border p-4" style={{ background: "#111111", borderColor: "#2A2A2A" }}>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: "#FE2C55" }} />
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: "#888" }}>{label}</p>
-            <p className="text-[11px] mb-2" style={{ color: "#888" }}>
-              Meta ({metaLbl}): <span style={{ color: "#25F4EE", fontWeight: 600 }}>{fmt(meta)}</span>
-            </p>
-            <p className="text-2xl font-bold font-mono mb-1" style={{ color: sem ? "#888" : "#FE2C55" }}>
-              {sem ? "—" : fmt(real)}
-            </p>
-            {!sem && (
-              <p className="text-[11px]" style={{ color: "#FE2C55" }}>
-                +{fmt(real - meta)} acima (+{Math.round(((real - meta) / meta) * 100)}%)
-              </p>
-            )}
-            <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5"
-              style={{ background: "rgba(254,44,85,.15)", color: "#FE2C55" }}>
-              {sem ? "Sem dados" : "Acima da meta"}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* ROAS */}
-      <div className="rounded-lg border p-4 flex gap-6 items-center flex-wrap mb-6" style={{ background: "#111111", borderColor: "#2A2A2A" }}>
-        <div>
-          <p className="text-4xl font-bold font-mono" style={{ color: roas >= 2.22 ? "#00C853" : "#FE2C55" }}>{fmtRoas(roas)}</p>
-          <p className="text-[11px] mt-1" style={{ color: "#888" }}>ROAS atual (estimado)</p>
-        </div>
-        <div className="w-px h-12" style={{ background: "#2A2A2A" }} />
-        <div>
-          <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: "#888" }}>Breakeven</p>
-          <p className="text-lg font-bold" style={{ color: "#FE2C55" }}>2,22x</p>
-        </div>
-        <div className="w-px h-12" style={{ background: "#2A2A2A" }} />
-        <div>
-          <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: "#888" }}>Vendas</p>
-          <p className="text-lg font-bold" style={{ color: "#FE2C55" }}>{vendas}</p>
-        </div>
-        <div className="w-px h-12" style={{ background: "#2A2A2A" }} />
-        <div>
-          <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: "#888" }}>Investido</p>
-          <p className="text-lg font-bold" style={{ color: "#FE2C55" }}>{fmt(spend)}</p>
-        </div>
-        <div className="w-px h-12" style={{ background: "#2A2A2A" }} />
-        <div>
-          <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: "#888" }}>CPR</p>
-          <p className="text-lg font-bold" style={{ color: "#FE2C55" }}>{cpr > 0 ? fmt(cpr) : "—"}</p>
-        </div>
-        <div className="ml-auto rounded border p-3 max-w-xs" style={{ borderColor: "rgba(254,44,85,.3)" }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#FE2C55" }}>Situação</p>
-          <p className="text-[12px] leading-relaxed" style={{ color: "#888" }}>
-            CPR de {fmt(cpr)} para produto de R${TICKET}. Margem bruta: {fmt(TICKET - cpr)}/venda. Funil só fecha com upsell.
-          </p>
+      <div>
+        <h2 className="text-base font-semibold mb-3">Diagnóstico do Funil</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <FunilCard label="Custo por View Página" meta={metaCplv} real={cplv} metaLbl="4% ticket" icon={TrendingUp} sem={lpv === 0} />
+          <FunilCard label="Custo por Finalização" meta={metaCpfc} real={cpfc} metaLbl="23% ticket" icon={TrendingUp} sem={fc === 0} />
+          <FunilCard label="Custo por Venda" meta={metaCpr} real={cpr} metaLbl="45% ticket" icon={TrendingUp} sem={vendas === 0} />
         </div>
       </div>
 
-      {/* TABELA */}
-      <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#888" }}>
-        Análise de Criativos — Retenção 25% vs Engajamento 95% (meta: ≥{GANCHO_META}% / ≥{CTA_META}%)
-      </p>
-      <div className="overflow-x-auto rounded-lg border mb-6" style={{ borderColor: "#2A2A2A" }}>
-        <table className="w-full" style={{ borderCollapse: "collapse", background: "#111111", fontSize: 11 }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid #2A2A2A" }}>
-              {["Anúncio", "Gasto", "Impressões", "P25", "P95", "Ret 25%", "", "Eng 95%", "", "CPR", "ROAS", "Diagnóstico"].map((h, i) => (
-                <th key={i} className="px-3 py-2 text-left whitespace-nowrap"
-                  style={{ color: "#888", fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ads.map((ad) => {
-              const isTop = bestAd && ad.ad_id === bestAd.ad_id
-              const gc = ad.ganchoSt === "ok" ? "#00C853" : ad.ganchoSt === "warn" ? "#FFD700" : "#FE2C55"
-              const cc = ad.ctaSt === "ok" ? "#00C853" : ad.ctaSt === "warn" ? "#FFD700" : "#FE2C55"
-              return (
-                <tr key={ad.ad_id} style={{ borderBottom: "1px solid #2A2A2A", background: isTop ? "rgba(37,244,238,0.03)" : undefined }}>
-                  <td className="px-3 py-2 font-medium" style={{ maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: isTop ? "#25F4EE" : "#F5F5F5" }}>
-                    {isTop ? "⭐ " : ""}{ad.ad_name.replace(/^AD\d+\s*[-–]\s*/i, "").slice(0, 34)}
-                  </td>
-                  <td className="px-3 py-2">{fmt(ad.spent)}</td>
-                  <td className="px-3 py-2">{ad.imp.toLocaleString("pt-BR")}</td>
-                  <td className="px-3 py-2">{ad.p25.toLocaleString("pt-BR")}</td>
-                  <td className="px-3 py-2">{ad.p95.toLocaleString("pt-BR")}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <Bar pct={(ad.gancho / GANCHO_META) * 100} color={gc} />
-                    <span style={{ color: gc }}>{fmtPct(ad.gancho)}</span>
-                  </td>
-                  <td className="px-3 py-2"><Badge cls={ad.ganchoSt}>{ad.ganchoSt === "ok" ? "OK" : ad.ganchoSt === "warn" ? "Quase" : "Ruim"}</Badge></td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <Bar pct={(ad.ctaPct / CTA_META) * 100} color={cc} />
-                    <span style={{ color: cc }}>{fmtPct(ad.ctaPct)}</span>
-                  </td>
-                  <td className="px-3 py-2"><Badge cls={ad.ctaSt}>{ad.ctaSt === "ok" ? "OK" : ad.ctaSt === "warn" ? "Quase" : "Ruim"}</Badge></td>
-                  <td className="px-3 py-2" style={{ color: ad.cprAd > metaCpr ? "#FE2C55" : "#00C853" }}>
-                    {ad.cprAd > 0 ? fmt(ad.cprAd) : "—"}
-                  </td>
-                  <td className="px-3 py-2" style={{ color: ad.roasAd >= 2.22 ? "#00C853" : ad.roasAd >= 1.5 ? "#FFD700" : "#FE2C55" }}>
-                    {ad.roasAd > 0 ? fmtRoas(ad.roasAd) : "—"}
-                  </td>
-                  <td className="px-3 py-2"><Badge cls={ad.diag.cls}>{ad.diag.label}</Badge></td>
+      {/* TABELA CRIATIVOS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Criativos — Retenção 25%
+            <span className="ml-1 text-sm font-normal text-muted-foreground">(meta ≥{GANCHO_META}%)</span>
+            {" "}vs Engajamento 95%
+            <span className="ml-1 text-sm font-normal text-muted-foreground">(meta ≥{CTA_META}%)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 border-y">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Anúncio</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Gasto</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden md:table-cell">Impressões</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Ret 25%</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Eng 95%</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden lg:table-cell">CPR</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden lg:table-cell">ROAS</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Diagnóstico</th>
                 </tr>
-              )
-            })}
-            {ads.length === 0 && (
-              <tr><td colSpan={12} className="px-3 py-6 text-center" style={{ color: "#888" }}>Nenhum anúncio encontrado no período</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {ads.map((ad) => {
+                  const isTop = bestAd && ad.ad_id === bestAd.ad_id
+                  return (
+                    <tr key={ad.ad_id} className={`hover:bg-muted/30 transition-colors ${isTop ? "bg-green-500/5" : ""}`}>
+                      <td className="px-4 py-3">
+                        <div className="font-medium max-w-[200px] truncate">
+                          {isTop && <span className="text-green-600 mr-1">★</span>}
+                          {ad.ad_name.replace(/^AD\d+\s*[-–]\s*/i, "").slice(0, 40)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-medium">{fmt(ad.spent)}</td>
+                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{ad.imp.toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-3"><BarPct pct={ad.gancho} meta={GANCHO_META} /></td>
+                      <td className="px-4 py-3"><BarPct pct={ad.ctaPct} meta={CTA_META} /></td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <span className={ad.cprAd > metaCpr ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
+                          {ad.cprAd > 0 ? fmt(ad.cprAd) : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <span className={`font-medium ${ad.roasAd >= 2.22 ? "text-green-600" : ad.roasAd >= 1.5 ? "text-yellow-600" : "text-red-500"}`}>
+                          {ad.roasAd > 0 ? `${ad.roasAd.toFixed(2)}x` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${ad.diagCls}`}>
+                          {ad.diagLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+                {ads.length === 0 && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Nenhum anúncio encontrado no período</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* CONCLUSÃO */}
-      <div className="rounded border p-4" style={{ borderColor: "rgba(254,44,85,.4)", background: "rgba(254,44,85,.04)" }}>
-        <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "#FE2C55" }}>Conclusão Direta</p>
-        <p className="text-[12px] leading-relaxed" style={{ color: "#888" }}>
-          <strong style={{ color: "#F5F5F5" }}>Dados ao vivo · CA EXP D BKP · Meta Ads API.</strong>{" "}
-          {ads.length} criativos · {fmt(spend)} investidos · {vendas} vendas · ROAS {fmtRoas(roas)}.{" "}
-          {bestAd && <>Melhor criativo: <strong style={{ color: "#25F4EE" }}>{bestAd.ad_name.slice(0, 40)}</strong> com ROAS {fmtRoas(bestAd.roasAd)}. </>}
-          Sem corrigir criativos e página, escalar só amplia o prejuízo.
-        </p>
-      </div>
+      <Card className="border-orange-500/30 bg-orange-500/5">
+        <CardContent className="pt-6">
+          <p className="text-sm font-semibold text-orange-600 mb-2">Conclusão do Período</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">{ads.length} criativos analisados</strong> · {fmt(spend)} investidos · {vendas} vendas · ROAS {roas.toFixed(2)}x.{" "}
+            {bestAd && <>Melhor criativo: <strong className="text-foreground">{bestAd.ad_name.slice(0, 45)}</strong> com ROAS {bestAd.roasAd.toFixed(2)}x. </>}
+            {roas < 2.22 && "Sem corrigir criativos e página de vendas, escalar só amplifica o prejuízo."}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
