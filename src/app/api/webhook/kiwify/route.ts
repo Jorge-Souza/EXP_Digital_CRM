@@ -30,33 +30,62 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
-  const event = payload.event as string
 
-  if (event === "purchase.approved") {
+  // Kiwify uses order.order_status to indicate event type,
+  // but also sends an event field with values like "purchase_approved" (underscore)
+  const order = payload.order as Record<string, unknown> | undefined
+  const orderStatus = order?.order_status as string | undefined
+  const eventField = (payload.event ?? payload.webhook_event ?? "") as string
+
+  // Normalize to our internal event names
+  const isPurchaseApproved =
+    orderStatus === "paid" ||
+    eventField === "purchase.approved" ||
+    eventField === "purchase_approved"
+
+  const isRefunded =
+    orderStatus === "refunded" ||
+    eventField === "purchase.refunded" ||
+    eventField === "purchase_refunded"
+
+  const isChargeback =
+    orderStatus === "chargedback" ||
+    eventField === "purchase.chargeback" ||
+    eventField === "purchase_chargeback"
+
+  const isAbandonedCart =
+    eventField === "abandoned_cart" ||
+    eventField === "cart.abandoned" ||
+    payload.abandoned_cart != null
+
+  console.log("[kiwify webhook]", JSON.stringify({ event: eventField, orderStatus, keys: Object.keys(payload) }))
+
+  if (isPurchaseApproved) {
     const order = payload.order as Record<string, unknown>
-    const customer = payload.customer as Record<string, unknown>
-    const product = payload.product as Record<string, unknown>
+    const customer = (payload.customer ?? payload.Customer) as Record<string, unknown>
+    const product = (payload.product ?? payload.Product) as Record<string, unknown>
     const tracking = payload.tracking as Record<string, unknown> | undefined
 
     const email = customer?.email as string
     const nome = customer?.full_name as string
     const telefone = customer?.phone as string | undefined
     const kiwifyCustomerId = customer?.id as string | undefined
-    const kiwifyOrderId = order?.id as string
+    const kiwifyOrderId = (order?.id ?? order?.order_id) as string
 
-    // Valores financeiros (Kiwify envia em centavos)
-    const valorBruto = Number(order?.amount ?? 0) / 100
-    const valorLiquido = order?.net_amount != null ? Number(order.net_amount) / 100 : null
-    const taxaGateway = order?.gateway_fee != null ? Number(order.gateway_fee) / 100 : null
-    const valorAfiliado = order?.affiliate_value != null ? Number(order.affiliate_value) / 100 : null
-    const imposto = order?.tax_value != null ? Number(order.tax_value) / 100 : null
+    // Valores financeiros — Kiwify sends amounts already in BRL (not cents)
+    const rawAmount = order?.amount ?? order?.order_amount ?? order?.product_price ?? 0
+    const valorBruto = Number(rawAmount)
+    const valorLiquido = order?.net_amount != null ? Number(order.net_amount) : null
+    const taxaGateway = order?.gateway_fee != null ? Number(order.gateway_fee) : null
+    const valorAfiliado = order?.affiliate_value != null ? Number(order.affiliate_value) : null
+    const imposto = order?.tax_value != null ? Number(order.tax_value) : null
     const paymentMethod = order?.payment_method as string | undefined
     const paymentApprovedAt = order?.approved_date as string | undefined
 
     const utmSource = tracking?.utm_source as string | undefined
     const utmMedium = tracking?.utm_medium as string | undefined
 
-    const kiwifyProductId = product?.id as string
+    const kiwifyProductId = (product?.id ?? product?.product_id) as string
 
     // Upsert aluno
     const { data: aluno, error: alunoErr } = await supabase
@@ -113,22 +142,22 @@ export async function POST(req: NextRequest) {
     await supabase.from("alunos").update({ etapa, updated_at: new Date().toISOString() }).eq("id", aluno.id)
   }
 
-  if (event === "purchase.refunded" || event === "purchase.chargeback") {
+  if (isRefunded || isChargeback) {
     const order = payload.order as Record<string, unknown>
-    const kiwifyOrderId = order?.id as string
-    const newStatus = event === "purchase.chargeback" ? "chargeback" : "reembolsado"
+    const kiwifyOrderId = (order?.id ?? order?.order_id) as string
+    const newStatus = isChargeback ? "chargeback" : "reembolsado"
 
     await supabase.from("compras_alunos").update({ status: newStatus }).eq("kiwify_order_id", kiwifyOrderId)
   }
 
-  if (event === "abandoned_cart") {
+  if (isAbandonedCart) {
     const customer = payload.customer as Record<string, unknown>
     const product = payload.product as Record<string, unknown>
     const checkoutId = (payload.checkout as Record<string, unknown>)?.id as string | undefined
 
     const email = customer?.email as string
     const nome = (customer?.full_name as string) ?? email
-    const kiwifyProductId = product?.id as string
+    const kiwifyProductId = (product?.id ?? product?.product_id) as string
 
     const { data: aluno } = await supabase
       .from("alunos")
