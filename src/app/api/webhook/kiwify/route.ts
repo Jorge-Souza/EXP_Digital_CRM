@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import crypto from "crypto"
 import type { AlunoEtapa } from "@/lib/types"
-
-// Kiwify signature verification — TODO: implement when Kiwify documents exact HMAC input
-function verifyToken(_req: NextRequest, _body: string): boolean {
-  return true
-}
 
 function computeEtapa(tipos: string[]): AlunoEtapa {
   if (tipos.includes("mentoria")) return "avancado"
@@ -18,79 +12,78 @@ function computeEtapa(tipos: string[]): AlunoEtapa {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
-  if (!verifyToken(req, rawBody)) {
-    return NextResponse.json({ error: "Token inválido" }, { status: 401 })
-  }
-
-  let payload: Record<string, unknown>
+  let p: Record<string, unknown>
   try {
-    payload = JSON.parse(rawBody)
+    p = JSON.parse(rawBody)
   } catch {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 })
   }
 
-  const supabase = createAdminClient()
+  // Kiwify payload is flat — all fields at root level
+  // event field is empty; status field determines the event type
+  const status = (p.status ?? p.order_status ?? "") as string
+  const eventField = (p.event ?? p.webhook_event ?? p.type ?? "") as string
 
-  // Kiwify uses order.order_status to indicate event type,
-  // but also sends an event field with values like "purchase_approved" (underscore)
-  const order = payload.order as Record<string, unknown> | undefined
-  const orderStatus = order?.order_status as string | undefined
-  const eventField = (payload.event ?? payload.webhook_event ?? "") as string
-
-  // Normalize to our internal event names
   const isPurchaseApproved =
-    orderStatus === "paid" ||
-    eventField === "purchase.approved" ||
-    eventField === "purchase_approved"
+    status === "paid" || status === "active" ||
+    eventField === "purchase.approved" || eventField === "purchase_approved"
 
   const isRefunded =
-    orderStatus === "refunded" ||
-    eventField === "purchase.refunded" ||
-    eventField === "purchase_refunded"
+    status === "refunded" ||
+    eventField === "purchase.refunded" || eventField === "purchase_refunded"
 
   const isChargeback =
-    orderStatus === "chargedback" ||
-    eventField === "purchase.chargeback" ||
-    eventField === "purchase_chargeback"
+    status === "chargedback" || status === "chargeback" ||
+    eventField === "purchase.chargeback" || eventField === "purchase_chargeback"
 
   const isAbandonedCart =
-    eventField === "abandoned_cart" ||
-    eventField === "cart.abandoned" ||
-    payload.abandoned_cart != null
+    eventField === "abandoned_cart" || eventField === "cart.abandoned" ||
+    p.abandoned_cart != null || status === "abandoned"
 
-  console.log("[kiwify webhook]", JSON.stringify({ event: eventField, orderStatus, keys: Object.keys(payload) }))
+  console.log("[kiwify webhook]", JSON.stringify({
+    status,
+    event: eventField,
+    isPurchaseApproved,
+    isRefunded,
+    isChargeback,
+    isAbandonedCart,
+    keys: Object.keys(p),
+  }))
+
+  const supabase = createAdminClient()
 
   if (isPurchaseApproved) {
-    const order = payload.order as Record<string, unknown>
-    const customer = (payload.customer ?? payload.Customer) as Record<string, unknown>
-    const product = (payload.product ?? payload.Product) as Record<string, unknown>
-    const tracking = payload.tracking as Record<string, unknown> | undefined
+    // Flat payload fields
+    const email = (p.email ?? p.customer_email) as string
+    const nome = (p.name ?? p.full_name ?? p.first_name ?? email) as string
+    const telefone = (p.phone ?? p.customer_phone) as string | undefined
+    const kiwifyCustomerId = (p.id ?? p.customer_id) as string | undefined
+    const kiwifyOrderId = (p.order_id ?? p.transaction_id ?? p.id) as string
+    const kiwifyProductId = (p.product_id) as string
 
-    const email = customer?.email as string
-    const nome = customer?.full_name as string
-    const telefone = customer?.phone as string | undefined
-    const kiwifyCustomerId = customer?.id as string | undefined
-    const kiwifyOrderId = (order?.id ?? order?.order_id) as string
+    const valorBruto = Number(p.product_price ?? p.amount ?? p.value ?? 0)
+    const valorLiquido = p.net_amount != null ? Number(p.net_amount) : null
+    const taxaGateway = p.gateway_fee != null ? Number(p.gateway_fee) : null
+    const valorAfiliado = p.affiliate_value != null ? Number(p.affiliate_value) : null
+    const imposto = p.tax_value != null ? Number(p.tax_value) : null
+    const paymentMethod = (p.payment_method ?? p.payment_type) as string | undefined
+    const utmSource = (p.utm_source ?? p.src) as string | undefined
+    const utmMedium = p.utm_medium as string | undefined
 
-    // Valores financeiros — Kiwify sends amounts already in BRL (not cents)
-    const rawAmount = order?.amount ?? order?.order_amount ?? order?.product_price ?? 0
-    const valorBruto = Number(rawAmount)
-    const valorLiquido = order?.net_amount != null ? Number(order.net_amount) : null
-    const taxaGateway = order?.gateway_fee != null ? Number(order.gateway_fee) : null
-    const valorAfiliado = order?.affiliate_value != null ? Number(order.affiliate_value) : null
-    const imposto = order?.tax_value != null ? Number(order.tax_value) : null
-    const paymentMethod = order?.payment_method as string | undefined
-    const paymentApprovedAt = order?.approved_date as string | undefined
+    if (!email) {
+      console.error("[kiwify webhook] missing email in payload")
+      return NextResponse.json({ ok: true })
+    }
 
-    const utmSource = tracking?.utm_source as string | undefined
-    const utmMedium = tracking?.utm_medium as string | undefined
-
-    const kiwifyProductId = (product?.id ?? product?.product_id) as string
-
-    // Upsert aluno
     const { data: aluno, error: alunoErr } = await supabase
       .from("alunos")
-      .upsert({ nome, email, telefone: telefone ?? null, kiwify_customer_id: kiwifyCustomerId ?? null, updated_at: new Date().toISOString() }, { onConflict: "email" })
+      .upsert({
+        nome,
+        email,
+        telefone: telefone ?? null,
+        kiwify_customer_id: kiwifyCustomerId ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "email" })
       .select("id")
       .single()
 
@@ -99,14 +92,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Erro ao salvar aluno" }, { status: 500 })
     }
 
-    // Buscar produto pelo kiwify_product_id
     const { data: produtoRow } = await supabase
       .from("produtos_tiktok")
       .select("id, tipo")
       .eq("kiwify_product_id", kiwifyProductId)
       .single()
 
-    // Registrar compra com todos os campos financeiros
     await supabase.from("compras_alunos").upsert({
       aluno_id: aluno.id,
       produto_id: produtoRow?.id ?? null,
@@ -119,13 +110,11 @@ export async function POST(req: NextRequest) {
       valor_afiliado: valorAfiliado,
       imposto: imposto,
       payment_method: paymentMethod ?? null,
-      payment_approved_at: paymentApprovedAt ?? null,
       utm_source: utmSource ?? null,
       utm_medium: utmMedium ?? null,
       data_compra: new Date().toISOString(),
     }, { onConflict: "kiwify_order_id" })
 
-    // Recalcular etapa
     const { data: compras } = await supabase
       .from("compras_alunos")
       .select("produto_id, produtos_tiktok(tipo)")
@@ -143,41 +132,40 @@ export async function POST(req: NextRequest) {
   }
 
   if (isRefunded || isChargeback) {
-    const order = payload.order as Record<string, unknown>
-    const kiwifyOrderId = (order?.id ?? order?.order_id) as string
+    const kiwifyOrderId = (p.order_id ?? p.transaction_id) as string
     const newStatus = isChargeback ? "chargeback" : "reembolsado"
-
-    await supabase.from("compras_alunos").update({ status: newStatus }).eq("kiwify_order_id", kiwifyOrderId)
+    if (kiwifyOrderId) {
+      await supabase.from("compras_alunos").update({ status: newStatus }).eq("kiwify_order_id", kiwifyOrderId)
+    }
   }
 
   if (isAbandonedCart) {
-    const customer = payload.customer as Record<string, unknown>
-    const product = payload.product as Record<string, unknown>
-    const checkoutId = (payload.checkout as Record<string, unknown>)?.id as string | undefined
+    const email = (p.email ?? p.customer_email) as string
+    const nome = (p.name ?? p.full_name ?? p.first_name ?? email) as string
+    const kiwifyProductId = p.product_id as string
+    const checkoutId = (p.checkout_id ?? p.id) as string | undefined
 
-    const email = customer?.email as string
-    const nome = (customer?.full_name as string) ?? email
-    const kiwifyProductId = (product?.id ?? product?.product_id) as string
-
-    const { data: aluno } = await supabase
-      .from("alunos")
-      .upsert({ nome, email, updated_at: new Date().toISOString() }, { onConflict: "email" })
-      .select("id")
-      .single()
-
-    if (aluno) {
-      const { data: produtoRow } = await supabase
-        .from("produtos_tiktok")
+    if (email) {
+      const { data: aluno } = await supabase
+        .from("alunos")
+        .upsert({ nome, email, updated_at: new Date().toISOString() }, { onConflict: "email" })
         .select("id")
-        .eq("kiwify_product_id", kiwifyProductId)
         .single()
 
-      await supabase.from("carrinhos_abandonados").insert({
-        aluno_id: aluno.id,
-        produto_id: produtoRow?.id ?? null,
-        kiwify_checkout_id: checkoutId ?? null,
-        data_abandono: new Date().toISOString(),
-      })
+      if (aluno) {
+        const { data: produtoRow } = await supabase
+          .from("produtos_tiktok")
+          .select("id")
+          .eq("kiwify_product_id", kiwifyProductId)
+          .single()
+
+        await supabase.from("carrinhos_abandonados").insert({
+          aluno_id: aluno.id,
+          produto_id: produtoRow?.id ?? null,
+          kiwify_checkout_id: checkoutId ?? null,
+          data_abandono: new Date().toISOString(),
+        })
+      }
     }
   }
 
