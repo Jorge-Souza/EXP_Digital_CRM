@@ -3,11 +3,32 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import crypto from "crypto"
 import type { AlunoEtapa } from "@/lib/types"
 
-function verifySignature(body: string, signature: string | null): boolean {
+function verifyToken(req: NextRequest, body: string): boolean {
   const secret = process.env.KIWIFY_WEBHOOK_SECRET
-  if (!secret || !signature) return false
-  const expected = crypto.createHmac("sha256", secret).update(body).digest("hex")
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+  if (!secret) return true // sem secret configurado, aceita tudo
+
+  // Kiwify envia o token como query param ?token=xxx
+  const urlToken = req.nextUrl.searchParams.get("token")
+  if (urlToken) {
+    return crypto.timingSafeEqual(Buffer.from(urlToken), Buffer.from(secret))
+  }
+
+  // Fallback: HMAC-SHA1 no header X-Kiwify-Signature (documentação legada)
+  const signature = req.headers.get("X-Kiwify-Signature")
+  if (signature) {
+    const expected = crypto.createHmac("sha1", secret).update(body).digest("hex")
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+  }
+
+  // Fallback: token no body JSON
+  try {
+    const parsed = JSON.parse(body)
+    if (parsed.token) {
+      return crypto.timingSafeEqual(Buffer.from(parsed.token as string), Buffer.from(secret))
+    }
+  } catch { /* ignore */ }
+
+  return false
 }
 
 function computeEtapa(tipos: string[]): AlunoEtapa {
@@ -19,10 +40,9 @@ function computeEtapa(tipos: string[]): AlunoEtapa {
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
-  const signature = req.headers.get("X-Kiwify-Signature")
 
-  if (!verifySignature(rawBody, signature)) {
-    return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 })
+  if (!verifyToken(req, rawBody)) {
+    return NextResponse.json({ error: "Token inválido" }, { status: 401 })
   }
 
   let payload: Record<string, unknown>
