@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Users, ShoppingBag } from "lucide-react"
 import { HubLogoutButton } from "@/components/hub-logout-button"
 
+export const dynamic = "force-dynamic"
+
 export default async function HubPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
