@@ -142,13 +142,14 @@ export async function POST(req: NextRequest) {
   if (isAbandonedCart) {
     const email = (p.email ?? p.customer_email) as string
     const nome = (p.name ?? p.full_name ?? p.first_name ?? email) as string
+    const telefone = (p.phone ?? p.customer_phone) as string | undefined
     const kiwifyProductId = p.product_id as string
     const checkoutId = (p.checkout_id ?? p.id) as string | undefined
 
     if (email) {
       const { data: aluno } = await supabase
         .from("alunos")
-        .upsert({ nome, email, updated_at: new Date().toISOString() }, { onConflict: "email" })
+        .upsert({ nome, email, telefone: telefone ?? null, updated_at: new Date().toISOString() }, { onConflict: "email" })
         .select("id")
         .single()
 
