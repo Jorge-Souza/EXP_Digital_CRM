@@ -35,7 +35,8 @@ export default async function CarrinhosAbandonadosPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  const { data: isVendas } = await supabase.rpc("current_user_is_vendas")
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   const admin = createAdminClient()
   const { data: carrinhos } = await admin

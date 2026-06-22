@@ -86,7 +86,7 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const admin = createAdminClient()
   const { data } = await admin.from("habilitacoes").select("*").eq("id", id).maybeSingle()

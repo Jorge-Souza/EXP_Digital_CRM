@@ -26,11 +26,13 @@ interface UsuariosViewProps {
 const roleLabel: Record<string, string> = {
   admin: "Admin",
   profissional: "Profissional",
+  vendas: "Vendas",
 }
 
 const roleBadge: Record<string, string> = {
   admin: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   profissional: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  vendas: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
 }
 
 const formVazio = { nome: "", email: "", senha: "", role: "profissional", telefone: "", endereco: "", data_admissao: "" }
@@ -224,6 +226,7 @@ export function UsuariosView({ usuarios: inicial }: UsuariosViewProps) {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="profissional">Profissional</SelectItem>
+                    <SelectItem value="vendas">Vendas</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>

@@ -29,7 +29,8 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  const { data: isVendas } = await supabase.rpc("current_user_is_vendas")
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   const params = await searchParams
   const admin = createAdminClient()

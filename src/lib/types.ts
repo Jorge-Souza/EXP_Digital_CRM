@@ -43,7 +43,7 @@ export type ClientAds = 'meta_ads' | 'google_ads' | 'meta_google' | 'tiktok_ads'
 export type PostStatus = 'planejado' | 'a_fazer' | 'falta_insumo' | 'producao' | 'aprovado_design' | 'aprovado' | 'agendado' | 'publicado'
 export type PostType = 'feed' | 'reels' | 'story' | 'tiktok' | 'carrossel'
 export type PostPlatform = 'instagram' | 'tiktok' | 'ambos'
-export type UserRole = 'admin' | 'profissional'
+export type UserRole = 'admin' | 'profissional' | 'vendas'
 
 export interface Client {
   id: string

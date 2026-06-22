@@ -72,7 +72,7 @@ export default async function VendasPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const params = await searchParams
   const today = new Date()

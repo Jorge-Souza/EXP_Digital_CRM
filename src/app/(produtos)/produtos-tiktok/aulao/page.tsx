@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { FaqAccordion } from "./faq-accordion"
 
 const S = {
@@ -103,7 +105,14 @@ function ScriptBlock({ step, fala, desc }: { step: string; fala: string; desc: s
   )
 }
 
-export default function AulaoPage() {
+export default async function AulaoPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
+
   return (
     <div style={{ background: S.black, color: S.white, fontFamily: "Inter, sans-serif", fontSize: 16, lineHeight: 1.65, margin: "-24px", minHeight: "100vh" }}>
 

@@ -40,11 +40,15 @@ const navItems = [
 interface ProdutosSidebarProps {
   userEmail?: string
   userName?: string
+  isVendas?: boolean
 }
 
-export function ProdutosSidebar({ userEmail, userName }: ProdutosSidebarProps) {
+const VENDAS_ALLOWED_URLS = ["/produtos-tiktok/alunos", "/produtos-tiktok/carrinhos-abandonados"]
+
+export function ProdutosSidebar({ userEmail, userName, isVendas }: ProdutosSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const items = isVendas ? navItems.filter(item => VENDAS_ALLOWED_URLS.includes(item.url)) : navItems
 
   const initials = userName
     ? userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -89,7 +93,7 @@ export function ProdutosSidebar({ userEmail, userName }: ProdutosSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     render={<Link href={item.url} />}

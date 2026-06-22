@@ -9,9 +9,12 @@ export type Demanda = {
   id: string
   titulo: string
   descricao: string | null
-  status: "a_fazer" | "em_andamento" | "concluido"
+  tipo: "tarefa" | "agenda" | "demanda"
+  status: "a_fazer" | "em_andamento" | "fazer_reuniao" | "reuniao_feita" | "pagamento_feito"
   prioridade: "baixa" | "media" | "alta"
   data_prazo: string | null
+  hora_prazo: string | null
+  valor: number | null
   created_at: string
 }
 
@@ -20,7 +23,7 @@ export default async function DemandasPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const admin = createAdminClient()
   const { data: demandas } = await admin

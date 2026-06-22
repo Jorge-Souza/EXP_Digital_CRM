@@ -18,10 +18,12 @@ export default async function AppLayout({
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: adminData }, { data: clientsData }] = await Promise.all([
-    supabase.from("profiles").select("nome").eq("id", user.id).single(),
+    supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
     supabase.rpc("current_user_is_admin"),
     supabase.from("clients").select("id, nome, status, avatar_emoji, cor").order("nome"),
   ])
+
+  if (profile?.role === "vendas") redirect("/produtos-tiktok/alunos")
 
   const isAdmin = adminData === true
   const clients = (clientsData ?? []).map((c) => ({

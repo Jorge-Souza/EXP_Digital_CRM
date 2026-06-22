@@ -44,7 +44,8 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  const { data: isVendas } = await supabase.rpc("current_user_is_vendas")
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   const { id } = await params
   const admin = createAdminClient()
