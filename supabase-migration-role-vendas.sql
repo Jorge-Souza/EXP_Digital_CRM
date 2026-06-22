@@ -13,6 +13,7 @@ BEGIN
   END IF;
 END $$;
 
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('admin', 'profissional', 'vendas'));
 
 CREATE OR REPLACE FUNCTION public.current_user_is_vendas()
@@ -21,8 +22,17 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
 $$;
 GRANT EXECUTE ON FUNCTION public.current_user_is_vendas() TO authenticated;
 
+DROP POLICY IF EXISTS "vendas_select" ON alunos;
 CREATE POLICY "vendas_select" ON alunos FOR SELECT USING (current_user_is_vendas());
+
+DROP POLICY IF EXISTS "vendas_select_carrinhos" ON carrinhos_abandonados;
 CREATE POLICY "vendas_select_carrinhos" ON carrinhos_abandonados FOR SELECT USING (current_user_is_vendas());
+
+DROP POLICY IF EXISTS "vendas_update_carrinhos" ON carrinhos_abandonados;
 CREATE POLICY "vendas_update_carrinhos" ON carrinhos_abandonados FOR UPDATE USING (current_user_is_vendas());
+
+DROP POLICY IF EXISTS "vendas_select_interacoes" ON interacoes_carrinho;
 CREATE POLICY "vendas_select_interacoes" ON interacoes_carrinho FOR SELECT USING (current_user_is_vendas());
+
+DROP POLICY IF EXISTS "vendas_insert_interacoes" ON interacoes_carrinho;
 CREATE POLICY "vendas_insert_interacoes" ON interacoes_carrinho FOR INSERT WITH CHECK (current_user_is_vendas());
