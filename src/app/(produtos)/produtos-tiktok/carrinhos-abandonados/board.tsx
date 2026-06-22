@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   useDroppable, useDraggable, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  ChevronLeft, ChevronRight, Loader2, X, Phone, Mail, Package, Send,
+  ChevronLeft, ChevronRight, Loader2, X, Phone, Mail, Package, Send, Download,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -43,6 +43,34 @@ const CARD_BG: Record<CarrinhoAbandonado["status"], string> = {
   em_contato: "#dbeafe",
   recuperado: "#dcfce7",
   perdido: "#fee2e2",
+}
+
+function csvEscape(value: string) {
+  if (/[",\n;]/.test(value)) return `"${value.replace(/"/g, '""')}"`
+  return value
+}
+
+function exportarCsv(carrinhos: CarrinhoAbandonado[]) {
+  const header = ["Nome", "Email", "Telefone", "Produto", "Data Abandono", "Status", "Próximo Follow-up", "Responsável", "Observações"]
+  const linhas = carrinhos.map(c => [
+    c.alunos?.nome ?? "",
+    c.alunos?.email ?? "",
+    c.alunos?.telefone ?? "",
+    c.produtos_tiktok?.nome ?? "",
+    c.data_abandono.slice(0, 10).split("-").reverse().join("/"),
+    COLUMNS.find(col => col.id === c.status)?.label ?? c.status,
+    c.proximo_followup ? c.proximo_followup.split("-").reverse().join("/") : "",
+    c.responsavel ?? "",
+    c.observacoes ?? "",
+  ])
+  const csv = [header, ...linhas].map(linha => linha.map(v => csvEscape(String(v))).join(";")).join("\n")
+  const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `carrinhos-abandonados-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function diasDesde(dataISO: string) {
@@ -357,9 +385,14 @@ export function CarrinhosBoard({ initialCarrinhos, initialInteracoes }: {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Carrinhos Abandonados</h1>
-        <p className="text-sm text-muted-foreground">Funil de recuperação alimentado automaticamente pela Kiwify</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Carrinhos Abandonados</h1>
+          <p className="text-sm text-muted-foreground">Funil de recuperação alimentado automaticamente pela Kiwify</p>
+        </div>
+        <Button onClick={() => exportarCsv(carrinhos)} size="sm" variant="outline">
+          <Download className="h-4 w-4 mr-1.5" /> Exportar CSV
+        </Button>
       </div>
 
       {/* Kanban */}
