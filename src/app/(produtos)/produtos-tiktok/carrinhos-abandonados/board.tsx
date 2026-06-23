@@ -5,11 +5,11 @@ import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   useDroppable, useDraggable, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
 import {
   ChevronLeft, ChevronRight, Loader2, X, Phone, Mail, Package, Send, Download,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,6 +73,12 @@ function exportarCsv(carrinhos: CarrinhoAbandonado[]) {
   URL.revokeObjectURL(url)
 }
 
+function whatsappUrl(phone: string) {
+  const digits = phone.replace(/\D/g, "")
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`
+  return `https://wa.me/${withCountry}`
+}
+
 function diasDesde(dataISO: string) {
   const dias = Math.floor((Date.now() - new Date(dataISO).getTime()) / 86400000)
   if (dias <= 0) return "hoje"
@@ -83,12 +89,12 @@ function diasDesde(dataISO: string) {
 // ─── Card ─────────────────────────────────────────────────────
 
 function CarrinhoCard({ carrinho, onClick }: { carrinho: CarrinhoAbandonado; onClick: (c: CarrinhoAbandonado) => void }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: carrinho.id })
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: carrinho.id })
 
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), opacity: isDragging ? 0.2 : 1, touchAction: "none" }}
+      style={{ opacity: isDragging ? 0.2 : 1, touchAction: "none" }}
       className="cursor-grab active:cursor-grabbing"
       {...attributes} {...listeners}
     >
@@ -395,35 +401,41 @@ export function CarrinhosBoard({ initialCarrinhos, initialInteracoes }: {
         </Button>
       </div>
 
-      {/* Kanban */}
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {COLUMNS.map(col => (
-            <CarrinhoColumn key={col.id} col={col}
-              carrinhos={carrinhos.filter(c => c.status === col.id)}
-              onCardClick={openEdit} />
-          ))}
-        </div>
-        <DragOverlay dropAnimation={null}>
-          {activeCarrinho ? (
-            <div className="rounded-lg border bg-white p-3 shadow-xl rotate-1 w-56 opacity-95">
-              <p className="text-sm font-semibold text-gray-800">{activeCarrinho.alunos?.nome ?? "Sem nome"}</p>
+      {/* Views */}
+      <Tabs defaultValue="kanban">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsTrigger value="kanban">🗂️ Kanban</TabsTrigger>
+          <TabsTrigger value="lista">📋 Lista de Leads</TabsTrigger>
+          <TabsTrigger value="calendario">📅 Calendário de Follow-up</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kanban" className="mt-4">
+          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {COLUMNS.map(col => (
+                <CarrinhoColumn key={col.id} col={col}
+                  carrinhos={carrinhos.filter(c => c.status === col.id)}
+                  onCardClick={openEdit} />
+              ))}
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+            <DragOverlay dropAnimation={null}>
+              {activeCarrinho ? (
+                <div className="rounded-lg border bg-white p-3 shadow-xl rotate-1 w-56 opacity-95">
+                  <p className="text-sm font-semibold text-gray-800">{activeCarrinho.alunos?.nome ?? "Sem nome"}</p>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </TabsContent>
 
-      {/* Calendário */}
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Calendário de Follow-up</h2>
-        <CalendarioFollowup carrinhos={carrinhos.filter(c => c.proximo_followup)} onCarrinhoClick={openEdit} />
-      </div>
+        <TabsContent value="lista" className="mt-4">
+          <TabelaCarrinhos carrinhos={carrinhos} onCarrinhoClick={openEdit} />
+        </TabsContent>
 
-      {/* Tabela */}
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Tabela</h2>
-        <TabelaCarrinhos carrinhos={carrinhos} onCarrinhoClick={openEdit} />
-      </div>
+        <TabsContent value="calendario" className="mt-4">
+          <CalendarioFollowup carrinhos={carrinhos.filter(c => c.proximo_followup)} onCarrinhoClick={openEdit} />
+        </TabsContent>
+      </Tabs>
 
       {/* Sheet */}
       <Sheet open={sheetOpen} onOpenChange={open => { if (!open) { setSheetOpen(false); setEditing(null) } }}>
@@ -446,6 +458,16 @@ export function CarrinhosBoard({ initialCarrinhos, initialInteracoes }: {
               )}
               {editing?.produtos_tiktok?.nome && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Package className="h-3 w-3" /> {editing.produtos_tiktok.nome}</p>
+              )}
+              {editing?.alunos?.telefone && (
+                <a
+                  href={whatsappUrl(editing.alunos.telefone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-500/15 text-green-600 border border-green-500/30 hover:bg-green-500/25 transition-colors mt-1"
+                >
+                  💬 Falar no WhatsApp
+                </a>
               )}
             </div>
 

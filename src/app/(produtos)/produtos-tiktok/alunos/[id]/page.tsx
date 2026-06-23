@@ -28,6 +28,25 @@ const proximaEtapa: Record<AlunoEtapa, string | null> = {
   avancado: null,
 }
 
+function whatsappUrl(phone: string) {
+  const digits = phone.replace(/\D/g, "")
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`
+  return `https://wa.me/${withCountry}`
+}
+
+function WhatsappButton({ phone }: { phone: string }) {
+  return (
+    <a
+      href={whatsappUrl(phone)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-500/15 text-green-500 border border-green-500/30 hover:bg-green-500/25 transition-colors"
+    >
+      💬 Falar no WhatsApp
+    </a>
+  )
+}
+
 function FormField({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null
   return (
@@ -90,6 +109,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
             {a.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
             ))}
+            {(a.whatsapp || a.telefone) && <WhatsappButton phone={a.whatsapp || a.telefone!} />}
           </div>
         </div>
         <AlunoDetalheActions alunoId={a.id} tags={a.tags} />

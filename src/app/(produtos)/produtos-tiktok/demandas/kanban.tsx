@@ -5,7 +5,6 @@ import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   useDroppable, useDraggable, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
 import {
   Plus, ChevronLeft, ChevronRight, Loader2,
   Circle, AlertCircle, ArrowUp, X, ClipboardList, Calendar, Briefcase,
@@ -74,7 +73,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 // ─── Card ─────────────────────────────────────────────────────
 
 function DemandaCard({ demanda, onClick }: { demanda: Demanda; onClick: (d: Demanda) => void }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: demanda.id })
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: demanda.id })
   const tipo = TIPO_CONFIG[demanda.tipo]
   const prio = PRIORIDADE_CONFIG[demanda.prioridade]
   const PrioIcon = prio.Icon
@@ -83,7 +82,7 @@ function DemandaCard({ demanda, onClick }: { demanda: Demanda; onClick: (d: Dema
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), opacity: isDragging ? 0.2 : 1, touchAction: "none" }}
+      style={{ opacity: isDragging ? 0.2 : 1, touchAction: "none" }}
       className="cursor-grab active:cursor-grabbing"
       {...attributes} {...listeners}
     >
