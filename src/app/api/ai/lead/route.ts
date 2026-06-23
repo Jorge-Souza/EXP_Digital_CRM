@@ -51,7 +51,7 @@ Score comercial: ${aluno.score_comercial}
 Próxima oferta sugerida: ${aluno.proxima_melhor_oferta ?? "nenhuma ainda"}
 
 Compras:
-${(compras ?? []).map(c => `- ${(c.produtos_tiktok as { nome: string } | null)?.nome ?? "produto removido"} (${c.status}) em ${c.data_compra}`).join("\n") || "Nenhuma compra."}
+${(compras ?? []).map(c => `- ${(c.produtos_tiktok as unknown as { nome: string } | null)?.nome ?? "produto removido"} (${c.status}) em ${c.data_compra}`).join("\n") || "Nenhuma compra."}
 
 Histórico de interações (mais recentes primeiro):
 ${(interacoes ?? []).map(i => `- [${i.tipo}] ${i.resumo ?? ""} ${i.proximo_passo ? `(próximo passo: ${i.proximo_passo})` : ""}`).join("\n") || "Nenhuma interação registrada."}
