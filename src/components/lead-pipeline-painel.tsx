@@ -36,14 +36,6 @@ const TIPOS_INTERACAO: Record<string, string> = {
   carrinho_abandonado: "Carrinho Abandonado",
 }
 
-const ACOES_IA: { id: string; label: string }[] = [
-  { id: "resumir", label: "📝 Resumir histórico" },
-  { id: "abordagem_whatsapp", label: "💬 Gerar abordagem WhatsApp" },
-  { id: "identificar_objecao", label: "🚧 Identificar objeção" },
-  { id: "proxima_acao", label: "➡️ Sugerir próxima ação" },
-  { id: "sugerir_produto", label: "🎯 Sugerir produto ideal" },
-]
-
 function sugerirOferta(tipoLead: string | null): string {
   if (tipoLead === "comprador_curso") return "Oferecer SOS TikTok Shop"
   if (tipoLead === "comprador_sos") return "Oferecer Mentoria"
@@ -83,9 +75,6 @@ export function LeadPipelinePainel({
   const [tituloTarefa, setTituloTarefa] = useState("")
   const [dataPrazoTarefa, setDataPrazoTarefa] = useState("")
   const [savingTarefa, setSavingTarefa] = useState(false)
-
-  const [acaoCarregando, setAcaoCarregando] = useState<string | null>(null)
-  const [resultadoIA, setResultadoIA] = useState<{ acao: string; texto: string } | null>(null)
 
   async function handleEtapaChange(novaEtapa: string) {
     setSavingEtapa(true)
@@ -154,25 +143,6 @@ export function LeadPipelinePainel({
     router.refresh()
   }
 
-  async function handleAcaoIA(acao: string) {
-    setAcaoCarregando(acao)
-    setResultadoIA(null)
-    try {
-      const res = await fetch("/api/ai/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alunoId, acao }),
-      })
-      const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? "Erro ao gerar com IA"); return }
-      setResultadoIA({ acao, texto: data.texto })
-    } catch {
-      toast.error("Erro ao chamar a IA")
-    } finally {
-      setAcaoCarregando(null)
-    }
-  }
-
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -221,22 +191,6 @@ export function LeadPipelinePainel({
             {savingOferta ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
             Sugerir próxima oferta
           </Button>
-        </div>
-
-        {/* Ações de IA */}
-        <div className="space-y-2 border-t pt-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ações de IA</p>
-          <div className="flex flex-wrap gap-2">
-            {ACOES_IA.map(acao => (
-              <Button key={acao.id} size="sm" variant="outline" onClick={() => handleAcaoIA(acao.id)} disabled={acaoCarregando !== null}>
-                {acaoCarregando === acao.id ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
-                {acao.label}
-              </Button>
-            ))}
-          </div>
-          {resultadoIA && (
-            <Textarea readOnly value={resultadoIA.texto} rows={6} className="text-sm resize-none mt-2" />
-          )}
         </div>
 
         {/* Interações Comerciais */}
