@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SyncFormulariosButton } from "@/components/sync-formularios-button"
 import { AlunoSearch } from "@/components/aluno-search"
+import { PesquisaCharts } from "@/components/pesquisa-charts"
 import { SCORE_DISPLAY } from "@/lib/form-score"
 import type { Aluno, AlunoEtapa, ScoreLabel } from "@/lib/types"
 
@@ -45,6 +46,10 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
 
   const { data: alunos } = await query
 
+  const { data: respostas } = await admin
+    .from("respostas_formulario")
+    .select("interesse_4500, interesse_297, tipo_venda, faturamento, nichos_que_vende")
+
   const scoreLabels: { value: string; label: string; emoji: string }[] = [
     { value: "quente", label: "Quente", emoji: "🔥" },
     { value: "morno",  label: "Morno",  emoji: "⚡" },
@@ -60,6 +65,8 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
         </div>
         <SyncFormulariosButton />
       </div>
+
+      <PesquisaCharts respostas={respostas ?? []} />
 
       <AlunoSearch />
 
