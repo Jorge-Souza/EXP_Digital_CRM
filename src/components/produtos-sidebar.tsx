@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw } from "lucide-react"
+import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw, Target } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/client"
 const navItems = [
   { title: "Dashboard",     url: "/produtos-tiktok",                   icon: LayoutDashboard, emoji: "📊" },
   { title: "Alunos",        url: "/produtos-tiktok/alunos",            icon: GraduationCap,   emoji: "🎓" },
+  { title: "Pipeline Comercial", url: "/produtos-tiktok/pipeline",     icon: Target,          emoji: "🎯" },
   { title: "Produtos",      url: "/produtos-tiktok/produtos",          icon: Package,         emoji: "📦" },
   { title: "Conteúdo",      url: "/produtos-tiktok/conteudo",          icon: Megaphone,       emoji: "🎬" },
   { title: "Habilitações",  url: "/produtos-tiktok/habilitacoes",      icon: ClipboardList,   emoji: "📋" },
@@ -43,7 +44,7 @@ interface ProdutosSidebarProps {
   isVendas?: boolean
 }
 
-const VENDAS_ALLOWED_URLS = ["/produtos-tiktok/alunos", "/produtos-tiktok/carrinhos-abandonados"]
+const VENDAS_ALLOWED_URLS = ["/produtos-tiktok/alunos", "/produtos-tiktok/carrinhos-abandonados", "/produtos-tiktok/pipeline"]
 
 export function ProdutosSidebar({ userEmail, userName, isVendas }: ProdutosSidebarProps) {
   const pathname = usePathname()

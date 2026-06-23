@@ -190,6 +190,26 @@ export interface CompraAluno {
   produto?: ProdutoTiktok
 }
 
+export interface InteracaoComercial {
+  id: string
+  aluno_id: string
+  tipo: string | null
+  resumo: string | null
+  proximo_passo: string | null
+  data: string
+  profiles: { nome: string } | null
+}
+
+export interface TarefaSdr {
+  id: string
+  aluno_id: string
+  titulo: string
+  descricao: string | null
+  data_prazo: string | null
+  status: "pendente" | "concluida" | "cancelada"
+  responsavel_id: string | null
+}
+
 export interface CarrinhoAbandonado {
   id: string
   aluno_id: string

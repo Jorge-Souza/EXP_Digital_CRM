@@ -9,6 +9,20 @@ function computeEtapa(tipos: string[]): AlunoEtapa {
   return "lead"
 }
 
+function tipoLeadFromProduto(tipo: string | undefined): string | null {
+  if (tipo === "lowticket") return "comprador_curso"
+  if (tipo === "core") return "comprador_sos"
+  if (tipo === "mentoria") return "interessado_mentoria"
+  return null
+}
+
+function ofertaProdutoFromProduto(tipo: string | undefined): string | null {
+  if (tipo === "lowticket") return "curso"
+  if (tipo === "core") return "sos"
+  if (tipo === "mentoria") return "mentoria"
+  return null
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
@@ -82,6 +96,7 @@ export async function POST(req: NextRequest) {
         email,
         telefone: telefone ?? null,
         kiwify_customer_id: kiwifyCustomerId ?? null,
+        origem: "kiwify_compra",
         updated_at: new Date().toISOString(),
       }, { onConflict: "email" })
       .select("id")
@@ -97,6 +112,22 @@ export async function POST(req: NextRequest) {
       .select("id, tipo")
       .eq("kiwify_product_id", kiwifyProductId)
       .single()
+
+    const tipoLead = tipoLeadFromProduto(produtoRow?.tipo)
+    const ofertaProduto = ofertaProdutoFromProduto(produtoRow?.tipo)
+    await supabase.from("alunos").update({
+      etapa_pipeline: "venda",
+      ...(tipoLead ? { tipo_lead: tipoLead } : {}),
+    }).eq("id", aluno.id)
+
+    if (ofertaProduto) {
+      await supabase.from("ofertas").insert({
+        aluno_id: aluno.id,
+        produto_tipo: ofertaProduto,
+        status: "aceita",
+        valor: valorBruto || null,
+      })
+    }
 
     await supabase.from("compras_alunos").upsert({
       aluno_id: aluno.id,
@@ -147,9 +178,17 @@ export async function POST(req: NextRequest) {
     const checkoutId = (p.checkout_id ?? p.id) as string | undefined
 
     if (email) {
+      const { data: existente } = await supabase.from("alunos").select("id").eq("email", email).maybeSingle()
+
       const { data: aluno } = await supabase
         .from("alunos")
-        .upsert({ nome, email, telefone: telefone ?? null, updated_at: new Date().toISOString() }, { onConflict: "email" })
+        .upsert({
+          nome,
+          email,
+          telefone: telefone ?? null,
+          ...(existente ? {} : { origem: "kiwify_carrinho", tipo_lead: "carrinho_abandonado", etapa_pipeline: "nutricao" }),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "email" })
         .select("id")
         .single()
 
