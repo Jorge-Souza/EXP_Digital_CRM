@@ -11,7 +11,7 @@ export default async function HubPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { data: adminData }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: adminData, error: adminError }] = await Promise.all([
     supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
     supabase.rpc("current_user_is_admin"),
   ])
@@ -19,6 +19,7 @@ export default async function HubPage() {
   const isAdmin = adminData === true
   const isVendas = profile?.role === "vendas"
   const nome = profile?.nome ?? user.email
+  const debug = JSON.stringify({ userId: user.id, profile, profileError, adminData, adminError })
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4"
@@ -45,6 +46,7 @@ export default async function HubPage() {
           <p className="text-white/70 text-base pt-2">
             Olá, <span className="text-white font-semibold">{nome}</span> — em qual CRM você quer entrar?
           </p>
+          <p className="text-[10px] text-yellow-400/80 break-all max-w-xl mx-auto">DEBUG: {debug}</p>
         </div>
 
         {/* Cards */}
