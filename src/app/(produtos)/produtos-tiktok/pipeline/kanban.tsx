@@ -6,7 +6,7 @@ import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   useDroppable, useDraggable, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { Plus, Loader2, X, Instagram } from "lucide-react"
+import { Plus, Loader2, X, UserPlus } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -201,7 +201,7 @@ export function PipelineKanban({ initialLeads }: { initialLeads: LeadPipeline[] 
         <SheetContent className="w-full sm:max-w-md flex flex-col p-0">
           <SheetHeader className="px-5 py-4 border-b shrink-0 flex flex-row items-center justify-between">
             <SheetTitle className="text-base font-semibold flex items-center gap-2">
-              <Instagram className="h-4 w-4" /> Novo Lead
+              <UserPlus className="h-4 w-4" /> Novo Lead
             </SheetTitle>
             <button type="button" onClick={() => setSheetOpen(false)} className="p-1 rounded hover:bg-muted">
               <X className="h-4 w-4 text-muted-foreground" />
