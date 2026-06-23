@@ -55,7 +55,7 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Alunos</h1>
+          <h1 className="text-2xl font-bold">Pesquisa de Qualificação</h1>
           <p className="text-sm text-muted-foreground">{alunos?.length ?? 0} alunos · ordenados por score</p>
         </div>
         <SyncFormulariosButton />

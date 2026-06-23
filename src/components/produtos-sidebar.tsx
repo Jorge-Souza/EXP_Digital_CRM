@@ -26,7 +26,7 @@ import { createClient } from "@/lib/supabase/client"
 
 const navItems = [
   { title: "Dashboard",     url: "/produtos-tiktok",                   icon: LayoutDashboard, emoji: "📊" },
-  { title: "Alunos",        url: "/produtos-tiktok/alunos",            icon: GraduationCap,   emoji: "🎓" },
+  { title: "Pesquisa de Qualificação", url: "/produtos-tiktok/alunos", icon: GraduationCap,   emoji: "🎓" },
   { title: "Pipeline Comercial", url: "/produtos-tiktok/pipeline",     icon: Target,          emoji: "🎯" },
   { title: "Produtos",      url: "/produtos-tiktok/produtos",          icon: Package,         emoji: "📦" },
   { title: "Conteúdo",      url: "/produtos-tiktok/conteudo",          icon: Megaphone,       emoji: "🎬" },
