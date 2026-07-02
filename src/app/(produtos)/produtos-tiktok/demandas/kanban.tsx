@@ -7,8 +7,10 @@ import {
 } from "@dnd-kit/core"
 import {
   Plus, ChevronLeft, ChevronRight, Loader2,
-  Circle, AlertCircle, ArrowUp, X, ClipboardList, Calendar, Briefcase,
+  Circle, AlertCircle, ArrowUp, X, ClipboardList, Calendar, Briefcase, GraduationCap,
 } from "lucide-react"
+import Link from "next/link"
+import { buttonVariants } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -377,9 +379,14 @@ export function KanbanBoard({ initialDemandas }: { initialDemandas: Demanda[] })
           <h1 className="text-2xl font-bold">Demandas</h1>
           <p className="text-sm text-muted-foreground">Tarefas, agendas e assessorias</p>
         </div>
-        <Button onClick={() => openNew()} size="sm">
-          <Plus className="h-4 w-4 mr-1.5" /> Nova
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/produtos-tiktok/demandas/mentorias" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <GraduationCap className="h-4 w-4 mr-1.5" /> Mentorias
+          </Link>
+          <Button onClick={() => openNew()} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" /> Nova
+          </Button>
+        </div>
       </div>
 
       {/* Kanban */}

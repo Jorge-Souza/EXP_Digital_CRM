@@ -37,6 +37,26 @@ export interface SessaoAssessoria {
   plano_de_acao: string | null
   created_at: string
 }
+// --- Mentorias (SOS e futuras consultorias avulsas) ---
+export type MentoriaStatus = 'nao_agendada' | 'agendada' | 'executada' | 'cancelada'
+
+export interface Mentoria {
+  id: string
+  tipo: string
+  cliente_nome: string
+  cliente_telefone: string | null
+  cliente_whatsapp: string | null
+  data_sessao: string | null
+  hora_sessao: string | null
+  status: MentoriaStatus
+  valor: number | null
+  pago: boolean
+  local_pagamento: string | null
+  observacoes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type ClientServico = 'social_media' | 'trafego_pago' | 'ambos'
 export type ClientRedeSocial = 'instagram' | 'tiktok' | 'insta_tiktok' | 'youtube' | 'linkedin'
 export type ClientAds = 'meta_ads' | 'google_ads' | 'meta_google' | 'tiktok_ads' | 'ambos'
