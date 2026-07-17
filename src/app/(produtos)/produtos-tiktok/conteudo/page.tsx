@@ -13,15 +13,17 @@ export default async function ConteudoPage() {
 
   const admin = createAdminClient()
 
-  const [{ data: posts }, { data: iniciativas }] = await Promise.all([
+  const [{ data: posts }, { data: iniciativas }, { data: temas }] = await Promise.all([
     admin.from("conteudo_posts").select("*").order("dia").order("horario"),
     admin.from("marketing_iniciativas").select("*").order("created_at", { ascending: false }),
+    admin.from("academy_temas").select("*").order("numero"),
   ])
 
   return (
     <ConteudoMarketing
       posts={(posts ?? []) as Parameters<typeof ConteudoMarketing>[0]["posts"]}
       iniciativas={(iniciativas ?? []) as Parameters<typeof ConteudoMarketing>[0]["iniciativas"]}
+      temas={(temas ?? []) as Parameters<typeof ConteudoMarketing>[0]["temas"]}
     />
   )
 }

@@ -37,6 +37,17 @@ type ConteudoPost = {
   notas: string | null
 }
 
+type TemaAcademy = {
+  id: string
+  numero: number
+  titulo: string
+  descricao: string | null
+  categoria: "preparacao" | "vendas" | "operacao" | "conteudo" | "engajamento"
+  ativo: boolean
+}
+
+type ChecklistItem = { quando: string; label: string; canal: string; feito: boolean }
+
 type Iniciativa = {
   id: string
   titulo: string
@@ -49,6 +60,9 @@ type Iniciativa = {
   meta: string | null
   resultado: string | null
   notas: string | null
+  tema_id: string | null
+  publico: "comunidade_aberta" | "alunos" | "ambos"
+  checklist: ChecklistItem[]
 }
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -99,6 +113,30 @@ const SEMANA_LABEL: Record<number, { titulo: string; sub: string }> = {
   3: { titulo: "Semana 3", sub: "Aprofundar Posicionamento" },
   4: { titulo: "Semana 4", sub: "Converter com Autoridade" },
 }
+
+const CATEGORIA_TEMA: Record<TemaAcademy["categoria"], { label: string; cor: string }> = {
+  preparacao: { label: "Preparação", cor: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
+  vendas:     { label: "Vendas",     cor: "bg-red-500/10 text-red-400 border-red-500/20" },
+  operacao:   { label: "Operação",  cor: "bg-white/5 text-foreground/70 border-border" },
+  conteudo:   { label: "Conteúdo",  cor: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+  engajamento:{ label: "Engajamento", cor: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+}
+
+const PUBLICO_LABEL: Record<Iniciativa["publico"], string> = {
+  comunidade_aberta: "Comunidade aberta",
+  alunos: "Alunos",
+  ambos: "Ambos",
+}
+
+// Fluxo padrão de divulgação de uma live semanal (D-3 até pós-live)
+const CHECKLIST_LIVE_TEMPLATE: ChecklistItem[] = [
+  { quando: "Domingo · D-3",     label: "Teaser no story",                          canal: "Instagram · comunidade aberta",              feito: false },
+  { quando: "Segunda · D-2",     label: "Anúncio oficial",                          canal: "ManyChat broadcast + grupo de alunos",       feito: false },
+  { quando: "Terça · D-1",       label: "Lembrete + reforço de valor",              canal: "ManyChat + story",                           feito: false },
+  { quando: "Quarta · manhã",    label: "\"Hoje tem live\"",                        canal: "ManyChat + grupo de alunos",                 feito: false },
+  { quando: "Quarta · 18h00",    label: "Lembrete final",                           canal: "ManyChat + WhatsApp",                        feito: false },
+  { quando: "Quarta · pós-live", label: "Entrega e reciclagem de conteúdo",         canal: "Grupo de alunos (completo) + Instagram (corte)", feito: false },
+]
 
 // ─── Post Card ───────────────────────────────────────────────────────────────
 
@@ -172,11 +210,19 @@ function PostCard({ post }: { post: ConteudoPost }) {
 
 // ─── Iniciativa Card ─────────────────────────────────────────────────────────
 
-function InicativaCard({ ini, onEdit, onDelete }: { ini: Iniciativa; onEdit: (i: Iniciativa) => void; onDelete: (id: string) => void }) {
-  const st = INIC_STATUS[ini.status]
+function InicativaCard({ ini, temaMap, onEdit, onDelete, onToggleChecklist }: {
+  ini: Iniciativa
+  temaMap: Record<string, TemaAcademy>
+  onEdit: (i: Iniciativa) => void
+  onDelete: (id: string) => void
+  onToggleChecklist: (ini: Iniciativa, index: number) => void
+}) {
   const tipo = INIC_TIPO[ini.tipo]
   const prio = PRIORIDADE[ini.prioridade]
   const Icon = tipo.icon
+  const tema = ini.tema_id ? temaMap[ini.tema_id] : null
+  const checklist = ini.checklist ?? []
+  const checklistFeitos = checklist.filter(c => c.feito).length
 
   return (
     <Card className="overflow-hidden">
@@ -194,15 +240,44 @@ function InicativaCard({ ini, onEdit, onDelete }: { ini: Iniciativa; onEdit: (i:
           </div>
         </div>
         <p className="font-semibold text-sm leading-tight">{ini.titulo}</p>
+        {tema && (
+          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border w-fit ${CATEGORIA_TEMA[tema.categoria].cor}`}>
+            Semana {tema.numero} · {tema.titulo}
+          </span>
+        )}
         {ini.descricao && <p className="text-xs text-muted-foreground leading-relaxed">{ini.descricao}</p>}
         {ini.meta && <div className="text-xs bg-muted/20 rounded p-2 border"><span className="font-medium text-muted-foreground">Meta:</span> {ini.meta}</div>}
         {ini.resultado && <div className="text-xs bg-green-500/5 rounded p-2 border border-green-500/20"><span className="font-medium text-green-400">Resultado:</span> {ini.resultado}</div>}
-        {(ini.data_inicio || ini.data_fim) && (
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            {ini.data_inicio && new Date(ini.data_inicio + "T00:00").toLocaleDateString("pt-BR")}
-            {ini.data_inicio && ini.data_fim && " → "}
-            {ini.data_fim && new Date(ini.data_fim + "T00:00").toLocaleDateString("pt-BR")}
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+          {(ini.data_inicio || ini.data_fim) && (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {ini.data_inicio && new Date(ini.data_inicio + "T00:00").toLocaleDateString("pt-BR")}
+              {ini.data_inicio && ini.data_fim && " → "}
+              {ini.data_fim && new Date(ini.data_fim + "T00:00").toLocaleDateString("pt-BR")}
+            </div>
+          )}
+          <span>{PUBLICO_LABEL[ini.publico]}</span>
+        </div>
+        {checklist.length > 0 && (
+          <div className="space-y-1 pt-1 border-t border-border/50">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pt-1">
+              Divulgação ({checklistFeitos}/{checklist.length})
+            </p>
+            {checklist.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => onToggleChecklist(ini, i)}
+                className="flex items-start gap-2 w-full text-left text-xs group"
+              >
+                <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded border flex items-center justify-center ${item.feito ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                  {item.feito && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                </span>
+                <span className={item.feito ? "line-through text-muted-foreground" : "text-foreground/80 group-hover:text-foreground"}>
+                  <span className="font-medium">{item.quando}</span> — {item.label}
+                </span>
+              </button>
+            ))}
           </div>
         )}
       </CardContent>
@@ -212,20 +287,38 @@ function InicativaCard({ ini, onEdit, onDelete }: { ini: Iniciativa; onEdit: (i:
 
 // ─── Form Iniciativa ──────────────────────────────────────────────────────────
 
-type FormInic = { titulo: string; descricao: string; tipo: string; status: string; prioridade: string; data_inicio: string; data_fim: string; meta: string; resultado: string; notas: string }
-const emptyForm: FormInic = { titulo: "", descricao: "", tipo: "acao", status: "ideia", prioridade: "media", data_inicio: "", data_fim: "", meta: "", resultado: "", notas: "" }
+type FormInic = {
+  titulo: string; descricao: string; tipo: string; status: string; prioridade: string
+  data_inicio: string; data_fim: string; meta: string; resultado: string; notas: string
+  tema_id: string; publico: string; checklist: ChecklistItem[]
+}
+const emptyForm: FormInic = {
+  titulo: "", descricao: "", tipo: "acao", status: "ideia", prioridade: "media",
+  data_inicio: "", data_fim: "", meta: "", resultado: "", notas: "",
+  tema_id: "", publico: "ambos", checklist: [],
+}
 
-function InicativaDialog({ open, onClose, editing }: { open: boolean; onClose: () => void; editing: Iniciativa | null }) {
+function InicativaDialog({ open, onClose, editing, temas }: { open: boolean; onClose: () => void; editing: Iniciativa | null; temas: TemaAcademy[] }) {
   const [form, setForm] = useState<FormInic>(editing ? {
     titulo: editing.titulo, descricao: editing.descricao ?? "", tipo: editing.tipo, status: editing.status,
     prioridade: editing.prioridade, data_inicio: editing.data_inicio ?? "", data_fim: editing.data_fim ?? "",
     meta: editing.meta ?? "", resultado: editing.resultado ?? "", notas: editing.notas ?? "",
+    tema_id: editing.tema_id ?? "", publico: editing.publico, checklist: editing.checklist ?? [],
   } : emptyForm)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })) }
+
+  function setTipo(v: string) {
+    setForm(prev => ({
+      ...prev,
+      tipo: v,
+      // ao virar "live" sem checklist ainda montado, pré-preenche o fluxo padrão de divulgação
+      checklist: v === "live" && prev.checklist.length === 0 ? CHECKLIST_LIVE_TEMPLATE : prev.checklist,
+    }))
+  }
 
   async function save() {
     if (!form.titulo.trim()) { toast.error("Título obrigatório"); return }
@@ -234,6 +327,7 @@ function InicativaDialog({ open, onClose, editing }: { open: boolean; onClose: (
       titulo: form.titulo.trim(), descricao: form.descricao || null, tipo: form.tipo, status: form.status,
       prioridade: form.prioridade, data_inicio: form.data_inicio || null, data_fim: form.data_fim || null,
       meta: form.meta || null, resultado: form.resultado || null, notas: form.notas || null,
+      tema_id: form.tema_id || null, publico: form.publico, checklist: form.checklist,
       updated_at: new Date().toISOString(),
     }
     const { error } = editing
@@ -253,7 +347,7 @@ function InicativaDialog({ open, onClose, editing }: { open: boolean; onClose: (
           <div><Label>Título *</Label><Input value={form.titulo} onChange={e => set("titulo", e.target.value)} placeholder="Ex: Lançamento Protocolo TikTok Shop" /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Tipo</Label>
-              <Select value={form.tipo} onValueChange={v => set("tipo", v ?? "acao")}>
+              <Select value={form.tipo} onValueChange={v => setTipo(v ?? "acao")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(INIC_TIPO).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select>
@@ -271,6 +365,24 @@ function InicativaDialog({ open, onClose, editing }: { open: boolean; onClose: (
               <SelectContent>{Object.entries(INIC_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          {form.tipo === "live" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Tema da semana</Label>
+                <Select value={form.tema_id || null} onValueChange={v => set("tema_id", v ?? "")}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar tema" /></SelectTrigger>
+                  <SelectContent>
+                    {temas.map(t => <SelectItem key={t.id} value={t.id}>Semana {t.numero} · {t.titulo}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Público</Label>
+                <Select value={form.publico} onValueChange={v => set("publico", v ?? "ambos")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(PUBLICO_LABEL).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
           <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={e => set("descricao", e.target.value)} placeholder="O que é essa iniciativa?" className="resize-none h-20" /></div>
           <div><Label>Meta</Label><Input value={form.meta} onChange={e => set("meta", e.target.value)} placeholder="Ex: 50 vendas, 10k visualizações..." /></div>
           <div className="grid grid-cols-2 gap-3">
@@ -291,13 +403,15 @@ function InicativaDialog({ open, onClose, editing }: { open: boolean; onClose: (
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { posts: ConteudoPost[]; iniciativas: Iniciativa[] }) {
+export function ConteudoMarketing({ posts, iniciativas: iniciativasInit, temas }: { posts: ConteudoPost[]; iniciativas: Iniciativa[]; temas: TemaAcademy[] }) {
   const [diaAtivo, setDiaAtivo] = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Iniciativa | null>(null)
   const [iniciativas, setIniciativas] = useState(iniciativasInit)
   const router = useRouter()
   const supabase = createClient()
+
+  const temaMap = Object.fromEntries(temas.map(t => [t.id, t]))
 
   const dias = Array.from(new Set(posts.map(p => p.dia))).sort((a, b) => a - b)
   const postsDia = posts.filter(p => p.dia === diaAtivo)
@@ -316,6 +430,12 @@ export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { pos
     await supabase.from("marketing_iniciativas").delete().eq("id", id)
     setIniciativas(prev => prev.filter(i => i.id !== id))
     toast.success("Removida")
+  }
+
+  async function toggleChecklist(ini: Iniciativa, index: number) {
+    const checklist = ini.checklist.map((item, i) => i === index ? { ...item, feito: !item.feito } : item)
+    setIniciativas(prev => prev.map(i => i.id === ini.id ? { ...i, checklist } : i))
+    await supabase.from("marketing_iniciativas").update({ checklist, updated_at: new Date().toISOString() }).eq("id", ini.id)
   }
 
   function openEdit(ini: Iniciativa) { setEditing(ini); setDialogOpen(true) }
@@ -393,6 +513,22 @@ export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { pos
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1.5" />Nova iniciativa</Button>
           </div>
 
+          {/* Rotação de temas das lives semanais */}
+          {temas.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Rotação de Temas — Live semanal (12 semanas)</CardTitle></CardHeader>
+              <CardContent className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                {temas.map(t => (
+                  <div key={t.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border border-border/50">
+                    <span className="font-mono text-muted-foreground shrink-0">{String(t.numero).padStart(2, "0")}</span>
+                    <span className="flex-1 truncate">{t.titulo}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ${CATEGORIA_TEMA[t.categoria].cor}`}>{CATEGORIA_TEMA[t.categoria].label}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Kanban por status */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {statusCols.map(col => {
@@ -409,7 +545,9 @@ export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { pos
                   {colInics.length === 0 ? (
                     <div className="text-center py-6 text-xs text-muted-foreground/40 border border-dashed rounded-md">vazio</div>
                   ) : (
-                    colInics.map(ini => <InicativaCard key={ini.id} ini={ini} onEdit={openEdit} onDelete={deleteIniciativa} />)
+                    colInics.map(ini => (
+                      <InicativaCard key={ini.id} ini={ini} temaMap={temaMap} onEdit={openEdit} onDelete={deleteIniciativa} onToggleChecklist={toggleChecklist} />
+                    ))
                   )}
                 </div>
               )
@@ -422,7 +560,7 @@ export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { pos
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pausados</p>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {iniciativas.filter(i => i.status === "pausado").map(ini => (
-                  <InicativaCard key={ini.id} ini={ini} onEdit={openEdit} onDelete={deleteIniciativa} />
+                  <InicativaCard key={ini.id} ini={ini} temaMap={temaMap} onEdit={openEdit} onDelete={deleteIniciativa} onToggleChecklist={toggleChecklist} />
                 ))}
               </div>
             </div>
@@ -430,7 +568,7 @@ export function ConteudoMarketing({ posts, iniciativas: iniciativasInit }: { pos
         </TabsContent>
       </Tabs>
 
-      <InicativaDialog open={dialogOpen} onClose={closeDialog} editing={editing} />
+      <InicativaDialog open={dialogOpen} onClose={closeDialog} editing={editing} temas={temas} />
     </div>
   )
 }
