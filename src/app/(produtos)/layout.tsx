@@ -12,15 +12,18 @@ export default async function ProdutosLayout({ children }: { children: React.Rea
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: adminData }] = await Promise.all([
-    supabase.from("profiles").select("nome").eq("id", user.id).single(),
+    supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
     supabase.rpc("current_user_is_admin"),
   ])
 
-  if (!adminData) redirect("/hub")
+  const isAdmin = adminData === true
+  const isVendas = profile?.role === "vendas"
+
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   return (
     <SidebarProvider>
-      <ProdutosSidebar userEmail={user.email} userName={profile?.nome} />
+      <ProdutosSidebar userEmail={user.email} userName={profile?.nome} isVendas={isVendas} />
       <main className="flex flex-1 flex-col min-h-svh">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sticky top-0 z-10"
           style={{ background: "rgba(15,10,30,0.9)", backdropFilter: "blur(12px)", borderColor: "rgba(249,115,22,0.15)" }}>

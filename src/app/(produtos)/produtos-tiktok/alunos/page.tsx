@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SyncFormulariosButton } from "@/components/sync-formularios-button"
 import { AlunoSearch } from "@/components/aluno-search"
+import { PesquisaCharts } from "@/components/pesquisa-charts"
 import { SCORE_DISPLAY } from "@/lib/form-score"
 import type { Aluno, AlunoEtapa, ScoreLabel } from "@/lib/types"
 
@@ -29,7 +30,8 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  const { data: isVendas } = await supabase.rpc("current_user_is_vendas")
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   const params = await searchParams
   const admin = createAdminClient()
@@ -44,6 +46,10 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
 
   const { data: alunos } = await query
 
+  const { data: respostas } = await admin
+    .from("respostas_formulario")
+    .select("interesse_4500, interesse_297, tipo_venda, faturamento, nichos_que_vende")
+
   const scoreLabels: { value: string; label: string; emoji: string }[] = [
     { value: "quente", label: "Quente", emoji: "🔥" },
     { value: "morno",  label: "Morno",  emoji: "⚡" },
@@ -54,11 +60,13 @@ export default async function AlunosPage({ searchParams }: { searchParams: Promi
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Alunos</h1>
+          <h1 className="text-2xl font-bold">Pesquisa de Qualificação</h1>
           <p className="text-sm text-muted-foreground">{alunos?.length ?? 0} alunos · ordenados por score</p>
         </div>
         <SyncFormulariosButton />
       </div>
+
+      <PesquisaCharts respostas={respostas ?? []} />
 
       <AlunoSearch />
 

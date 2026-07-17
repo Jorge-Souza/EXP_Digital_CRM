@@ -18,7 +18,7 @@ export default async function ProdutosTiktokPage() {
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const admin = createAdminClient()
   const { data: produtos } = await admin.from("produtos_tiktok").select("*").order("tipo").order("nome")

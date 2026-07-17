@@ -30,8 +30,11 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
-  const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+  const [{ data: isAdmin }, { data: isVendas }] = await Promise.all([
+    supabase.rpc("current_user_is_admin"),
+    supabase.rpc("current_user_is_vendas"),
+  ])
+  if (!isAdmin && !isVendas) return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
 
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&tq=select+*`
   const res = await fetch(url)

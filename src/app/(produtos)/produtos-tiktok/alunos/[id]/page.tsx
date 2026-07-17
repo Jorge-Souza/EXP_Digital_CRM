@@ -4,8 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlunoDetalheActions } from "@/components/aluno-detalhe-actions"
+import { LeadPipelinePainel } from "@/components/lead-pipeline-painel"
 import { SCORE_DISPLAY } from "@/lib/form-score"
-import type { Aluno, CompraAluno, CarrinhoAbandonado, NotaAluno, AlunoEtapa, ScoreLabel } from "@/lib/types"
+import type { Aluno, CompraAluno, CarrinhoAbandonado, NotaAluno, AlunoEtapa, ScoreLabel, InteracaoComercial, TarefaSdr } from "@/lib/types"
 
 const etapaCor: Record<AlunoEtapa, string> = {
   lead: "bg-gray-500/20 text-gray-400 border-gray-500/30",
@@ -28,6 +29,25 @@ const proximaEtapa: Record<AlunoEtapa, string | null> = {
   avancado: null,
 }
 
+function whatsappUrl(phone: string) {
+  const digits = phone.replace(/\D/g, "")
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`
+  return `https://wa.me/${withCountry}`
+}
+
+function WhatsappButton({ phone }: { phone: string }) {
+  return (
+    <a
+      href={whatsappUrl(phone)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-500/15 text-green-500 border border-green-500/30 hover:bg-green-500/25 transition-colors"
+    >
+      💬 Falar no WhatsApp
+    </a>
+  )
+}
+
 function FormField({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null
   return (
@@ -44,7 +64,8 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/hub")
+  const { data: isVendas } = await supabase.rpc("current_user_is_vendas")
+  if (!isAdmin && !isVendas) redirect("/hub")
 
   const { id } = await params
   const admin = createAdminClient()
@@ -55,17 +76,27 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     { data: carrinhos },
     { data: notas },
     { data: resposta },
+    { data: interacoesComerciais },
+    { data: tarefasSdr },
+    { data: responsaveis },
   ] = await Promise.all([
     admin.from("alunos").select("*").eq("id", id).single(),
     admin.from("compras_alunos").select("*, produtos_tiktok(id, nome, tipo)").eq("aluno_id", id).order("data_compra", { ascending: false }),
     admin.from("carrinhos_abandonados").select("*, produtos_tiktok(id, nome, tipo)").eq("aluno_id", id).order("data_abandono", { ascending: false }),
     admin.from("notas_alunos").select("*, profiles(nome)").eq("aluno_id", id).order("created_at", { ascending: false }),
     admin.from("respostas_formulario").select("*").eq("aluno_id", id).maybeSingle(),
+    admin.from("interacoes_comerciais").select("*, profiles(nome)").eq("aluno_id", id).order("data", { ascending: false }),
+    admin.from("tarefas_sdr").select("*").eq("aluno_id", id).order("data_prazo", { ascending: true }),
+    admin.from("profiles").select("id, nome").in("role", ["admin", "vendas"]).order("nome"),
   ])
 
   if (!aluno) notFound()
 
-  const a = aluno as Aluno & { score: number; score_label: ScoreLabel; whatsapp?: string; instagram?: string; tem_formulario?: boolean }
+  const a = aluno as Aluno & {
+    score: number; score_label: ScoreLabel; whatsapp?: string; instagram?: string; tem_formulario?: boolean
+    etapa_pipeline: string; score_comercial: number; proxima_melhor_oferta: string | null
+    responsavel_id: string | null; tipo_lead: string | null
+  }
   const proxima = proximaEtapa[a.etapa]
   const scoreInfo = SCORE_DISPLAY[a.score_label ?? 'sem_dados']
 
@@ -89,10 +120,23 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
             {a.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
             ))}
+            {(a.whatsapp || a.telefone) && <WhatsappButton phone={a.whatsapp || a.telefone!} />}
           </div>
         </div>
         <AlunoDetalheActions alunoId={a.id} tags={a.tags} />
       </div>
+
+      <LeadPipelinePainel
+        alunoId={a.id}
+        etapaPipeline={a.etapa_pipeline}
+        tipoLead={a.tipo_lead}
+        scoreComercial={a.score_comercial}
+        proximaMelhorOferta={a.proxima_melhor_oferta}
+        responsavelId={a.responsavel_id}
+        responsaveis={responsaveis ?? []}
+        interacoes={(interacoesComerciais ?? []) as InteracaoComercial[]}
+        tarefas={(tarefasSdr ?? []) as TarefaSdr[]}
+      />
 
       {proxima && (
         <Card className="border-yellow-500/30 bg-yellow-500/5">
