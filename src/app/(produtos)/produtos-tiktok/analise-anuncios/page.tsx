@@ -2,11 +2,14 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Target, DollarSign, ShoppingCart, BarChart2 } from "lucide-react"
+import { DateFilter } from "./date-filter"
 
 export const dynamic = "force-dynamic"
 
 const AD_ACCOUNT_ID = "623539261669603"
 const TICKET = 67
+
+function toISO(d: Date) { return d.toISOString().split("T")[0] }
 
 interface Action { action_type: string; value: string }
 
@@ -29,8 +32,8 @@ interface CampaignInsight {
   actions?: Action[]
 }
 
-async function fetchMetaAds(token: string): Promise<{ campaigns: CampaignInsight[]; ads: AdInsight[]; error?: string } | null> {
-  const timeRange = encodeURIComponent(JSON.stringify({ since: "2026-05-12", until: "2026-06-16" }))
+async function fetchMetaAds(token: string, since: string, until: string): Promise<{ campaigns: CampaignInsight[]; ads: AdInsight[]; error?: string } | null> {
+  const timeRange = encodeURIComponent(JSON.stringify({ since, until }))
   const base = `https://graph.facebook.com/v21.0/act_${AD_ACCOUNT_ID}/insights`
 
   const [campRes, adRes] = await Promise.all([
@@ -56,12 +59,24 @@ const CTA_META = 20
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 const fmtPct = (n: number) => `${n.toFixed(1)}%`
 
-export default async function AnaliseAnunciosPage() {
+export default async function AnaliseAnunciosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ since?: string; until?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
   if (!isAdmin) redirect("/produtos-tiktok/alunos")
+
+  const params = await searchParams
+  const today = new Date()
+  const since = params.since ?? toISO(today)
+  const until = params.until ?? toISO(today)
+  const periodLabel = since === until
+    ? since.split("-").reverse().join("/")
+    : `${since.split("-").reverse().join("/")} → ${until.split("-").reverse().join("/")}`
 
   const token = process.env.FACEBOOK_ACCESS_TOKEN
 
@@ -82,12 +97,13 @@ export default async function AnaliseAnunciosPage() {
     )
   }
 
-  const data = await fetchMetaAds(token)
+  const data = await fetchMetaAds(token, since, until)
 
   if (!data || data.error) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
+        <DateFilter since={since} until={until} />
         <Card className="border-red-500/30 bg-red-500/10">
           <CardContent className="pt-6">
             <p className="font-semibold text-red-500 mb-1">Erro ao buscar dados do Meta Ads</p>
@@ -188,16 +204,19 @@ export default async function AnaliseAnunciosPage() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
-          <p className="text-sm text-muted-foreground">
-            CA EXP D BKP · Meta Ads · 12/05 → 16/06/2026
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Análise de Anúncios</h1>
+            <p className="text-sm text-muted-foreground">
+              CA EXP D BKP · Meta Ads · {periodLabel}
+            </p>
+          </div>
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500/15 text-green-600 border border-green-500/30">
+            Dados ao vivo
+          </span>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500/15 text-green-600 border border-green-500/30">
-          Dados ao vivo
-        </span>
+        <DateFilter since={since} until={until} />
       </div>
 
       {/* MÉTRICAS RESUMO */}

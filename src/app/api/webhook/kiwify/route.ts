@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     eventField === "abandoned_cart" || eventField === "cart.abandoned" ||
     p.abandoned_cart != null || status === "abandoned"
 
-  console.log("[kiwify webhook]", JSON.stringify({
+  const detected = {
     status,
     event: eventField,
     isPurchaseApproved,
@@ -62,9 +62,16 @@ export async function POST(req: NextRequest) {
     isChargeback,
     isAbandonedCart,
     keys: Object.keys(p),
-  }))
+  }
+  console.log("[kiwify webhook]", JSON.stringify(detected))
 
   const supabase = createAdminClient()
+
+  try {
+    await supabase.from("webhook_logs").insert({ source: "kiwify", payload: p, detected })
+  } catch (logErr) {
+    console.error("[kiwify webhook] falha ao gravar log:", logErr)
+  }
 
   if (isPurchaseApproved) {
     // Flat payload fields
