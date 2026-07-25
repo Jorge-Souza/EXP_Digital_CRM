@@ -33,22 +33,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 })
   }
 
-  // Kiwify payload is flat — all fields at root level
-  // event field is empty; status field determines the event type
+  // Pedidos (compra/pix/boleto/reembolso/chargeback) vêm em payload aninhado:
+  // Customer{email,full_name,mobile}, Product{product_id}, Commissions{charge_amount,my_commission,kiwify_fee} (em centavos), TrackingParameters{utm_*}
+  // Carrinho abandonado vem em payload plano (email/name/phone na raiz) — mantido como estava.
   const status = (p.status ?? p.order_status ?? "") as string
-  const eventField = (p.event ?? p.webhook_event ?? p.type ?? "") as string
+  const eventField = (p.event ?? p.webhook_event ?? p.type ?? p.webhook_event_type ?? "") as string
 
   const isPurchaseApproved =
     status === "paid" || status === "active" ||
-    eventField === "purchase.approved" || eventField === "purchase_approved"
+    eventField === "purchase.approved" || eventField === "purchase_approved" || eventField === "order_approved"
 
   const isRefunded =
     status === "refunded" ||
-    eventField === "purchase.refunded" || eventField === "purchase_refunded"
+    eventField === "purchase.refunded" || eventField === "purchase_refunded" || eventField === "order_refunded"
 
   const isChargeback =
     status === "chargedback" || status === "chargeback" ||
-    eventField === "purchase.chargeback" || eventField === "purchase_chargeback"
+    eventField === "purchase.chargeback" || eventField === "purchase_chargeback" || eventField === "chargeback"
 
   const isAbandonedCart =
     eventField === "abandoned_cart" || eventField === "cart.abandoned" ||
@@ -74,22 +75,33 @@ export async function POST(req: NextRequest) {
   }
 
   if (isPurchaseApproved) {
-    // Flat payload fields
-    const email = (p.email ?? p.customer_email) as string
-    const nome = (p.name ?? p.full_name ?? p.first_name ?? email) as string
-    const telefone = (p.phone ?? p.customer_phone) as string | undefined
+    const customer = (p.Customer ?? {}) as Record<string, unknown>
+    const product = (p.Product ?? {}) as Record<string, unknown>
+    const commissions = (p.Commissions ?? {}) as Record<string, unknown>
+    const tracking = (p.TrackingParameters ?? {}) as Record<string, unknown>
+    const commissionedStores = (commissions.commissioned_stores ?? []) as { type?: string; value?: string }[]
+
+    const email = (customer.email ?? p.email ?? p.customer_email) as string
+    const nome = (customer.full_name ?? customer.first_name ?? p.name ?? p.full_name ?? p.first_name ?? email) as string
+    const telefone = (customer.mobile ?? p.phone ?? p.customer_phone) as string | undefined
     const kiwifyCustomerId = (p.id ?? p.customer_id) as string | undefined
     const kiwifyOrderId = (p.order_id ?? p.transaction_id ?? p.id) as string
-    const kiwifyProductId = (p.product_id) as string
+    const kiwifyProductId = (product.product_id ?? p.product_id) as string
 
-    const valorBruto = Number(p.product_price ?? p.amount ?? p.value ?? 0)
-    const valorLiquido = p.net_amount != null ? Number(p.net_amount) : null
-    const taxaGateway = p.gateway_fee != null ? Number(p.gateway_fee) : null
-    const valorAfiliado = p.affiliate_value != null ? Number(p.affiliate_value) : null
+    // Valores da Kiwify vêm em centavos
+    const cents = (v: unknown) => v != null ? Number(v) / 100 : null
+
+    const valorBruto = cents(commissions.charge_amount) ?? Number(p.product_price ?? p.amount ?? p.value ?? 0)
+    const valorLiquido = cents(commissions.my_commission) ?? (p.net_amount != null ? Number(p.net_amount) : null)
+    const taxaGateway = cents(commissions.kiwify_fee) ?? (p.gateway_fee != null ? Number(p.gateway_fee) : null)
+    const valorAfiliadoCents = commissionedStores
+      .filter(s => s.type && s.type !== "producer")
+      .reduce((sum, s) => sum + Number(s.value ?? 0), 0)
+    const valorAfiliado = valorAfiliadoCents > 0 ? valorAfiliadoCents / 100 : (p.affiliate_value != null ? Number(p.affiliate_value) : null)
     const imposto = p.tax_value != null ? Number(p.tax_value) : null
     const paymentMethod = (p.payment_method ?? p.payment_type) as string | undefined
-    const utmSource = (p.utm_source ?? p.src) as string | undefined
-    const utmMedium = p.utm_medium as string | undefined
+    const utmSource = (tracking.utm_source ?? p.utm_source ?? p.src) as string | undefined
+    const utmMedium = (tracking.utm_medium ?? p.utm_medium) as string | undefined
 
     if (!email) {
       console.error("[kiwify webhook] missing email in payload")
