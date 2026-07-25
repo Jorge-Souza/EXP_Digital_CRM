@@ -37,8 +37,8 @@ export function RoiDiarioChart({ data }: { data: RoiDia[] }) {
             width={78}
           />
           <Tooltip
-            formatter={(value: number) => fmt(value)}
-            labelFormatter={(dia: string) => dia.split("-").reverse().join("/")}
+            formatter={(value) => fmt(Number(value))}
+            labelFormatter={(dia) => String(dia).split("-").reverse().join("/")}
             contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "var(--foreground)", fontWeight: 600, marginBottom: 4 }}
           />
