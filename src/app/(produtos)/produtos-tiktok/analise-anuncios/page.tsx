@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic"
 
 const AD_ACCOUNT_ID = "623539261669603"
 const TICKET = 67
+const TAXA_IMPOSTO_META = 0.1212
 
 function toISO(d: Date) { return d.toISOString().split("T")[0] }
 
@@ -51,6 +52,30 @@ async function fetchMetaAds(token: string, since: string, until: string): Promis
   return { campaigns: campJson.data ?? [], ads: adJson.data ?? [] }
 }
 
+async function fetchDailySpend(token: string, since: string, until: string): Promise<Record<string, number>> {
+  const timeRange = encodeURIComponent(JSON.stringify({ since, until }))
+  const url = `https://graph.facebook.com/v21.0/act_${AD_ACCOUNT_ID}/insights?level=account&time_increment=1&fields=spend&time_range=${timeRange}&access_token=${token}`
+  const res = await fetch(url, { cache: "no-store" })
+  const json = await res.json()
+  if (json.error) return {}
+  const byDate: Record<string, number> = {}
+  for (const row of (json.data ?? []) as { date_start: string; spend?: string }[]) {
+    byDate[row.date_start] = parseFloat(row.spend ?? "0") || 0
+  }
+  return byDate
+}
+
+function enumerateDates(since: string, until: string): string[] {
+  const dates: string[] = []
+  let d = new Date(`${since}T00:00:00Z`)
+  const end = new Date(`${until}T00:00:00Z`)
+  while (d <= end) {
+    dates.push(toISO(d))
+    d = new Date(d.getTime() + 86400000)
+  }
+  return dates
+}
+
 function getAction(actions: Action[] | undefined, type: string): number {
   return parseFloat(actions?.find(a => a.action_type === type)?.value ?? "0") || 0
 }
@@ -69,6 +94,7 @@ type CompraKiwify = {
   status: string
   utm_campaign: string | null
   utm_source: string | null
+  data_compra: string
 }
 
 export default async function AnaliseAnunciosPage({
@@ -109,7 +135,10 @@ export default async function AnaliseAnunciosPage({
     )
   }
 
-  const data = await fetchMetaAds(token, since, until)
+  const [data, dailySpend] = await Promise.all([
+    fetchMetaAds(token, since, until),
+    fetchDailySpend(token, since, until),
+  ])
 
   if (!data || data.error) {
     return (
@@ -176,7 +205,7 @@ export default async function AnaliseAnunciosPage({
   const untilISO = `${until}T23:59:59`
   const { data: comprasKiwifyRaw } = await admin
     .from("compras_alunos")
-    .select("valor, valor_bruto, valor_liquido, status, utm_campaign, utm_source")
+    .select("valor, valor_bruto, valor_liquido, status, utm_campaign, utm_source, data_compra")
     .gte("data_compra", sinceISO)
     .lte("data_compra", untilISO)
 
@@ -229,6 +258,30 @@ export default async function AnaliseAnunciosPage({
 
     return { nome, metaSpend, metaVendas, metaRoas, kiwifyVendasN, kiwifyLiquidoN, roasReal, semMeta, semKiwify, badge }
   }).sort((a, b) => b.metaSpend - a.metaSpend)
+
+  // ROI Diário: gasto de tráfego + imposto sobre o gasto vs tudo que vendeu no dia (sem exigir atribuição de campanha)
+  const vendidoPorDia: Record<string, number> = {}
+  for (const c of comprasAtivas) {
+    const dia = c.data_compra.split("T")[0]
+    vendidoPorDia[dia] = (vendidoPorDia[dia] ?? 0) + (c.valor_liquido ?? c.valor_bruto ?? c.valor ?? 0)
+  }
+
+  const roiDiario = enumerateDates(since, until).map(dia => {
+    const gasto = dailySpend[dia] ?? 0
+    const imposto = gasto * TAXA_IMPOSTO_META
+    const custoTotal = gasto + imposto
+    const vendido = vendidoPorDia[dia] ?? 0
+    const lucro = vendido - custoTotal
+    const roiPct = custoTotal > 0 ? (lucro / custoTotal) * 100 : null
+    return { dia, gasto, imposto, custoTotal, vendido, lucro, roiPct }
+  })
+
+  const totalGasto = roiDiario.reduce((s, r) => s + r.gasto, 0)
+  const totalImposto = roiDiario.reduce((s, r) => s + r.imposto, 0)
+  const totalCustoTotal = totalGasto + totalImposto
+  const totalVendido = roiDiario.reduce((s, r) => s + r.vendido, 0)
+  const totalLucro = totalVendido - totalCustoTotal
+  const totalRoiPct = totalCustoTotal > 0 ? (totalLucro / totalCustoTotal) * 100 : null
 
   function FunilCard({ label, meta, real, metaLbl, icon: Icon, sem }: {
     label: string; meta: number; real: number; metaLbl: string; icon: React.ElementType; sem: boolean
@@ -297,6 +350,7 @@ export default async function AnaliseAnunciosPage({
           <TabsTrigger value="meta">Meta Ads</TabsTrigger>
           <TabsTrigger value="kiwify">Kiwify (real)</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
+          <TabsTrigger value="roi-diario">ROI Diário</TabsTrigger>
         </TabsList>
 
         {/* ABA META ADS */}
@@ -583,6 +637,110 @@ export default async function AnaliseAnunciosPage({
                       <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Nenhuma campanha ou venda no período</td></tr>
                     )}
                   </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ABA ROI DIÁRIO */}
+        <TabsContent value="roi-diario" className="space-y-6 pt-4">
+          <p className="text-sm text-muted-foreground">
+            Gasto de tráfego (Meta Ads) + {fmtPct(TAXA_IMPOSTO_META * 100)} de imposto sobre esse gasto, comparado com tudo que a Kiwify vendeu no dia — sem exigir que a venda seja atribuída a uma campanha específica.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Custo Total do Período</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{fmt(totalCustoTotal)}</div>
+                <p className="text-xs text-muted-foreground mt-1">{fmt(totalGasto)} tráfego + {fmt(totalImposto)} imposto</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Vendido no Período</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{fmt(totalVendido)}</div>
+                <p className="text-xs text-muted-foreground mt-1">receita líquida Kiwify, todas as vendas</p>
+              </CardContent>
+            </Card>
+            <Card className={totalLucro >= 0 ? "border-green-500/20" : "border-red-500/30"}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Lucro</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${totalLucro >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(totalLucro)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">ROI</CardTitle>
+                <BarChart2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${totalRoiPct != null && totalRoiPct >= 0 ? "text-green-600" : "text-red-500"}`}>
+                  {totalRoiPct != null ? `${totalRoiPct >= 0 ? "+" : ""}${totalRoiPct.toFixed(0)}%` : "—"}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">lucro / custo total</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-y">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Data</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Gasto Tráfego</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Imposto ({fmtPct(TAXA_IMPOSTO_META * 100)})</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Custo Total</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Vendido</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Lucro</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">ROI</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {roiDiario.map(r => (
+                      <tr key={r.dia} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-medium whitespace-nowrap">{r.dia.split("-").reverse().join("/")}</td>
+                        <td className="px-4 py-3">{fmt(r.gasto)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{fmt(r.imposto)}</td>
+                        <td className="px-4 py-3 font-medium">{fmt(r.custoTotal)}</td>
+                        <td className="px-4 py-3 font-medium text-green-600">{fmt(r.vendido)}</td>
+                        <td className={`px-4 py-3 font-medium ${r.lucro >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(r.lucro)}</td>
+                        <td className="px-4 py-3">
+                          {r.roiPct != null ? (
+                            <span className={`font-medium ${r.roiPct >= 0 ? "text-green-600" : "text-red-500"}`}>
+                              {r.roiPct >= 0 ? "+" : ""}{r.roiPct.toFixed(0)}%
+                            </span>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                    {roiDiario.length === 0 && (
+                      <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum dia no período</td></tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t font-semibold">
+                      <td className="px-4 py-3">Total</td>
+                      <td className="px-4 py-3">{fmt(totalGasto)}</td>
+                      <td className="px-4 py-3">{fmt(totalImposto)}</td>
+                      <td className="px-4 py-3">{fmt(totalCustoTotal)}</td>
+                      <td className="px-4 py-3 text-green-600">{fmt(totalVendido)}</td>
+                      <td className={totalLucro >= 0 ? "px-4 py-3 text-green-600" : "px-4 py-3 text-red-500"}>{fmt(totalLucro)}</td>
+                      <td className="px-4 py-3">{totalRoiPct != null ? `${totalRoiPct >= 0 ? "+" : ""}${totalRoiPct.toFixed(0)}%` : "—"}</td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </CardContent>
