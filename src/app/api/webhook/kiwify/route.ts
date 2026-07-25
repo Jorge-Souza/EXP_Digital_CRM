@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
     const paymentMethod = (p.payment_method ?? p.payment_type) as string | undefined
     const utmSource = (tracking.utm_source ?? p.utm_source ?? p.src) as string | undefined
     const utmMedium = (tracking.utm_medium ?? p.utm_medium) as string | undefined
+    const utmCampaign = (tracking.utm_campaign ?? p.utm_campaign) as string | undefined
 
     if (!email) {
       console.error("[kiwify webhook] missing email in payload")
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
       payment_method: paymentMethod ?? null,
       utm_source: utmSource ?? null,
       utm_medium: utmMedium ?? null,
+      utm_campaign: utmCampaign ?? null,
       data_compra: new Date().toISOString(),
     }, { onConflict: "kiwify_order_id" })
 
