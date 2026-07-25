@@ -23,6 +23,15 @@ function ofertaProdutoFromProduto(tipo: string | undefined): string | null {
   return null
 }
 
+// Kiwify manda datas como "YYYY-MM-DD HH:mm" no horário de Brasília (UTC-3, sem DST)
+function parseKiwifyDate(raw: unknown): string | null {
+  if (typeof raw !== "string") return null
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
+  if (!m) return null
+  const [, y, mo, d, h, mi] = m
+  return new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h) + 3, Number(mi))).toISOString()
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
@@ -103,6 +112,7 @@ export async function POST(req: NextRequest) {
     const utmSource = (tracking.utm_source ?? p.utm_source ?? p.src) as string | undefined
     const utmMedium = (tracking.utm_medium ?? p.utm_medium) as string | undefined
     const utmCampaign = (tracking.utm_campaign ?? p.utm_campaign) as string | undefined
+    const dataCompra = parseKiwifyDate(p.approved_date ?? p.created_at) ?? new Date().toISOString()
 
     if (!email) {
       console.error("[kiwify webhook] missing email in payload")
@@ -164,7 +174,7 @@ export async function POST(req: NextRequest) {
       utm_source: utmSource ?? null,
       utm_medium: utmMedium ?? null,
       utm_campaign: utmCampaign ?? null,
-      data_compra: new Date().toISOString(),
+      data_compra: dataCompra,
     }, { onConflict: "kiwify_order_id" })
 
     const { data: compras } = await supabase
@@ -197,6 +207,7 @@ export async function POST(req: NextRequest) {
     const telefone = (p.phone ?? p.customer_phone) as string | undefined
     const kiwifyProductId = p.product_id as string
     const checkoutId = (p.checkout_id ?? p.id) as string | undefined
+    const dataAbandono = parseKiwifyDate(p.created_at) ?? new Date().toISOString()
 
     if (email) {
       const { data: existente } = await supabase.from("alunos").select("id").eq("email", email).maybeSingle()
@@ -224,7 +235,7 @@ export async function POST(req: NextRequest) {
           aluno_id: aluno.id,
           produto_id: produtoRow?.id ?? null,
           kiwify_checkout_id: checkoutId ?? null,
-          data_abandono: new Date().toISOString(),
+          data_abandono: dataAbandono,
         })
       }
     }

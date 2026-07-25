@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Target, DollarSign, ShoppingCart, BarChart2 } from "lucide-react"
 import { DateFilter } from "./date-filter"
+import { RoiDiarioChart } from "./roi-chart"
 
 export const dynamic = "force-dynamic"
 
@@ -692,6 +693,15 @@ export default async function AnaliseAnunciosPage({
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Custo x Vendido por dia</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RoiDiarioChart data={roiDiario.map(r => ({ dia: r.dia, custoTotal: r.custoTotal, vendido: r.vendido, lucro: r.lucro }))} />
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent className="p-0">
