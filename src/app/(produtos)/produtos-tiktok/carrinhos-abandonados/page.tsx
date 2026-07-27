@@ -28,6 +28,7 @@ export type CarrinhoAbandonado = {
   updated_at: string | null
   alunos: { nome: string; email: string; telefone: string | null } | null
   produtos_tiktok: { nome: string } | null
+  vendido: number | null
 }
 
 export default async function CarrinhosAbandonadosPage() {
@@ -49,9 +50,29 @@ export default async function CarrinhosAbandonadosPage() {
     .select("*")
     .order("data", { ascending: false })
 
+  const alunoIds = Array.from(new Set((carrinhos ?? []).map(c => c.aluno_id)))
+  const { data: comprasRaw } = alunoIds.length
+    ? await admin
+        .from("compras_alunos")
+        .select("aluno_id, valor, valor_liquido, valor_bruto, status")
+        .in("aluno_id", alunoIds)
+        .eq("status", "ativo")
+    : { data: [] as { aluno_id: string; valor: number | null; valor_liquido: number | null; valor_bruto: number | null }[] }
+
+  const vendidoPorAluno = new Map<string, number>()
+  for (const c of comprasRaw ?? []) {
+    const valor = c.valor_liquido ?? c.valor_bruto ?? c.valor ?? 0
+    vendidoPorAluno.set(c.aluno_id, (vendidoPorAluno.get(c.aluno_id) ?? 0) + valor)
+  }
+
+  const carrinhosComVenda = (carrinhos ?? []).map(c => ({
+    ...c,
+    vendido: vendidoPorAluno.get(c.aluno_id) ?? null,
+  }))
+
   return (
     <CarrinhosBoard
-      initialCarrinhos={(carrinhos ?? []) as CarrinhoAbandonado[]}
+      initialCarrinhos={carrinhosComVenda as CarrinhoAbandonado[]}
       initialInteracoes={(interacoes ?? []) as Interacao[]}
     />
   )

@@ -50,8 +50,10 @@ function csvEscape(value: string) {
   return value
 }
 
+const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
 function exportarCsv(carrinhos: CarrinhoAbandonado[]) {
-  const header = ["Nome", "Email", "Telefone", "Produto", "Data Abandono", "Status", "Próximo Follow-up", "Responsável", "Observações"]
+  const header = ["Nome", "Email", "Telefone", "Produto", "Data Abandono", "Status", "Vendido", "Próximo Follow-up", "Responsável", "Observações"]
   const linhas = carrinhos.map(c => [
     c.alunos?.nome ?? "",
     c.alunos?.email ?? "",
@@ -59,6 +61,7 @@ function exportarCsv(carrinhos: CarrinhoAbandonado[]) {
     c.produtos_tiktok?.nome ?? "",
     c.data_abandono.slice(0, 10).split("-").reverse().join("/"),
     COLUMNS.find(col => col.id === c.status)?.label ?? c.status,
+    c.vendido != null ? fmt(c.vendido) : "Não",
     c.proximo_followup ? c.proximo_followup.split("-").reverse().join("/") : "",
     c.responsavel ?? "",
     c.observacoes ?? "",
@@ -259,6 +262,7 @@ function TabelaCarrinhos({ carrinhos, onCarrinhoClick }: {
             <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Produto</th>
             <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Abandono</th>
             <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Status</th>
+            <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Vendido</th>
             <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Próximo Follow-up</th>
             <th className="text-left px-4 py-2.5 font-semibold text-xs text-muted-foreground uppercase tracking-wide">Responsável</th>
           </tr>
@@ -275,6 +279,15 @@ function TabelaCarrinhos({ carrinhos, onCarrinhoClick }: {
                 <td className="px-4 py-2.5">
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${col.bg} ${col.color}`}>{col.label}</span>
                 </td>
+                <td className="px-4 py-2.5">
+                  {c.vendido != null ? (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">
+                      ✅ {fmt(c.vendido)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-muted-foreground">
                   {c.proximo_followup ? c.proximo_followup.split("-").reverse().join("/") : "—"}
                 </td>
@@ -283,7 +296,7 @@ function TabelaCarrinhos({ carrinhos, onCarrinhoClick }: {
             )
           })}
           {ordenados.length === 0 && (
-            <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum carrinho abandonado</td></tr>
+            <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum carrinho abandonado</td></tr>
           )}
         </tbody>
       </table>
