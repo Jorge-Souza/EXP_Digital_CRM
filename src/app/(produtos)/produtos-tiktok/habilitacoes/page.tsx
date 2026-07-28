@@ -14,6 +14,7 @@ type Habilitacao = {
   etapa_atual: number | null
   created_at: string
   termos_aceitos_at: string | null
+  ja_habilitou_loja: boolean | null
 }
 
 const STATUS_COR: Record<string, string> = {
@@ -44,7 +45,7 @@ export default async function HabilitacoesPage() {
   const admin = createAdminClient()
   const { data: habs } = await admin
     .from("habilitacoes")
-    .select("id, email, nome_empresa, status, etapa_atual, created_at, termos_aceitos_at")
+    .select("id, email, nome_empresa, status, etapa_atual, created_at, termos_aceitos_at, ja_habilitou_loja")
     .order("created_at", { ascending: false })
 
   const lista = (habs ?? []) as Habilitacao[]
@@ -118,8 +119,11 @@ export default async function HabilitacoesPage() {
               <Link key={h.id} href={`/produtos-tiktok/habilitacoes/${h.id}`}
                 className={`grid grid-cols-[1fr_140px_110px_100px_32px] gap-4 px-5 py-4 items-center hover:bg-accent transition-colors ${i < lista.length - 1 ? "border-b" : ""}`}>
                 <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">
+                  <p className="font-medium text-sm truncate flex items-center gap-1.5">
                     {h.nome_empresa ?? <span className="text-muted-foreground italic text-xs">Empresa não preenchida</span>}
+                    {h.ja_habilitou_loja && (
+                      <span title="Já habilitou a loja por conta própria" className="text-green-600 text-xs">✅</span>
+                    )}
                   </p>
                   <p className="text-muted-foreground text-xs truncate">{h.email}</p>
                 </div>

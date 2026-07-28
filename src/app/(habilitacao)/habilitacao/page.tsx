@@ -119,11 +119,13 @@ export default function HabilitacaoPortalPage() {
       }
       const { error } = await supabase.auth.signUp({ email, password: senha })
       if (error) {
-        setErro(
-          error.message.includes("already registered")
-            ? "Este e-mail já tem cadastro. Use 'Já tenho acesso'."
-            : "Erro ao criar acesso. Tente novamente."
-        )
+        let msg = "Erro ao criar acesso. Tente novamente."
+        if (error.message.includes("already registered")) {
+          msg = "Este e-mail já tem cadastro. Use 'Já tenho acesso'."
+        } else if (error.message.toLowerCase().includes("rate limit")) {
+          msg = "Muitos cadastros em pouco tempo. Aguarde alguns minutos e tente novamente."
+        }
+        setErro(msg)
         setLoading(false)
         return
       }

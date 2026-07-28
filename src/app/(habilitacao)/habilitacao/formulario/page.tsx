@@ -376,6 +376,7 @@ export default function FormularioPage() {
   const [docFrenteUrl, setDocFrenteUrl] = useState("")
   const [selfieUrl, setSelfieUrl] = useState("")
   const [selfieDocUrl, setSelfieDocUrl] = useState("")
+  const [jaHabilitouLoja, setJaHabilitouLoja] = useState(false)
 
   // Etapa 3 – Produtos
   const [produtos, setProdutos] = useState<Produto[]>([produtoVazio()])
@@ -420,6 +421,7 @@ export default function FormularioPage() {
       if (hab.doc_frente_url) setDocFrenteUrl(hab.doc_frente_url)
       if (hab.selfie_url) setSelfieUrl(hab.selfie_url)
       if (hab.selfie_doc_url) setSelfieDocUrl(hab.selfie_doc_url)
+      if (hab.ja_habilitou_loja) setJaHabilitouLoja(hab.ja_habilitou_loja)
       if (hab.produtos?.length) setProdutos(hab.produtos)
 
       setVerificando(false)
@@ -542,9 +544,11 @@ export default function FormularioPage() {
     if (!nicho) erros.nicho = "Campo obrigatório"
     if (!subnicho) erros.subnicho = "Campo obrigatório"
     if (!senhaCertificado) erros.senhaCertificado = "Campo obrigatório"
-    if (!docFrenteUrl) erros.docFrenteUrl = "Envie uma foto do documento"
-    if (!selfieUrl) erros.selfieUrl = "Envie uma selfie"
-    if (!selfieDocUrl) erros.selfieDocUrl = "Envie uma selfie com o documento"
+    if (!jaHabilitouLoja) {
+      if (!docFrenteUrl) erros.docFrenteUrl = "Envie uma foto do documento"
+      if (!selfieUrl) erros.selfieUrl = "Envie uma selfie"
+      if (!selfieDocUrl) erros.selfieDocUrl = "Envie uma selfie com o documento"
+    }
     if (Object.keys(erros).length > 0) { setErrors(erros); return }
     setErrors({})
     setLoading(true)
@@ -555,6 +559,7 @@ export default function FormularioPage() {
       doc_frente_url: docFrenteUrl,
       selfie_url: selfieUrl,
       selfie_doc_url: selfieDocUrl,
+      ja_habilitou_loja: jaHabilitouLoja,
     }, 3)
     setLoading(false)
     setStep(3)
@@ -841,56 +846,91 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <Field label="Qual documento você irá usar para a habilitação?" required>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {["RG", "CNH", "Passaporte"].map(doc => {
-                      const ativo = tipoDocumento === doc
-                      return (
-                        <button
-                          key={doc} type="button"
-                          onClick={() => setTipoDocumento(doc)}
-                          style={{
-                            padding: "9px 20px",
-                            background: ativo
-                              ? "linear-gradient(135deg,#EC4899,#8B5CF6)"
-                              : "rgba(255,255,255,0.06)",
-                            border: ativo ? "none" : "1px solid rgba(255,255,255,0.12)",
-                            borderRadius: 8, cursor: "pointer",
-                            color: ativo ? "#fff" : "rgba(255,255,255,0.4)",
-                            fontSize: 14, fontWeight: 600,
-                          }}
-                        >{doc}</button>
-                      )
-                    })}
-                  </div>
-                </Field>
+                <button
+                  type="button"
+                  onClick={() => setJaHabilitouLoja(!jaHabilitouLoja)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                    textAlign: "left", width: "100%",
+                    background: jaHabilitouLoja ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
+                    border: jaHabilitouLoja ? "1.5px solid rgba(52,211,153,0.4)" : "1.5px solid rgba(255,255,255,0.12)",
+                  }}
+                >
+                  <span style={{
+                    width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: jaHabilitouLoja ? "linear-gradient(135deg,#EC4899,#8B5CF6)" : "rgba(255,255,255,0.08)",
+                    border: jaHabilitouLoja ? "none" : "1.5px solid rgba(255,255,255,0.2)",
+                  }}>
+                    {jaHabilitouLoja && (
+                      <svg width="12" height="9" viewBox="0 0 14 11" fill="none">
+                        <path d="M1 5.5L5 9.5L13 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </span>
+                  <span style={{ color: jaHabilitouLoja ? "#34D399" : "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600 }}>
+                    ✅ Já habilitei a loja
+                    <span style={{ display: "block", color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400, marginTop: 2 }}>
+                      Marque se você já fez a habilitação da loja por conta própria — assim não precisa enviar os documentos abaixo
+                    </span>
+                  </span>
+                </button>
 
-                <DocUploadExample
-                  label={`Carregue uma imagem bem posicionada do ${tipoDocumento} (parte da frente)`}
-                  example={EXEMPLO_DOC}
-                  value={docFrenteUrl}
-                  uploading={uploadingField === "doc_frente"}
-                  onUpload={f => { clearError("docFrenteUrl"); return handleUpload(f, "doc_frente", setDocFrenteUrl) }}
-                  error={errors.docFrenteUrl}
-                />
+                {!jaHabilitouLoja && (
+                  <>
+                    <Field label="Qual documento você irá usar para a habilitação?" required>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {["RG", "CNH", "Passaporte"].map(doc => {
+                          const ativo = tipoDocumento === doc
+                          return (
+                            <button
+                              key={doc} type="button"
+                              onClick={() => setTipoDocumento(doc)}
+                              style={{
+                                padding: "9px 20px",
+                                background: ativo
+                                  ? "linear-gradient(135deg,#EC4899,#8B5CF6)"
+                                  : "rgba(255,255,255,0.06)",
+                                border: ativo ? "none" : "1px solid rgba(255,255,255,0.12)",
+                                borderRadius: 8, cursor: "pointer",
+                                color: ativo ? "#fff" : "rgba(255,255,255,0.4)",
+                                fontSize: 14, fontWeight: 600,
+                              }}
+                            >{doc}</button>
+                          )
+                        })}
+                      </div>
+                    </Field>
 
-                <DocUploadExample
-                  label={`Selfie do titular da ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
-                  example={EXEMPLO_SELFIE}
-                  value={selfieUrl}
-                  uploading={uploadingField === "selfie"}
-                  onUpload={f => { clearError("selfieUrl"); return handleUpload(f, "selfie", setSelfieUrl) }}
-                  error={errors.selfieUrl}
-                />
+                    <DocUploadExample
+                      label={`Carregue uma imagem bem posicionada do ${tipoDocumento} (parte da frente)`}
+                      example={EXEMPLO_DOC}
+                      value={docFrenteUrl}
+                      uploading={uploadingField === "doc_frente"}
+                      onUpload={f => { clearError("docFrenteUrl"); return handleUpload(f, "doc_frente", setDocFrenteUrl) }}
+                      error={errors.docFrenteUrl}
+                    />
 
-                <DocUploadExample
-                  label={`Selfie com o documento de ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
-                  example={EXEMPLO_SELFIE_DOC}
-                  value={selfieDocUrl}
-                  uploading={uploadingField === "selfie_doc"}
-                  onUpload={f => { clearError("selfieDocUrl"); return handleUpload(f, "selfie_doc", setSelfieDocUrl) }}
-                  error={errors.selfieDocUrl}
-                />
+                    <DocUploadExample
+                      label={`Selfie do titular da ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
+                      example={EXEMPLO_SELFIE}
+                      value={selfieUrl}
+                      uploading={uploadingField === "selfie"}
+                      onUpload={f => { clearError("selfieUrl"); return handleUpload(f, "selfie", setSelfieUrl) }}
+                      error={errors.selfieUrl}
+                    />
+
+                    <DocUploadExample
+                      label={`Selfie com o documento de ${tipoDocumento === "Passaporte" ? "passaporte" : "identidade"}`}
+                      example={EXEMPLO_SELFIE_DOC}
+                      value={selfieDocUrl}
+                      uploading={uploadingField === "selfie_doc"}
+                      onUpload={f => { clearError("selfieDocUrl"); return handleUpload(f, "selfie_doc", setSelfieDocUrl) }}
+                      error={errors.selfieDocUrl}
+                    />
+                  </>
+                )}
               </div>
             </div>
 

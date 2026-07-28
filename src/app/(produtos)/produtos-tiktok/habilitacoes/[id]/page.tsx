@@ -23,6 +23,7 @@ type Hab = {
   rep_nacionalidade: string | null; rep_endereco: string | null
   rep_comprovante_url: string | null; tipo_documento: string | null
   doc_frente_url: string | null; selfie_url: string | null; selfie_doc_url: string | null
+  ja_habilitou_loja: boolean | null
   inscricao_estadual: string | null; nicho: string | null; subnicho: string | null
   certificado_url: string | null; senha_certificado: string | null
   produtos: Produto[] | null
@@ -158,13 +159,22 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
           <CardTitle className="text-base flex items-center gap-2">🪪 Documentos de Identidade</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <FieldItem label="Tipo de documento" value={h.tipo_documento} />
-          <div />
-          <FileLink label={`${h.tipo_documento ?? "Documento"} – frente`} url={h.doc_frente_url} />
-          <FileLink label="Selfie do titular" url={h.selfie_url} />
-          <div className="col-span-2">
-            <FileLink label="Selfie com o documento" url={h.selfie_doc_url} />
-          </div>
+          {h.ja_habilitou_loja ? (
+            <div className="col-span-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+              <p className="text-sm font-semibold text-green-700">✅ Cliente já habilitou a loja por conta própria</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Não enviou documentos de identidade — marcou essa opção no formulário.</p>
+            </div>
+          ) : (
+            <>
+              <FieldItem label="Tipo de documento" value={h.tipo_documento} />
+              <div />
+              <FileLink label={`${h.tipo_documento ?? "Documento"} – frente`} url={h.doc_frente_url} />
+              <FileLink label="Selfie do titular" url={h.selfie_url} />
+              <div className="col-span-2">
+                <FileLink label="Selfie com o documento" url={h.selfie_doc_url} />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
