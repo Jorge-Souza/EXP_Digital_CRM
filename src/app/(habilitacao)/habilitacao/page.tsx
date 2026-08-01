@@ -117,23 +117,35 @@ export default function HabilitacaoPortalPage() {
         setLoading(false)
         return
       }
-      const { error } = await supabase.auth.signUp({ email, password: senha })
-      if (error) {
-        let msg = "Erro ao criar acesso. Tente novamente."
-        if (error.message.includes("already registered")) {
-          msg = "Este e-mail já tem cadastro. Use 'Já tenho acesso'."
-        } else if (error.message.toLowerCase().includes("rate limit")) {
-          msg = "Muitos cadastros em pouco tempo. Aguarde alguns minutos e tente novamente."
-        }
-        setErro(msg)
+      const resp = await fetch("/api/habilitacao/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: senha }),
+      })
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}))
+        setErro(
+          body.error === "already_registered"
+            ? "Este e-mail já tem cadastro. Use 'Já tenho acesso'."
+            : "Erro ao criar acesso. Tente novamente."
+        )
         setLoading(false)
         return
       }
-      await supabase.auth.signInWithPassword({ email, password: senha })
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: senha })
+      if (signInError) {
+        setErro("Conta criada, mas não foi possível entrar automaticamente. Use 'Já tenho acesso'.")
+        setLoading(false)
+        return
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
       if (error) {
-        setErro("E-mail ou senha incorretos.")
+        setErro(
+          error.message.toLowerCase().includes("not confirmed")
+            ? "Seu e-mail ainda não foi confirmado. Fale com a equipe pelo WhatsApp."
+            : "E-mail ou senha incorretos."
+        )
         setLoading(false)
         return
       }
