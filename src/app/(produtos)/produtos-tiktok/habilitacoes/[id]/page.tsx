@@ -17,6 +17,7 @@ type Produto = {
 type Hab = {
   id: string; email: string; status: string | null; etapa_atual: number | null
   created_at: string; termos_aceitos_at: string | null
+  aceito_privacidade: boolean | null; aceito_uso_imagem: boolean | null; aceito_divulgacao: boolean | null
   nome_empresa: string | null; cnpj: string | null; data_constituicao: string | null
   endereco_comercial: string | null; cnpj_doc_url: string | null
   rep_nome: string | null; rep_data_nascimento: string | null
@@ -204,9 +205,28 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">✅ Aceite de Termos</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <FieldItem label="Termos aceitos em" value={fmt(h.termos_aceitos_at)} />
-          <FieldItem label="Etapa atual" value={h.etapa_atual != null ? `Etapa ${h.etapa_atual} de 3` : "—"} />
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <FieldItem label="Termos aceitos em" value={fmt(h.termos_aceitos_at)} />
+            <FieldItem label="Etapa atual" value={h.etapa_atual != null ? `Etapa ${h.etapa_atual} de 3` : "—"} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { label: "Privacidade e dados (LGPD)", aceito: h.aceito_privacidade },
+              { label: "Uso de imagem e marca", aceito: h.aceito_uso_imagem },
+              { label: "Divulgação do relacionamento", aceito: h.aceito_divulgacao },
+            ].map(item => (
+              <div key={item.label}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                  item.aceito
+                    ? "border-green-500/30 bg-green-500/10 text-green-700"
+                    : "border-red-500/30 bg-red-500/10 text-red-600"
+                }`}>
+                <span>{item.aceito ? "✅" : "❌"}</span>
+                <span className="font-medium">{item.label}</span>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
