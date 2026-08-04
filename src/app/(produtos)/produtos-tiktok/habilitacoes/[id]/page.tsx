@@ -25,6 +25,7 @@ type Hab = {
   rep_comprovante_url: string | null; tipo_documento: string | null
   doc_frente_url: string | null; selfie_url: string | null; selfie_doc_url: string | null
   ja_habilitou_loja: boolean | null
+  etapa1_pulada: boolean | null
   inscricao_estadual: string | null; nicho: string | null; subnicho: string | null
   certificado_url: string | null; senha_certificado: string | null
   produtos: Produto[] | null
@@ -121,6 +122,13 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
           </div>
         </div>
       </div>
+
+      {h.etapa1_pulada && (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-yellow-700">⏭️ Cliente pulou a Etapa 1 (Empresa/Representante)</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Esses dados precisam ser coletados manualmente pela equipe (WhatsApp/planilha).</p>
+        </div>
+      )}
 
       {/* Empresa */}
       <Card>

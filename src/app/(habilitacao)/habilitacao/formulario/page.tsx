@@ -90,7 +90,7 @@ function FileUpload({
   const ref = useRef<HTMLInputElement>(null)
   return (
     <div>
-      <label style={FIELD_LABEL}>{label} {RED}</label>
+      <label style={FIELD_LABEL}>{label}</label>
       <div
         onClick={() => !uploading && ref.current?.click()}
         style={{
@@ -194,7 +194,7 @@ function DocUploadExample({
   const ref = useRef<HTMLInputElement>(null)
   return (
     <div>
-      <label style={FIELD_LABEL}>{label} {RED}</label>
+      <label style={FIELD_LABEL}>{label}</label>
       <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 12, alignItems: "stretch" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
           <span style={{
@@ -353,6 +353,7 @@ export default function FormularioPage() {
   }
 
   // Etapa 1 – Empresa
+  const [etapa1Pulada, setEtapa1Pulada] = useState(false)
   const [nomeEmpresa, setNomeEmpresa] = useState("")
   const [cnpj, setCnpj] = useState("")
   const [dataConst, setDataConst] = useState("")
@@ -422,6 +423,7 @@ export default function FormularioPage() {
       if (hab.selfie_url) setSelfieUrl(hab.selfie_url)
       if (hab.selfie_doc_url) setSelfieDocUrl(hab.selfie_doc_url)
       if (hab.ja_habilitou_loja) setJaHabilitouLoja(hab.ja_habilitou_loja)
+      if (hab.etapa1_pulada) setEtapa1Pulada(hab.etapa1_pulada)
       if (hab.produtos?.length) setProdutos(hab.produtos)
 
       setVerificando(false)
@@ -514,24 +516,15 @@ export default function FormularioPage() {
 
   // ─── Navegação ─────────────────────────────────────────────
   async function avancarEtapa1() {
-    const erros: Record<string, string> = {}
-    if (!nomeEmpresa) erros.nomeEmpresa = "Campo obrigatório"
-    if (!cnpj) erros.cnpj = "Campo obrigatório"
-    if (!dataConst) erros.dataConst = "Campo obrigatório"
-    if (!endComercial) erros.endComercial = "Campo obrigatório"
-    if (!repNome) erros.repNome = "Campo obrigatório"
-    if (!repNascimento) erros.repNascimento = "Campo obrigatório"
-    if (!repNacionalidade) erros.repNacionalidade = "Campo obrigatório"
-    if (!repEndereco) erros.repEndereco = "Campo obrigatório"
-    if (Object.keys(erros).length > 0) { setErrors(erros); return }
     setErrors({})
     setLoading(true)
     await salvarEtapa({
-      nome_empresa: nomeEmpresa, cnpj, data_constituicao: dataConst,
-      endereco_comercial: endComercial, cnpj_doc_url: cnpjDocUrl,
-      rep_nome: repNome, rep_data_nascimento: repNascimento,
-      rep_nacionalidade: repNacionalidade, rep_endereco: repEndereco,
-      rep_comprovante_url: repComprovanteUrl,
+      nome_empresa: nomeEmpresa || null, cnpj: cnpj || null, data_constituicao: dataConst || null,
+      endereco_comercial: endComercial || null, cnpj_doc_url: cnpjDocUrl || null,
+      rep_nome: repNome || null, rep_data_nascimento: repNascimento || null,
+      rep_nacionalidade: repNacionalidade || null, rep_endereco: repEndereco || null,
+      rep_comprovante_url: repComprovanteUrl || null,
+      etapa1_pulada: etapa1Pulada,
     }, 2)
     setLoading(false)
     setStep(2)
@@ -539,26 +532,15 @@ export default function FormularioPage() {
   }
 
   async function avancarEtapa2() {
-    const erros: Record<string, string> = {}
-    if (!inscricaoEstadual) erros.inscricaoEstadual = "Campo obrigatório"
-    if (!nicho) erros.nicho = "Campo obrigatório"
-    if (!subnicho) erros.subnicho = "Campo obrigatório"
-    if (!senhaCertificado) erros.senhaCertificado = "Campo obrigatório"
-    if (!jaHabilitouLoja) {
-      if (!docFrenteUrl) erros.docFrenteUrl = "Envie uma foto do documento"
-      if (!selfieUrl) erros.selfieUrl = "Envie uma selfie"
-      if (!selfieDocUrl) erros.selfieDocUrl = "Envie uma selfie com o documento"
-    }
-    if (Object.keys(erros).length > 0) { setErrors(erros); return }
     setErrors({})
     setLoading(true)
     await salvarEtapa({
-      inscricao_estadual: inscricaoEstadual, nicho, subnicho,
-      certificado_url: certificadoUrl, senha_certificado: senhaCertificado,
+      inscricao_estadual: inscricaoEstadual || null, nicho: nicho || null, subnicho: subnicho || null,
+      certificado_url: certificadoUrl || null, senha_certificado: senhaCertificado || null,
       tipo_documento: tipoDocumento,
-      doc_frente_url: docFrenteUrl,
-      selfie_url: selfieUrl,
-      selfie_doc_url: selfieDocUrl,
+      doc_frente_url: docFrenteUrl || null,
+      selfie_url: selfieUrl || null,
+      selfie_doc_url: selfieDocUrl || null,
       ja_habilitou_loja: jaHabilitouLoja,
     }, 3)
     setLoading(false)
@@ -567,19 +549,6 @@ export default function FormularioPage() {
   }
 
   async function enviarFormulario() {
-    const erros: Record<string, string> = {}
-    produtos.forEach((p, pi) => {
-      if (!p.nome) erros[`produto_${pi}_nome`] = "Campo obrigatório"
-      if (!p.ncm) erros[`produto_${pi}_ncm`] = "Campo obrigatório"
-      if (!p.preco) erros[`produto_${pi}_preco`] = "Campo obrigatório"
-      if (!p.unidade) erros[`produto_${pi}_unidade`] = "Selecione uma unidade"
-      if (!p.estoque) erros[`produto_${pi}_estoque`] = "Campo obrigatório"
-      if (!p.comprimento) erros[`produto_${pi}_comprimento`] = "Obrigatório"
-      if (!p.largura) erros[`produto_${pi}_largura`] = "Obrigatório"
-      if (!p.altura) erros[`produto_${pi}_altura`] = "Obrigatório"
-      if (!p.peso) erros[`produto_${pi}_peso`] = "Obrigatório"
-    })
-    if (Object.keys(erros).length > 0) { setErrors(erros); return }
     setErrors({})
     setLoading(true)
     const supabase = createClient()
@@ -659,6 +628,39 @@ export default function FormularioPage() {
         {/* ════════════════════════════════════════════════════ */}
         {step === 1 && (
           <>
+            <button
+              type="button"
+              onClick={() => setEtapa1Pulada(!etapa1Pulada)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                textAlign: "left", width: "100%", marginBottom: 16,
+                background: etapa1Pulada ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
+                border: etapa1Pulada ? "1.5px solid rgba(52,211,153,0.4)" : "1.5px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: etapa1Pulada ? "linear-gradient(135deg,#EC4899,#8B5CF6)" : "rgba(255,255,255,0.08)",
+                border: etapa1Pulada ? "none" : "1.5px solid rgba(255,255,255,0.2)",
+              }}>
+                {etapa1Pulada && (
+                  <svg width="12" height="9" viewBox="0 0 14 11" fill="none">
+                    <path d="M1 5.5L5 9.5L13 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+              <span style={{ color: etapa1Pulada ? "#34D399" : "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600 }}>
+                ✅ Já fiz a Etapa 1 (habilitação da loja)
+                <span style={{ display: "block", color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400, marginTop: 2 }}>
+                  Marque se os dados da empresa e do representante já foram tratados por outro canal — assim você pula direto para o cadastro de produtos
+                </span>
+              </span>
+            </button>
+
+            {!etapa1Pulada && (
+            <>
             {/* Informações da Empresa */}
             <div style={CARD}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -670,25 +672,25 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Nome da empresa" required error={errors.nomeEmpresa}>
+                <Field label="Nome da empresa" error={errors.nomeEmpresa}>
                   <input style={{ ...INPUT, borderColor: errors.nomeEmpresa ? "rgba(236,72,153,0.5)" : undefined }}
                     value={nomeEmpresa} onChange={e => { setNomeEmpresa(e.target.value); clearError("nomeEmpresa") }}
                     placeholder="Razão social completa" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="CNPJ" required error={errors.cnpj}>
+                  <Field label="CNPJ" error={errors.cnpj}>
                     <input style={{ ...INPUT, borderColor: errors.cnpj ? "rgba(236,72,153,0.5)" : undefined }}
                       value={cnpj} onChange={e => { setCnpj(e.target.value); clearError("cnpj") }}
                       placeholder="00.000.000/0001-00" />
                   </Field>
-                  <Field label="Data de constituição" required error={errors.dataConst}>
+                  <Field label="Data de constituição" error={errors.dataConst}>
                     <input style={{ ...INPUT, borderColor: errors.dataConst ? "rgba(236,72,153,0.5)" : undefined }}
                       type="date" value={dataConst} onChange={e => { setDataConst(e.target.value); clearError("dataConst") }} />
                   </Field>
                 </FieldRow>
 
-                <Field label="Endereço comercial principal" required error={errors.endComercial}>
+                <Field label="Endereço comercial principal" error={errors.endComercial}>
                   <input style={{ ...INPUT, borderColor: errors.endComercial ? "rgba(236,72,153,0.5)" : undefined }}
                     value={endComercial} onChange={e => { setEndComercial(e.target.value); clearError("endComercial") }}
                     placeholder="Rua, número, bairro, cidade – UF, CEP" />
@@ -716,25 +718,25 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Nome civil completo" required error={errors.repNome}>
+                <Field label="Nome civil completo" error={errors.repNome}>
                   <input style={{ ...INPUT, borderColor: errors.repNome ? "rgba(236,72,153,0.5)" : undefined }}
                     value={repNome} onChange={e => { setRepNome(e.target.value); clearError("repNome") }}
                     placeholder="Conforme documento oficial (RG/CNH)" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="Data de nascimento" required error={errors.repNascimento}>
+                  <Field label="Data de nascimento" error={errors.repNascimento}>
                     <input style={{ ...INPUT, borderColor: errors.repNascimento ? "rgba(236,72,153,0.5)" : undefined }}
                       type="date" value={repNascimento} onChange={e => { setRepNascimento(e.target.value); clearError("repNascimento") }} />
                   </Field>
-                  <Field label="Nacionalidade" required error={errors.repNacionalidade}>
+                  <Field label="Nacionalidade" error={errors.repNacionalidade}>
                     <input style={{ ...INPUT, borderColor: errors.repNacionalidade ? "rgba(236,72,153,0.5)" : undefined }}
                       value={repNacionalidade} onChange={e => { setRepNacionalidade(e.target.value); clearError("repNacionalidade") }}
                       placeholder="Ex: Brasileira" />
                   </Field>
                 </FieldRow>
 
-                <Field label="Endereço residencial" required error={errors.repEndereco}>
+                <Field label="Endereço residencial" error={errors.repEndereco}>
                   <input style={{ ...INPUT, borderColor: errors.repEndereco ? "rgba(236,72,153,0.5)" : undefined }}
                     value={repEndereco} onChange={e => { setRepEndereco(e.target.value); clearError("repEndereco") }}
                     placeholder="Rua, número, bairro, cidade – UF, CEP" />
@@ -750,6 +752,8 @@ export default function FormularioPage() {
                 />
               </div>
             </div>
+            </>
+            )}
 
             <NavButtons step={1} loading={loading} onProximo={avancarEtapa1} labelProximo="Próximo: Dados da Loja →" />
           </>
@@ -770,19 +774,19 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <Field label="Inscrição estadual" required error={errors.inscricaoEstadual}>
+                <Field label="Inscrição estadual" error={errors.inscricaoEstadual}>
                   <input style={{ ...INPUT, borderColor: errors.inscricaoEstadual ? "rgba(236,72,153,0.5)" : undefined }}
                     value={inscricaoEstadual} onChange={e => { setInscricaoEstadual(e.target.value); clearError("inscricaoEstadual") }}
                     placeholder="Número da inscrição estadual" />
                 </Field>
 
                 <FieldRow>
-                  <Field label="Nicho" required error={errors.nicho}>
+                  <Field label="Nicho" error={errors.nicho}>
                     <input style={{ ...INPUT, borderColor: errors.nicho ? "rgba(236,72,153,0.5)" : undefined }}
                       value={nicho} onChange={e => { setNicho(e.target.value); clearError("nicho") }}
                       placeholder="Ex: Moda, Eletrônicos, Beleza" />
                   </Field>
-                  <Field label="Subnicho" required error={errors.subnicho}>
+                  <Field label="Subnicho" error={errors.subnicho}>
                     <input style={{ ...INPUT, borderColor: errors.subnicho ? "rgba(236,72,153,0.5)" : undefined }}
                       value={subnicho} onChange={e => { setSubnicho(e.target.value); clearError("subnicho") }}
                       placeholder="Ex: Moda Feminina, Skincare" />
@@ -798,7 +802,7 @@ export default function FormularioPage() {
                   onUpload={f => handleUpload(f, "certificado", setCertificadoUrl)}
                 />
 
-                <Field label="Senha do certificado digital" required error={errors.senhaCertificado}>
+                <Field label="Senha do certificado digital" error={errors.senhaCertificado}>
                   <div style={{ position: "relative" }}>
                     <input
                       type={mostrarSenha ? "text" : "password"}
@@ -879,7 +883,7 @@ export default function FormularioPage() {
 
                 {!jaHabilitouLoja && (
                   <>
-                    <Field label="Qual documento você irá usar para a habilitação?" required>
+                    <Field label="Qual documento você irá usar para a habilitação?">
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {["RG", "CNH", "Passaporte"].map(doc => {
                           const ativo = tipoDocumento === doc
@@ -987,7 +991,7 @@ export default function FormularioPage() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  <Field label="Nome" required error={errors[`produto_${pi}_nome`]}>
+                  <Field label="Nome" error={errors[`produto_${pi}_nome`]}>
                     <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_nome`] ? "rgba(236,72,153,0.5)" : undefined }}
                       value={p.nome}
                       onChange={e => { updateProduto(pi, "nome", e.target.value); clearError(`produto_${pi}_nome`) }}
@@ -1006,7 +1010,7 @@ export default function FormularioPage() {
                         onChange={e => updateProduto(pi, "sku", e.target.value)}
                         placeholder="Sugestivo ou defina o seu" />
                     </Field>
-                    <Field label="NCM" required error={errors[`produto_${pi}_ncm`]}>
+                    <Field label="NCM" error={errors[`produto_${pi}_ncm`]}>
                       <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_ncm`] ? "rgba(236,72,153,0.5)" : undefined }}
                         value={p.ncm}
                         onChange={e => { updateProduto(pi, "ncm", e.target.value); clearError(`produto_${pi}_ncm`) }}
@@ -1015,7 +1019,7 @@ export default function FormularioPage() {
                   </FieldRow>
 
                   <FieldRow>
-                    <Field label="Preço de venda (R$)" required error={errors[`produto_${pi}_preco`]}>
+                    <Field label="Preço de venda (R$)" error={errors[`produto_${pi}_preco`]}>
                       <div style={{ display: "flex", gap: 8 }}>
                         <input style={{ ...INPUT, flex: 1, borderColor: errors[`produto_${pi}_preco`] ? "rgba(236,72,153,0.5)" : undefined }}
                           value={p.preco}
@@ -1049,7 +1053,7 @@ export default function FormularioPage() {
                         </div>
                       )}
                     </Field>
-                    <Field label="Unidade" required error={errors[`produto_${pi}_unidade`]}>
+                    <Field label="Unidade" error={errors[`produto_${pi}_unidade`]}>
                       <select style={{ ...SELECT, borderColor: errors[`produto_${pi}_unidade`] ? "rgba(236,72,153,0.5)" : undefined }}
                         value={p.unidade}
                         onChange={e => { updateProduto(pi, "unidade", e.target.value); clearError(`produto_${pi}_unidade`) }}>
@@ -1062,7 +1066,7 @@ export default function FormularioPage() {
                   </FieldRow>
 
                   <FieldRow>
-                    <Field label="Estoque atual" required error={errors[`produto_${pi}_estoque`]}>
+                    <Field label="Estoque atual" error={errors[`produto_${pi}_estoque`]}>
                       <input style={{ ...INPUT, borderColor: errors[`produto_${pi}_estoque`] ? "rgba(236,72,153,0.5)" : undefined }}
                         value={p.estoque} type="number"
                         onChange={e => { updateProduto(pi, "estoque", e.target.value); clearError(`produto_${pi}_estoque`) }}
@@ -1092,7 +1096,7 @@ export default function FormularioPage() {
                         return (
                           <div key={campo}>
                             <label style={{ ...FIELD_LABEL, fontSize: 11 }}>
-                              {label} {RED}
+                              {label}
                             </label>
                             <input
                               style={{ ...INPUT, fontSize: 13, borderColor: errors[errKey] ? "rgba(236,72,153,0.5)" : undefined }}
