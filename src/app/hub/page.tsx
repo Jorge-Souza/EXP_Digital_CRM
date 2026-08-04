@@ -12,9 +12,22 @@ export default async function HubPage() {
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: adminData }] = await Promise.all([
-    supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
+    supabase.from("profiles").select("nome, role").eq("id", user.id).maybeSingle(),
     supabase.rpc("current_user_is_admin"),
   ])
+
+  // Quem não é da equipe (sem registro em profiles) é cliente do portal de
+  // habilitação — nunca deve ver o hub interno, vai direto pro fluxo dele.
+  if (!profile) {
+    const { data: hab } = await supabase
+      .from("habilitacoes")
+      .select("termos_aceitos_at, status")
+      .maybeSingle()
+
+    if (!hab || !hab.termos_aceitos_at) redirect("/habilitacao/termos")
+    else if (hab.status === "enviado") redirect("/habilitacao/concluido")
+    else redirect("/habilitacao/formulario")
+  }
 
   const isAdmin = adminData === true
   const isVendas = profile?.role === "vendas"

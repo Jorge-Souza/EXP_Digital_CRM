@@ -26,6 +26,13 @@ export default async function AppLayout({
   if (profile?.role === "vendas") redirect("/produtos-tiktok/alunos")
 
   const isAdmin = adminData === true
+
+  // Cliente do portal de habilitação (mesmo tendo profiles.role default) nunca
+  // deve acessar o CRM Serviços — manda pro fluxo dele. Admin sempre passa.
+  if (!isAdmin) {
+    const { data: hab } = await supabase.from("habilitacoes").select("id").maybeSingle()
+    if (hab) redirect("/hub")
+  }
   const clients = (clientsData ?? []).map((c) => ({
     ...c,
     avatar_emoji: c.avatar_emoji ?? "🏢",
