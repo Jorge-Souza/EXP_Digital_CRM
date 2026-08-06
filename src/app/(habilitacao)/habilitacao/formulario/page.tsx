@@ -397,7 +397,6 @@ export default function FormularioPage() {
 
       if (!hab) { router.push("/habilitacao/termos"); return }
       if (!hab.termos_aceitos_at) { router.push("/habilitacao/termos"); return }
-      if (hab.status === "enviado") { router.push("/habilitacao/concluido"); return }
 
       setHabId(hab.id)
       if (hab.etapa_atual) setStep(hab.etapa_atual)
