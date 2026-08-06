@@ -764,6 +764,39 @@ export default function FormularioPage() {
         {/* ════════════════════════════════════════════════════ */}
         {step === 2 && (
           <>
+            <button
+              type="button"
+              onClick={() => setJaHabilitouLoja(!jaHabilitouLoja)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                textAlign: "left", width: "100%", marginBottom: 16,
+                background: jaHabilitouLoja ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
+                border: jaHabilitouLoja ? "1.5px solid rgba(52,211,153,0.4)" : "1.5px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <span style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: jaHabilitouLoja ? "linear-gradient(135deg,#EC4899,#8B5CF6)" : "rgba(255,255,255,0.08)",
+                border: jaHabilitouLoja ? "none" : "1.5px solid rgba(255,255,255,0.2)",
+              }}>
+                {jaHabilitouLoja && (
+                  <svg width="12" height="9" viewBox="0 0 14 11" fill="none">
+                    <path d="M1 5.5L5 9.5L13 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+              <span style={{ color: jaHabilitouLoja ? "#34D399" : "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600 }}>
+                ✅ Já habilitei a loja
+                <span style={{ display: "block", color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400, marginTop: 2 }}>
+                  Marque se você já fez a habilitação da loja por conta própria — assim não precisa preencher os dados da loja nem enviar os documentos abaixo
+                </span>
+              </span>
+            </button>
+
+            {!jaHabilitouLoja && (
+            <>
             <div style={CARD}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
                 <span style={{ fontSize: 22 }}>🏪</span>
@@ -850,39 +883,6 @@ export default function FormularioPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <button
-                  type="button"
-                  onClick={() => setJaHabilitouLoja(!jaHabilitouLoja)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "14px 16px", borderRadius: 10, cursor: "pointer",
-                    textAlign: "left", width: "100%",
-                    background: jaHabilitouLoja ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
-                    border: jaHabilitouLoja ? "1.5px solid rgba(52,211,153,0.4)" : "1.5px solid rgba(255,255,255,0.12)",
-                  }}
-                >
-                  <span style={{
-                    width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: jaHabilitouLoja ? "linear-gradient(135deg,#EC4899,#8B5CF6)" : "rgba(255,255,255,0.08)",
-                    border: jaHabilitouLoja ? "none" : "1.5px solid rgba(255,255,255,0.2)",
-                  }}>
-                    {jaHabilitouLoja && (
-                      <svg width="12" height="9" viewBox="0 0 14 11" fill="none">
-                        <path d="M1 5.5L5 9.5L13 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </span>
-                  <span style={{ color: jaHabilitouLoja ? "#34D399" : "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600 }}>
-                    ✅ Já habilitei a loja
-                    <span style={{ display: "block", color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400, marginTop: 2 }}>
-                      Marque se você já fez a habilitação da loja por conta própria — assim não precisa enviar os documentos abaixo
-                    </span>
-                  </span>
-                </button>
-
-                {!jaHabilitouLoja && (
-                  <>
                     <Field label="Qual documento você irá usar para a habilitação?">
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {["RG", "CNH", "Passaporte"].map(doc => {
@@ -933,10 +933,10 @@ export default function FormularioPage() {
                       onUpload={f => { clearError("selfieDocUrl"); return handleUpload(f, "selfie_doc", setSelfieDocUrl) }}
                       error={errors.selfieDocUrl}
                     />
-                  </>
-                )}
               </div>
             </div>
+            </>
+            )}
 
             <NavButtons
               step={2} loading={loading}

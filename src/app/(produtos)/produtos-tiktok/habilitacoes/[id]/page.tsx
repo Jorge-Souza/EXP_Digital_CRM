@@ -193,18 +193,27 @@ export default async function HabilitacaoDetailPage({ params }: { params: Promis
           <CardTitle className="text-base flex items-center gap-2">🏪 Dados da Loja</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <FieldItem label="Inscrição estadual" value={h.inscricao_estadual} />
-          <FieldItem label="Nicho" value={h.nicho} />
-          <FieldItem label="Subnicho" value={h.subnicho} />
-          <div />
-          <FileLink label="Certificado digital A1" url={h.certificado_url} />
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Senha do certificado</p>
-            {h.senha_certificado
-              ? <p className="text-sm font-mono bg-muted px-2 py-1 rounded w-fit">{h.senha_certificado}</p>
-              : <p className="text-sm text-muted-foreground italic">Não informado</p>
-            }
-          </div>
+          {h.ja_habilitou_loja ? (
+            <div className="col-span-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+              <p className="text-sm font-semibold text-green-700">✅ Cliente já habilitou a loja por conta própria</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Não preencheu os dados fiscais/certificado — marcou essa opção no formulário.</p>
+            </div>
+          ) : (
+            <>
+              <FieldItem label="Inscrição estadual" value={h.inscricao_estadual} />
+              <FieldItem label="Nicho" value={h.nicho} />
+              <FieldItem label="Subnicho" value={h.subnicho} />
+              <div />
+              <FileLink label="Certificado digital A1" url={h.certificado_url} />
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Senha do certificado</p>
+                {h.senha_certificado
+                  ? <p className="text-sm font-mono bg-muted px-2 py-1 rounded w-fit">{h.senha_certificado}</p>
+                  : <p className="text-sm text-muted-foreground italic">Não informado</p>
+                }
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
