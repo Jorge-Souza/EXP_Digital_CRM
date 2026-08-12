@@ -39,7 +39,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/dashboard")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const [{ data: assessorado }, { data: sessoes }, { data: token }] = await Promise.all([
     supabase.from("assessorados").select("*").eq("id", id).single(),
@@ -62,7 +62,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
@@ -79,7 +79,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
             )}
           </p>
         </div>
-        <Link href={`/assessoria/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <Link href={`/produtos-tiktok/assessoria/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Editar
         </Link>
       </div>

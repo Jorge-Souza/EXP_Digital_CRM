@@ -17,7 +17,7 @@ export default async function RelatorioPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/dashboard")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const [{ data: assessoradosRaw }, { data: sessoesRaw }] = await Promise.all([
     supabase.from("assessorados").select("*").order("nome"),
@@ -56,7 +56,7 @@ export default async function RelatorioPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold flex items-center gap-2">

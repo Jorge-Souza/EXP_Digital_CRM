@@ -22,7 +22,7 @@ export default async function AssessoriaPage() {
   if (!user) redirect("/login")
 
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/dashboard")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const { data: assessorados } = await supabase
     .from("assessorados")
@@ -45,10 +45,10 @@ export default async function AssessoriaPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/assessoria/dashboard" className={buttonVariants({ variant: "outline" })}>Dashboard</Link>
-          <Link href="/assessoria/agenda" className={buttonVariants({ variant: "outline" })}>Agenda</Link>
-          <Link href="/assessoria/relatorio" className={buttonVariants({ variant: "outline" })}>Relatório</Link>
-          <Link href="/assessoria/novo" className={buttonVariants()}>
+          <Link href="/produtos-tiktok/assessoria/dashboard" className={buttonVariants({ variant: "outline" })}>Dashboard</Link>
+          <Link href="/produtos-tiktok/assessoria/agenda" className={buttonVariants({ variant: "outline" })}>Agenda</Link>
+          <Link href="/produtos-tiktok/assessoria/relatorio" className={buttonVariants({ variant: "outline" })}>Relatório</Link>
+          <Link href="/produtos-tiktok/assessoria/novo" className={buttonVariants()}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Assessorado
           </Link>
@@ -60,7 +60,7 @@ export default async function AssessoriaPage() {
           <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-3">
             <GraduationCap className="h-12 w-12 text-muted-foreground/30" />
             <p className="text-muted-foreground">Nenhum assessorado ainda.</p>
-            <Link href="/assessoria/novo" className={buttonVariants({ variant: "outline" })}>
+            <Link href="/produtos-tiktok/assessoria/novo" className={buttonVariants({ variant: "outline" })}>
               Cadastrar primeiro assessorado
             </Link>
           </CardContent>
@@ -68,7 +68,7 @@ export default async function AssessoriaPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {lista.map((a) => (
-            <Link key={a.id} href={`/assessoria/${a.id}`}>
+            <Link key={a.id} href={`/produtos-tiktok/assessoria/${a.id}`}>
               <Card className="hover:border-purple-500/50 hover:shadow-md transition-all cursor-pointer h-full">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex items-start justify-between gap-2">

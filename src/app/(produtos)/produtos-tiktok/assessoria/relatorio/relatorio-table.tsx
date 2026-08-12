@@ -114,7 +114,7 @@ export function RelatorioTable({ linhas }: { linhas: LinhaRelatorio[] }) {
                 {filtradas.map((l) => (
                   <tr key={l.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-2.5 font-medium">
-                      <Link href={`/assessoria/${l.id}`} className="hover:underline">{l.nome}</Link>
+                      <Link href={`/produtos-tiktok/assessoria/${l.id}`} className="hover:underline">{l.nome}</Link>
                       {l.loja && <p className="text-xs text-muted-foreground">{l.loja}</p>}
                     </td>
                     <td className="px-4 py-2.5"><Badge variant="outline">{STATUS_LABEL[l.status] ?? l.status}</Badge></td>

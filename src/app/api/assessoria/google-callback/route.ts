@@ -8,7 +8,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code")
-  if (!code) return Response.redirect(`${APP_URL}/assessoria?erro=sem_codigo`)
+  if (!code) return Response.redirect(`${APP_URL}/produtos-tiktok/assessoria?erro=sem_codigo`)
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" })
 
-    return Response.redirect(`${APP_URL}/assessoria?google=conectado`)
+    return Response.redirect(`${APP_URL}/produtos-tiktok/assessoria?google=conectado`)
   } catch (err) {
     console.error("Google OAuth error:", err)
-    return Response.redirect(`${APP_URL}/assessoria?erro=oauth`)
+    return Response.redirect(`${APP_URL}/produtos-tiktok/assessoria?erro=oauth`)
   }
 }

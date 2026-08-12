@@ -29,7 +29,7 @@ export default async function AgendaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
-  if (!isAdmin) redirect("/dashboard")
+  if (!isAdmin) redirect("/produtos-tiktok/alunos")
 
   const hoje = new Date()
   const inicio30 = new Date(hoje); inicio30.setDate(inicio30.getDate() - 7)
@@ -56,7 +56,7 @@ export default async function AgendaPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
@@ -87,7 +87,7 @@ export default async function AgendaPage() {
                     const dt = new Date(s.data_sessao)
                     const cfg = statusConfig[s.status] ?? statusConfig.agendada
                     return (
-                      <Link key={s.id} href={`/assessoria/${s.assessorado_id}`}>
+                      <Link key={s.id} href={`/produtos-tiktok/assessoria/${s.assessorado_id}`}>
                         <Card className="hover:border-border/80 transition-colors">
                           <CardContent className="p-3.5 flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">

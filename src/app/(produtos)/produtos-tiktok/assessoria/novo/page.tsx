@@ -66,7 +66,7 @@ export default function NovoAssessoradoPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success("Assessorado cadastrado!")
-      router.push(`/assessoria/${data.id}`)
+      router.push(`/produtos-tiktok/assessoria/${data.id}`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao cadastrar")
       setLoading(false)
@@ -76,7 +76,7 @@ export default function NovoAssessoradoPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold">Novo Assessorado</h1>
@@ -184,7 +184,7 @@ export default function NovoAssessoradoPage() {
                 <Save className="mr-2 h-4 w-4" />
                 {loading ? "Salvando..." : "Salvar"}
               </Button>
-              <Link href="/assessoria">
+              <Link href="/produtos-tiktok/assessoria">
                 <Button type="button" variant="outline">Cancelar</Button>
               </Link>
             </div>
