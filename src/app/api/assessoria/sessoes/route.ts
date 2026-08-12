@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!isAdmin) return Response.json({ error: "Sem permissão" }, { status: 403 })
 
   const body = await req.json()
-  const { assessorado_id, titulo, data_sessao, duracao_minutos, descricao, link_reuniao, sincronizar_google, assessorado_nome, numero_sessao, pilar_foco, plano_de_acao } = body
+  const { assessorado_id, titulo, tipo, data_sessao, duracao_minutos, descricao, link_reuniao, sincronizar_google, assessorado_nome, numero_sessao, pilar_foco, plano_de_acao } = body
 
   let google_event_id: string | null = null
   let google_event_link: string | null = null
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
     .insert({
       assessorado_id,
       titulo,
+      tipo: tipo ?? "individual",
       data_sessao,
       duracao_minutos: duracao_minutos ?? 60,
       descricao: descricao ?? null,

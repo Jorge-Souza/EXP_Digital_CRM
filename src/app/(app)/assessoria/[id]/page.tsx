@@ -4,16 +4,27 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Calendar, DollarSign, Phone, Mail, Plus, ExternalLink, Clock } from "lucide-react"
+import { ArrowLeft, Calendar, DollarSign, Phone, Mail, Plus, ExternalLink, Clock, Store, Tag, TrendingUp } from "lucide-react"
 import type { Assessorado, SessaoAssessoria } from "@/lib/types"
 import { NovaSessaoDialog } from "@/components/nova-sessao-dialog"
+import { RegistrarSessaoDialog } from "@/components/registrar-sessao-dialog"
 import { GoogleCalendarConnect } from "@/components/google-calendar-connect"
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   agendada:  { label: "Agendada",  className: "bg-blue-500/10 text-blue-400 border-blue-400/30" },
   realizada: { label: "Realizada", className: "bg-green-500/10 text-green-400 border-green-400/30" },
+  remarcada: { label: "Remarcada", className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
   cancelada: { label: "Cancelada", className: "bg-red-500/10 text-red-400 border-red-400/30" },
+  no_show:   { label: "Não compareceu", className: "bg-red-500/10 text-red-400 border-red-400/30" },
 }
+
+const SAUDE_CONFIG: Record<string, { label: string; className: string }> = {
+  verde:    { label: "🟢 Evoluindo",  className: "bg-green-500/10 text-green-500 border-green-500/30" },
+  amarelo:  { label: "🟡 Estagnado",  className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30" },
+  vermelho: { label: "🔴 Crítico",    className: "bg-red-500/10 text-red-500 border-red-500/30" },
+}
+
+const STATUS_LABEL: Record<string, string> = { ativo: "Ativo", pausado: "Pausado", encerrado: "Encerrado", renovado: "Renovado" }
 
 const pilarStatusConfig: Record<string, { label: string; className: string }> = {
   nao_iniciado: { label: "Não Iniciado", className: "bg-muted text-muted-foreground border-border" },
@@ -42,6 +53,11 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   const lista = (sessoes ?? []) as SessaoAssessoria[]
   const temGoogleCal = !!token
 
+  const diasParaFim = a.data_fim_prevista
+    ? Math.ceil((new Date(a.data_fim_prevista + "T00:00:00").getTime() - Date.now()) / 86400000)
+    : null
+  const saude = SAUDE_CONFIG[a.saude_conta] ?? SAUDE_CONFIG.verde
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,8 +66,18 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{a.nome}</h1>
-          <p className="text-muted-foreground text-sm">Assessorado desde {new Date(a.data_contratacao + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
+            {a.nome}
+            <Badge variant="outline">{STATUS_LABEL[a.status] ?? a.status}</Badge>
+            <Badge variant="outline" className={saude.className}>{saude.label}</Badge>
+            {a.numero_vaga && <Badge variant="outline">Vaga {a.numero_vaga}/7</Badge>}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Assessorado desde {new Date(a.data_contratacao + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+            {a.data_fim_prevista && diasParaFim !== null && (
+              <> · {diasParaFim >= 0 ? `${diasParaFim} dia(s) até o fim do contrato` : `contrato encerrado há ${Math.abs(diasParaFim)} dia(s)`}</>
+            )}
+          </p>
         </div>
         <Link href={`/assessoria/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Editar
@@ -82,6 +108,31 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                   {pilarStatusConfig[a.status_expansao]?.label || "Não Iniciado"}
                 </Badge>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Situação Atual</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {a.loja && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Store className="h-4 w-4" /> {a.loja}
+                </div>
+              )}
+              {a.segmento && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="h-4 w-4" /> {a.segmento}
+                </div>
+              )}
+              {a.gmv_atual != null && (
+                <div className="flex items-center gap-2 font-semibold text-blue-400">
+                  <TrendingUp className="h-4 w-4" />
+                  GMV: {a.gmv_atual.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+              )}
+              {!a.loja && !a.segmento && a.gmv_atual == null && (
+                <p className="text-muted-foreground italic">Sem dados de loja/GMV ainda.</p>
+              )}
             </CardContent>
           </Card>
 
@@ -142,16 +193,27 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
             <div className="space-y-3">
               {lista.map((s) => {
                 const dt = new Date(s.data_sessao)
-                const cfg = statusConfig[s.status]
+                const cfg = statusConfig[s.status] ?? statusConfig.agendada
+                const podeRegistrar = s.status === "agendada" || s.status === "remarcada"
                 return (
                   <Card key={s.id} className="hover:border-border/80 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium">{s.titulo} {s.numero_sessao ? `(Encontro ${s.numero_sessao})` : ""}</p>
                             <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
+                            <Badge variant="secondary">{s.tipo === "grupo" ? "Grupo" : "Individual"}</Badge>
                             {s.pilar_foco && <Badge variant="secondary">{s.pilar_foco}</Badge>}
+                            {s.tarefas_anteriores_cumpridas && (
+                              <Badge variant="outline" className={
+                                s.tarefas_anteriores_cumpridas === "sim" ? "text-green-500 border-green-500/30" :
+                                s.tarefas_anteriores_cumpridas === "parcial" ? "text-yellow-500 border-yellow-500/30" :
+                                "text-red-500 border-red-500/30"
+                              }>
+                                Tarefas anteriores: {s.tarefas_anteriores_cumpridas === "sim" ? "cumpridas" : s.tarefas_anteriores_cumpridas === "parcial" ? "parcial" : "não cumpridas"}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1.5">
@@ -171,7 +233,8 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          {podeRegistrar && <RegistrarSessaoDialog sessao={s} assessoradoId={id} />}
                           {s.google_event_link && (
                             <a href={s.google_event_link} target="_blank" rel="noopener noreferrer"
                               className="text-xs text-blue-400 hover:underline flex items-center gap-1">

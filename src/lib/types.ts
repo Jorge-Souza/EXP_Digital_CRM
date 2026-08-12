@@ -1,17 +1,28 @@
 export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
 
 // --- Assessoria ---
-export type SessaoStatus = 'agendada' | 'realizada' | 'cancelada'
+export type SessaoStatus = 'agendada' | 'realizada' | 'remarcada' | 'cancelada' | 'no_show'
+export type SessaoTipo = 'individual' | 'grupo'
+export type TarefasCumpridas = 'sim' | 'parcial' | 'nao'
 export type PilarStatus = 'nao_iniciado' | 'em_andamento' | 'concluido'
 export type PilarFoco = 'Estrutura' | 'Exposição' | 'Expansão' | 'Geral'
+export type AssessoradoStatus = 'ativo' | 'pausado' | 'encerrado' | 'renovado'
+export type SaudeConta = 'verde' | 'amarelo' | 'vermelho'
 
 export interface Assessorado {
   id: string
   nome: string
   email: string | null
   telefone: string | null
+  loja: string | null
+  segmento: string | null
+  numero_vaga: number | null
   data_contratacao: string
+  data_fim_prevista: string | null
+  status: AssessoradoStatus
   valor_assessoria: number | null
+  gmv_atual: number | null
+  saude_conta: SaudeConta
   observacoes: string | null
   status_estrutura: PilarStatus
   status_exposicao: PilarStatus
@@ -27,7 +38,10 @@ export interface SessaoAssessoria {
   data_sessao: string
   duracao_minutos: number
   titulo: string
+  tipo: SessaoTipo
   descricao: string | null
+  tarefas_passadas: string | null
+  tarefas_anteriores_cumpridas: TarefasCumpridas | null
   link_reuniao: string | null
   google_event_id: string | null
   google_event_link: string | null

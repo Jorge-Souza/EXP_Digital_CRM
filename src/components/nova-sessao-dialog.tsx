@@ -31,6 +31,7 @@ export function NovaSessaoDialog({ assessoradoId, assessoradoNome, temGoogleCal 
     descricao: "",
     link_reuniao: "",
     sincronizar_google: temGoogleCal,
+    tipo: "individual",
     numero_sessao: "1",
     pilar_foco: "Estrutura",
     plano_de_acao: "",
@@ -50,6 +51,7 @@ export function NovaSessaoDialog({ assessoradoId, assessoradoNome, temGoogleCal 
         body: JSON.stringify({
           assessorado_id: assessoradoId,
           titulo: form.titulo,
+          tipo: form.tipo,
           data_sessao: new Date(form.data).toISOString(),
           duracao_minutos: parseInt(form.duracao_minutos),
           descricao: form.descricao || null,
@@ -97,6 +99,13 @@ export function NovaSessaoDialog({ assessoradoId, assessoradoNome, temGoogleCal 
               <Label>Duração (min)</Label>
               <Input type="number" value={form.duracao_minutos} onChange={(e) => set("duracao_minutos", e.target.value)} min={15} step={15} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Tipo</Label>
+            <select value={form.tipo} onChange={(e) => set("tipo", e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <option value="individual">Individual</option>
+              <option value="grupo">Grupo</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

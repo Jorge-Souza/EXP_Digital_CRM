@@ -7,23 +7,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+
+function addMonths(dateStr: string, months: number) {
+  const d = new Date(dateStr + "T00:00:00")
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().split("T")[0]
+}
 
 export default function NovoAssessoradoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const hoje = new Date().toISOString().split("T")[0]
   const [form, setForm] = useState({
     nome: "",
     email: "",
     telefone: "",
-    data_contratacao: new Date().toISOString().split("T")[0],
+    loja: "",
+    segmento: "",
+    numero_vaga: "",
+    data_contratacao: hoje,
+    data_fim_prevista: addMonths(hoje, 3),
+    status: "ativo",
     valor_assessoria: "",
+    gmv_atual: "",
+    saude_conta: "verde",
     observacoes: "",
   })
 
   function set(field: string, value: string) {
-    setForm((f) => ({ ...f, [field]: value }))
+    setForm((f) => {
+      const next = { ...f, [field]: value }
+      // Sugere data fim = contratação + 3 meses, só se o usuário ainda não mexeu manualmente nela
+      if (field === "data_contratacao" && value) {
+        next.data_fim_prevista = addMonths(value, 3)
+      }
+      return next
+    })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -36,7 +58,9 @@ export default function NovoAssessoradoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          numero_vaga: form.numero_vaga ? parseInt(form.numero_vaga, 10) : null,
           valor_assessoria: form.valor_assessoria ? parseFloat(form.valor_assessoria.replace(",", ".")) : null,
+          gmv_atual: form.gmv_atual ? parseFloat(form.gmv_atual.replace(",", ".")) : null,
         }),
       })
       const data = await res.json()
@@ -82,12 +106,64 @@ export default function NovoAssessoradoPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="loja">Loja / Marca</Label>
+                <Input id="loja" value={form.loja} onChange={(e) => set("loja", e.target.value)} placeholder="Nome da loja no TikTok Shop" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="segmento">Segmento</Label>
+                <Input id="segmento" value={form.segmento} onChange={(e) => set("segmento", e.target.value)} placeholder="Ex: Moda, Acessórios" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vaga">Nº da vaga (1-7)</Label>
+                <Input id="vaga" type="number" min={1} max={7} value={form.numero_vaga} onChange={(e) => set("numero_vaga", e.target.value)} placeholder="1 a 7" />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => v && set("status", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="pausado">Pausado</SelectItem>
+                    <SelectItem value="encerrado">Encerrado</SelectItem>
+                    <SelectItem value="renovado">Renovado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="data_contratacao">Data da contratação *</Label>
                 <Input id="data_contratacao" type="date" value={form.data_contratacao} onChange={(e) => set("data_contratacao", e.target.value)} />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="data_fim">Fim previsto (3 meses)</Label>
+                <Input id="data_fim" type="date" value={form.data_fim_prevista} onChange={(e) => set("data_fim_prevista", e.target.value)} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="valor">Valor da assessoria (R$)</Label>
                 <Input id="valor" value={form.valor_assessoria} onChange={(e) => set("valor_assessoria", e.target.value)} placeholder="0,00" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gmv">GMV atual (R$)</Label>
+                <Input id="gmv" value={form.gmv_atual} onChange={(e) => set("gmv_atual", e.target.value)} placeholder="0,00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Saúde da conta</Label>
+                <Select value={form.saude_conta} onValueChange={(v) => v && set("saude_conta", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="verde">🟢 Evoluindo</SelectItem>
+                    <SelectItem value="amarelo">🟡 Estagnado</SelectItem>
+                    <SelectItem value="vermelho">🔴 Crítico</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

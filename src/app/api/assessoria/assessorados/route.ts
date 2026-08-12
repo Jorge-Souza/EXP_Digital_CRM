@@ -10,13 +10,31 @@ export async function POST(req: NextRequest) {
   if (!isAdmin) return Response.json({ error: "Sem permissão" }, { status: 403 })
 
   const body = await req.json()
-  const { nome, email, telefone, data_contratacao, valor_assessoria, observacoes } = body
+  const {
+    nome, email, telefone, loja, segmento, numero_vaga,
+    data_contratacao, data_fim_prevista, status,
+    valor_assessoria, gmv_atual, saude_conta, observacoes,
+  } = body
 
   if (!nome) return Response.json({ error: "Nome é obrigatório" }, { status: 400 })
 
   const { data, error } = await supabase
     .from("assessorados")
-    .insert({ nome, email: email || null, telefone: telefone || null, data_contratacao, valor_assessoria, observacoes: observacoes || null })
+    .insert({
+      nome,
+      email: email || null,
+      telefone: telefone || null,
+      loja: loja || null,
+      segmento: segmento || null,
+      numero_vaga: numero_vaga || null,
+      data_contratacao,
+      data_fim_prevista: data_fim_prevista || null,
+      status: status || "ativo",
+      valor_assessoria,
+      gmv_atual: gmv_atual ?? null,
+      saude_conta: saude_conta || "verde",
+      observacoes: observacoes || null,
+    })
     .select()
     .single()
 
