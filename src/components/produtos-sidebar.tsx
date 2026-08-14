@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw, Target } from "lucide-react"
+import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw, Target, Compass } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +36,7 @@ const navItems = [
   { title: "Vendas & Carrinhos",   url: "/produtos-tiktok/vendas",           icon: ShoppingCart, emoji: "💰" },
   { title: "Carrinhos Abandonados", url: "/produtos-tiktok/carrinhos-abandonados", icon: RotateCcw, emoji: "🛒" },
   { title: "Análise de Anúncios", url: "/produtos-tiktok/analise-anuncios", icon: BarChart2,    emoji: "📈" },
+  { title: "Assessoria",    url: "/produtos-tiktok/assessoria",         icon: Compass,       emoji: "🧭" },
 ]
 
 interface ProdutosSidebarProps {

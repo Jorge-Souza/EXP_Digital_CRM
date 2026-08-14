@@ -52,7 +52,7 @@ export interface SessaoAssessoria {
   created_at: string
 }
 
-// --- Assessoria: Jornada Granular (por Loja) ---
+// --- Assessoria TikTok Shop: Painel de Jornada (CRM Produtos, independente de assessorados) ---
 export type PilarId = 'estrutura' | 'exposicao' | 'expansao'
 
 export interface SituationState {
@@ -79,9 +79,17 @@ export interface CustomTask {
   done: boolean
 }
 
+export interface AssessoriaCliente {
+  id: string
+  nome: string
+  nicho: string | null
+  whatsapp: string | null
+  created_at: string
+}
+
 export interface AssessoriaLoja {
   id: string
-  assessorado_id: string
+  cliente_id: string
   label: string
   link: string | null
   situations: SituationState[]
