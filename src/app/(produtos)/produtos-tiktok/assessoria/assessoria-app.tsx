@@ -1,6 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { AssessoriaCliente, AssessoriaLoja } from "@/lib/types"
@@ -75,10 +77,13 @@ export function AssessoriaApp({ clientesIniciais }: Props) {
   }
 
   return (
-    <div className="bg-[#010101] text-[#F5F5F5] flex" style={{ margin: "-24px", minHeight: "100vh" }}>
+    <div className="bg-[#010101] text-[#F5F5F5] flex fixed inset-0 z-50">
       {/* Sidebar */}
-      <div className="w-[290px] shrink-0 bg-[#141414] border-r border-[#2b2b2b] p-5 flex flex-col gap-4">
+      <div className="w-[290px] shrink-0 bg-[#141414] border-r border-[#2b2b2b] p-5 flex flex-col gap-4 overflow-y-auto">
         <div>
+          <Link href="/produtos-tiktok" className="flex items-center gap-1.5 text-[11px] text-[#8a8a8a] hover:text-white mb-3">
+            <ArrowLeft className="h-3 w-3" /> Voltar ao CRM
+          </Link>
           <h1 className="text-sm font-extrabold uppercase tracking-wide">
             EXP <span className="text-[#FE2C55]">·</span> Assessoria<span className="text-[#25F4EE]">.</span>
           </h1>
