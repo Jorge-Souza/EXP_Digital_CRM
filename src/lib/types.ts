@@ -51,6 +51,46 @@ export interface SessaoAssessoria {
   plano_de_acao: string | null
   created_at: string
 }
+
+// --- Assessoria: Jornada Granular (por Loja) ---
+export type PilarId = 'estrutura' | 'exposicao' | 'expansao'
+
+export interface SituationState {
+  id: string
+  active: boolean
+  sent: boolean
+  responsavel: string | null
+  prazo: string | null
+}
+
+export interface TrilhaSubtaskState {
+  id: string
+  done: boolean
+  responsavel: string | null
+  prazo: string | null
+}
+
+export interface CustomTask {
+  id: string
+  text: string
+  tag: string | null
+  responsavel: string | null
+  prazo: string | null
+  done: boolean
+}
+
+export interface AssessoriaLoja {
+  id: string
+  assessorado_id: string
+  label: string
+  link: string | null
+  situations: SituationState[]
+  trilha: TrilhaSubtaskState[]
+  custom_tasks: CustomTask[]
+  created_at: string
+  updated_at: string
+}
+
 // --- Mentorias (SOS e futuras consultorias avulsas) ---
 export type MentoriaStatus = 'nao_agendada' | 'agendada' | 'executada' | 'cancelada'
 

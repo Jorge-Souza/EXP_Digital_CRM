@@ -4,11 +4,13 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Calendar, DollarSign, Phone, Mail, Plus, ExternalLink, Clock, Store, Tag, TrendingUp } from "lucide-react"
-import type { Assessorado, SessaoAssessoria } from "@/lib/types"
+import type { Assessorado, SessaoAssessoria, AssessoriaLoja } from "@/lib/types"
 import { NovaSessaoDialog } from "@/components/nova-sessao-dialog"
 import { RegistrarSessaoDialog } from "@/components/registrar-sessao-dialog"
 import { GoogleCalendarConnect } from "@/components/google-calendar-connect"
+import { JornadaLojasPanel } from "@/components/assessoria/jornada-lojas-panel"
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   agendada:  { label: "Agendada",  className: "bg-blue-500/10 text-blue-400 border-blue-400/30" },
@@ -41,10 +43,11 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   const { data: isAdmin } = await supabase.rpc("current_user_is_admin")
   if (!isAdmin) redirect("/dashboard")
 
-  const [{ data: assessorado }, { data: sessoes }, { data: token }] = await Promise.all([
+  const [{ data: assessorado }, { data: sessoes }, { data: token }, { data: lojas }] = await Promise.all([
     supabase.from("assessorados").select("*").eq("id", id).single(),
     supabase.from("sessoes_assessoria").select("*").eq("assessorado_id", id).order("data_sessao", { ascending: false }),
     supabase.from("google_calendar_tokens").select("calendar_id").eq("user_id", user.id).maybeSingle(),
+    supabase.from("assessoria_lojas").select("*").eq("assessorado_id", id).order("created_at"),
   ])
 
   if (!assessorado) notFound()
@@ -52,6 +55,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   const a = assessorado as Assessorado
   const lista = (sessoes ?? []) as SessaoAssessoria[]
   const temGoogleCal = !!token
+  const lojasIniciais = (lojas ?? []) as AssessoriaLoja[]
 
   const diasParaFim = a.data_fim_prevista
     ? Math.ceil((new Date(a.data_fim_prevista + "T00:00:00").getTime() - Date.now()) / 86400000)
@@ -84,6 +88,13 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
         </Link>
       </div>
 
+      <Tabs defaultValue="visao-geral">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
+          <TabsTrigger value="jornada">Jornada Completa</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visao-geral" className="mt-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Info */}
         <div className="space-y-4">
@@ -257,6 +268,12 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="jornada" className="mt-4">
+          <JornadaLojasPanel assessoradoId={id} assessoradoNome={a.nome} lojaLegado={a.loja} lojasIniciais={lojasIniciais} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
