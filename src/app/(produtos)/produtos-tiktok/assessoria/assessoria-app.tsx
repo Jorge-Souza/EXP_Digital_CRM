@@ -88,6 +88,9 @@ export function AssessoriaApp({ clientesIniciais }: Props) {
             EXP <span className="text-[#FE2C55]">·</span> Assessoria<span className="text-[#25F4EE]">.</span>
           </h1>
           <p className="text-[11px] text-[#8a8a8a] mt-1">Jornada TikTok Shop por assessorado</p>
+          <Link href="/produtos-tiktok/assessoria/gestao" className="inline-flex items-center gap-1.5 text-[11px] text-[#25F4EE] hover:underline mt-2">
+            Vagas, agenda e relatório →
+          </Link>
         </div>
 
         <div className="bg-[#1c1c1c] border border-[#2b2b2b] rounded-lg p-3 flex flex-col gap-2">

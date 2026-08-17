@@ -56,7 +56,7 @@ export default async function RelatorioPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria/gestao" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold flex items-center gap-2">

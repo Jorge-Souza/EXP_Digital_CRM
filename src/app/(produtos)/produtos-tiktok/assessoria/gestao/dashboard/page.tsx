@@ -77,7 +77,7 @@ export default async function AssessoriaDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria/gestao" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -115,7 +115,7 @@ export default async function AssessoriaDashboardPage() {
           <CardHeader><CardTitle className="text-base flex items-center gap-2 text-red-500"><AlertTriangle className="h-4 w-4" />Precisa de atenção</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {alertas.map((al, i) => (
-              <Link key={i} href={`/produtos-tiktok/assessoria/${al.assessorado.id}`} className="block">
+              <Link key={i} href={`/produtos-tiktok/assessoria/gestao/${al.assessorado.id}`} className="block">
                 <div className="flex items-center justify-between gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                   <div>
                     <p className="font-medium text-sm">{al.assessorado.nome}</p>
@@ -138,7 +138,7 @@ export default async function AssessoriaDashboardPage() {
             sessoesDaSemana.map(({ sessao, assessorado }) => {
               const dt = new Date(sessao.data_sessao)
               return (
-                <Link key={sessao.id} href={`/produtos-tiktok/assessoria/${sessao.assessorado_id}`} className="block">
+                <Link key={sessao.id} href={`/produtos-tiktok/assessoria/gestao/${sessao.assessorado_id}`} className="block">
                   <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-sm">
                     <span className="font-semibold text-purple-400 w-24 shrink-0">
                       {dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -156,7 +156,7 @@ export default async function AssessoriaDashboardPage() {
         <CardHeader><CardTitle className="text-base">Semáforo Geral</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
           {assessorados.map((a) => (
-            <Link key={a.id} href={`/produtos-tiktok/assessoria/${a.id}`}>
+            <Link key={a.id} href={`/produtos-tiktok/assessoria/gestao/${a.id}`}>
               <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors text-sm">
                 <span className="truncate">{a.nome}</span>
                 <div className="flex items-center gap-2 shrink-0">

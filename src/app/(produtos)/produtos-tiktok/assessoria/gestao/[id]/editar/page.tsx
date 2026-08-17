@@ -69,13 +69,13 @@ export default function EditarAssessoradoPage() {
     }).eq("id", id)
     if (error) { toast.error(error.message); setLoading(false); return }
     toast.success("Dados atualizados!")
-    router.push(`/produtos-tiktok/assessoria/${id}`)
+    router.push(`/produtos-tiktok/assessoria/gestao/${id}`)
   }
 
   return (
     <div className="max-w-xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={`/produtos-tiktok/assessoria/${id}`} className="text-muted-foreground hover:text-foreground">
+        <Link href={`/produtos-tiktok/assessoria/gestao/${id}`} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold">Editar Assessorado</h1>
@@ -171,7 +171,7 @@ export default function EditarAssessoradoPage() {
               <Button type="submit" disabled={loading}>
                 <Save className="mr-2 h-4 w-4" />{loading ? "Salvando..." : "Salvar"}
               </Button>
-              <Link href={`/produtos-tiktok/assessoria/${id}`}><Button variant="outline">Cancelar</Button></Link>
+              <Link href={`/produtos-tiktok/assessoria/gestao/${id}`}><Button variant="outline">Cancelar</Button></Link>
             </div>
           </form>
         </CardContent>
