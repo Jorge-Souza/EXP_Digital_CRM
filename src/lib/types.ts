@@ -51,6 +51,54 @@ export interface SessaoAssessoria {
   plano_de_acao: string | null
   created_at: string
 }
+
+// --- Assessoria TikTok Shop: Painel de Jornada (CRM Produtos, independente de assessorados) ---
+export type PilarId = 'estrutura' | 'exposicao' | 'expansao'
+
+export interface SituationState {
+  id: string
+  active: boolean
+  sent: boolean
+  responsavel: string | null
+  prazo: string | null
+}
+
+export interface TrilhaSubtaskState {
+  id: string
+  done: boolean
+  responsavel: string | null
+  prazo: string | null
+}
+
+export interface CustomTask {
+  id: string
+  text: string
+  tag: string | null
+  responsavel: string | null
+  prazo: string | null
+  done: boolean
+}
+
+export interface AssessoriaCliente {
+  id: string
+  nome: string
+  nicho: string | null
+  whatsapp: string | null
+  created_at: string
+}
+
+export interface AssessoriaLoja {
+  id: string
+  cliente_id: string
+  label: string
+  link: string | null
+  situations: SituationState[]
+  trilha: TrilhaSubtaskState[]
+  custom_tasks: CustomTask[]
+  created_at: string
+  updated_at: string
+}
+
 // --- Mentorias (SOS e futuras consultorias avulsas) ---
 export type MentoriaStatus = 'nao_agendada' | 'agendada' | 'executada' | 'cancelada'
 

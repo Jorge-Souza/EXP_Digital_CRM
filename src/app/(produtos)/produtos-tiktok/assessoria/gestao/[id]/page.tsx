@@ -4,7 +4,7 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Calendar, DollarSign, Phone, Mail, Plus, ExternalLink, Clock, Store, Tag, TrendingUp } from "lucide-react"
+import { ArrowLeft, Calendar, DollarSign, Phone, Mail, ExternalLink, Clock, Store, Tag, TrendingUp } from "lucide-react"
 import type { Assessorado, SessaoAssessoria } from "@/lib/types"
 import { NovaSessaoDialog } from "@/components/nova-sessao-dialog"
 import { RegistrarSessaoDialog } from "@/components/registrar-sessao-dialog"
@@ -54,7 +54,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   const temGoogleCal = !!token
 
   const diasParaFim = a.data_fim_prevista
-    ? Math.ceil((new Date(a.data_fim_prevista + "T00:00:00").getTime() - Date.now()) / 86400000)
+    ? Math.ceil((new Date(a.data_fim_prevista + "T00:00:00").getTime() - new Date().getTime()) / 86400000)
     : null
   const saude = SAUDE_CONFIG[a.saude_conta] ?? SAUDE_CONFIG.verde
 
@@ -62,7 +62,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/produtos-tiktok/assessoria" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/produtos-tiktok/assessoria/gestao" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
@@ -79,7 +79,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
             )}
           </p>
         </div>
-        <Link href={`/produtos-tiktok/assessoria/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <Link href={`/produtos-tiktok/assessoria/gestao/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Editar
         </Link>
       </div>
