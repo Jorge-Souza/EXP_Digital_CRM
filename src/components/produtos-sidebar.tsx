@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw, Target, Compass } from "lucide-react"
+import { LayoutDashboard, GraduationCap, Package, LogOut, ChevronUp, ArrowLeft, ShoppingBag, Megaphone, ClipboardList, BookOpen, BarChart2, ShoppingCart, Kanban, RotateCcw, Target, Compass, Users } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +37,7 @@ const navItems = [
   { title: "Carrinhos Abandonados", url: "/produtos-tiktok/carrinhos-abandonados", icon: RotateCcw, emoji: "🛒" },
   { title: "Análise de Anúncios", url: "/produtos-tiktok/analise-anuncios", icon: BarChart2,    emoji: "📈" },
   { title: "Assessoria",    url: "/produtos-tiktok/assessoria",         icon: Compass,       emoji: "🧭" },
+  { title: "Gestão de Assessorados", url: "/produtos-tiktok/assessoria/gestao", icon: Users, emoji: "🗂️" },
 ]
 
 interface ProdutosSidebarProps {
@@ -99,7 +100,11 @@ export function ProdutosSidebar({ userEmail, userName, isVendas }: ProdutosSideb
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     render={<Link href={item.url} />}
-                    isActive={item.url === "/produtos-tiktok" ? pathname === item.url : pathname.startsWith(item.url)}
+                    isActive={
+                      item.url === "/produtos-tiktok" || item.url === "/produtos-tiktok/assessoria"
+                        ? pathname === item.url
+                        : pathname.startsWith(item.url)
+                    }
                     className="text-white/70 hover:text-white hover:bg-white/10 data-[active=true]:text-white font-medium"
                     style={{ "--sidebar-accent": "rgba(249,115,22,0.2)" } as React.CSSProperties}
                   >
