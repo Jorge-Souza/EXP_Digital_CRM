@@ -59,7 +59,7 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
   const saude = SAUDE_CONFIG[a.saude_conta] ?? SAUDE_CONFIG.verde
 
   return (
-    <div className="space-y-6">
+    <div className="dark bg-background text-foreground -m-6 min-h-[calc(100vh-3.5rem)] p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/produtos-tiktok/assessoria/gestao" className="text-muted-foreground hover:text-foreground transition-colors">

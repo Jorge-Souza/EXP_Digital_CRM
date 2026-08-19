@@ -74,7 +74,7 @@ export default function NovoAssessoradoPage() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="dark bg-background text-foreground -m-6 min-h-[calc(100vh-3.5rem)] p-6"><div className="max-w-xl space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/produtos-tiktok/assessoria/gestao" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
@@ -191,6 +191,7 @@ export default function NovoAssessoradoPage() {
           </form>
         </CardContent>
       </Card>
+    </div>
     </div>
   )
 }
