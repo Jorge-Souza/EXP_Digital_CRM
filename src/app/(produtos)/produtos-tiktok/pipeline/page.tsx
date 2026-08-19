@@ -35,6 +35,7 @@ export default async function PipelinePage() {
   const { data: leads } = await admin
     .from("alunos")
     .select("id, nome, email, telefone, whatsapp, instagram, etapa_pipeline, origem, tipo_lead, score_comercial, proxima_melhor_oferta, responsavel_id, created_at, profiles(nome)")
+    .or("tipo_lead.neq.carrinho_abandonado,tipo_lead.is.null")
     .order("created_at", { ascending: false })
 
   return <PipelineKanban initialLeads={(leads ?? []) as unknown as LeadPipeline[]} />

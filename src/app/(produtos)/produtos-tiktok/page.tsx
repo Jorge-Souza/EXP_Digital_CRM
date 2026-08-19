@@ -84,9 +84,6 @@ export default async function ProdutosTiktokPage({ searchParams }: { searchParam
           <Link href="/produtos-tiktok/alunos" className="text-sm px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
             Ver alunos
           </Link>
-          <Link href="/produtos-tiktok/produtos" className="text-sm px-4 py-2 rounded-md border hover:bg-accent transition-colors">
-            Produtos
-          </Link>
         </div>
       </div>
 
