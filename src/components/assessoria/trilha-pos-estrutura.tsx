@@ -1,18 +1,18 @@
 "use client"
 
-import type { AssessoriaLoja, TrilhaSubtaskState } from "@/lib/types"
+import type { JornadaChecklist, TrilhaSubtaskState } from "@/lib/types"
 import { mergeTrilha, upsertById, DEFAULT_SUBTASK_STATE } from "@/lib/assessoria-catalog"
 
 interface Props {
-  loja: AssessoriaLoja
-  onUpdate: (patch: Partial<AssessoriaLoja>) => void
+  data: JornadaChecklist
+  onUpdate: (patch: Partial<JornadaChecklist>) => void
 }
 
-export function TrilhaPosEstrutura({ loja, onUpdate }: Props) {
-  const etapas = mergeTrilha(loja.trilha)
+export function TrilhaPosEstrutura({ data, onUpdate }: Props) {
+  const etapas = mergeTrilha(data.trilha)
 
   function patch(id: string, value: Partial<TrilhaSubtaskState>) {
-    onUpdate({ trilha: upsertById(loja.trilha, id, value, DEFAULT_SUBTASK_STATE) })
+    onUpdate({ trilha: upsertById(data.trilha, id, value, DEFAULT_SUBTASK_STATE) })
   }
 
   return (

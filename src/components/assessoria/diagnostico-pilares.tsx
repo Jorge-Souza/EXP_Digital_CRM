@@ -1,11 +1,11 @@
 "use client"
 
-import type { AssessoriaLoja, SituationState } from "@/lib/types"
+import type { JornadaChecklist, SituationState } from "@/lib/types"
 import { PILLARS, mergeSituations, upsertById, DEFAULT_SITUATION_STATE } from "@/lib/assessoria-catalog"
 
 interface Props {
-  loja: AssessoriaLoja
-  onUpdate: (patch: Partial<AssessoriaLoja>) => void
+  data: JornadaChecklist
+  onUpdate: (patch: Partial<JornadaChecklist>) => void
 }
 
 const PILAR_ACCENT: Record<string, { bg: string; text: string; tagBg: string; tagText: string }> = {
@@ -14,11 +14,11 @@ const PILAR_ACCENT: Record<string, { bg: string; text: string; tagBg: string; ta
   expansao: { bg: "bg-[#c9a8ff]", text: "text-black", tagBg: "bg-[#241c33]", tagText: "text-[#c9a8ff]" },
 }
 
-export function DiagnosticoPilares({ loja, onUpdate }: Props) {
-  const merged = mergeSituations(loja.situations)
+export function DiagnosticoPilares({ data, onUpdate }: Props) {
+  const merged = mergeSituations(data.situations)
 
   function patch(id: string, value: Partial<SituationState>) {
-    onUpdate({ situations: upsertById(loja.situations, id, value, DEFAULT_SITUATION_STATE) })
+    onUpdate({ situations: upsertById(data.situations, id, value, DEFAULT_SITUATION_STATE) })
   }
 
   return (

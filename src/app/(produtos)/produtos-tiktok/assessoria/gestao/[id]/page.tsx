@@ -9,6 +9,7 @@ import type { Assessorado, SessaoAssessoria } from "@/lib/types"
 import { NovaSessaoDialog } from "@/components/nova-sessao-dialog"
 import { RegistrarSessaoDialog } from "@/components/registrar-sessao-dialog"
 import { GoogleCalendarConnect } from "@/components/google-calendar-connect"
+import { ChecklistAssessorado } from "@/components/assessoria/checklist-assessorado"
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   agendada:  { label: "Agendada",  className: "bg-blue-500/10 text-blue-400 border-blue-400/30" },
@@ -25,12 +26,6 @@ const SAUDE_CONFIG: Record<string, { label: string; className: string }> = {
 }
 
 const STATUS_LABEL: Record<string, string> = { ativo: "Ativo", pausado: "Pausado", encerrado: "Encerrado", renovado: "Renovado" }
-
-const pilarStatusConfig: Record<string, { label: string; className: string }> = {
-  nao_iniciado: { label: "Não Iniciado", className: "bg-muted text-muted-foreground border-border" },
-  em_andamento: { label: "Em Andamento", className: "bg-blue-500/10 text-blue-400 border-blue-400/30" },
-  concluido: { label: "Concluído", className: "bg-green-500/10 text-green-400 border-green-400/30" },
-}
 
 export default async function AssessoradoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -87,30 +82,6 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Info */}
         <div className="space-y-4">
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Jornada (Pilares)</CardTitle></CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Estrutura</span>
-                <Badge variant="outline" className={pilarStatusConfig[a.status_estrutura]?.className || ""}>
-                  {pilarStatusConfig[a.status_estrutura]?.label || "Não Iniciado"}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Exposição</span>
-                <Badge variant="outline" className={pilarStatusConfig[a.status_exposicao]?.className || ""}>
-                  {pilarStatusConfig[a.status_exposicao]?.label || "Não Iniciado"}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Expansão</span>
-                <Badge variant="outline" className={pilarStatusConfig[a.status_expansao]?.className || ""}>
-                  {pilarStatusConfig[a.status_expansao]?.label || "Não Iniciado"}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader><CardTitle className="text-sm">Situação Atual</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
@@ -257,6 +228,12 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
+
+      <ChecklistAssessorado
+        assessoradoId={id}
+        assessoradoNome={a.nome}
+        initial={{ situations: a.situations, trilha: a.trilha, custom_tasks: a.custom_tasks, link: a.jornada_link }}
+      />
     </div>
   )
 }

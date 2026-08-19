@@ -4,7 +4,6 @@ export type ClientStatus = 'ativo' | 'inativo' | 'pausado'
 export type SessaoStatus = 'agendada' | 'realizada' | 'remarcada' | 'cancelada' | 'no_show'
 export type SessaoTipo = 'individual' | 'grupo'
 export type TarefasCumpridas = 'sim' | 'parcial' | 'nao'
-export type PilarStatus = 'nao_iniciado' | 'em_andamento' | 'concluido'
 export type PilarFoco = 'Estrutura' | 'Exposição' | 'Expansão' | 'Geral'
 export type AssessoradoStatus = 'ativo' | 'pausado' | 'encerrado' | 'renovado'
 export type SaudeConta = 'verde' | 'amarelo' | 'vermelho'
@@ -24,10 +23,11 @@ export interface Assessorado {
   gmv_atual: number | null
   saude_conta: SaudeConta
   observacoes: string | null
-  status_estrutura: PilarStatus
-  status_exposicao: PilarStatus
-  status_expansao: PilarStatus
   notas_jornada: string | null
+  situations: SituationState[]
+  trilha: TrilhaSubtaskState[]
+  custom_tasks: CustomTask[]
+  jornada_link: string | null
   created_at: string
   updated_at: string
 }
@@ -52,7 +52,7 @@ export interface SessaoAssessoria {
   created_at: string
 }
 
-// --- Assessoria TikTok Shop: Painel de Jornada (CRM Produtos, independente de assessorados) ---
+// --- Assessoria TikTok Shop: Painel de Jornada (diagnóstico por pilar) ---
 export type PilarId = 'estrutura' | 'exposicao' | 'expansao'
 
 export interface SituationState {
@@ -77,6 +77,15 @@ export interface CustomTask {
   responsavel: string | null
   prazo: string | null
   done: boolean
+}
+
+// Shape comum usado pelos componentes de checklist (DiagnosticoPilares,
+// TrilhaPosEstrutura, TarefasAdicionais) — hoje só é preenchido por Assessorado.
+export interface JornadaChecklist {
+  situations: SituationState[]
+  trilha: TrilhaSubtaskState[]
+  custom_tasks: CustomTask[]
+  link: string | null
 }
 
 export interface AssessoriaCliente {

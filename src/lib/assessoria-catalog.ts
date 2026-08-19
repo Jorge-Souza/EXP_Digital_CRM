@@ -1,4 +1,4 @@
-import type { PilarId, SituationState, TrilhaSubtaskState, AssessoriaLoja } from "./types"
+import type { PilarId, SituationState, TrilhaSubtaskState, JornadaChecklist } from "./types"
 
 export interface Situation {
   id: string
@@ -211,10 +211,10 @@ export function mergeTrilha(trilha: TrilhaSubtaskState[]): MergedTrilhaEtapa[] {
   }))
 }
 
-export function buildProximosPassosText(loja: AssessoriaLoja, clienteNome: string): string {
+export function buildProximosPassosText(data: JornadaChecklist, clienteNome: string): string {
   const linhas: string[] = []
 
-  const merged = mergeSituations(loja.situations)
+  const merged = mergeSituations(data.situations)
   for (const pilar of PILLARS) {
     for (const sit of merged[pilar.id]) {
       if (sit.active && !sit.sent) {
@@ -224,7 +224,7 @@ export function buildProximosPassosText(loja: AssessoriaLoja, clienteNome: strin
     }
   }
 
-  for (const etapa of mergeTrilha(loja.trilha)) {
+  for (const etapa of mergeTrilha(data.trilha)) {
     for (const task of etapa.tasks) {
       for (const sub of task.subtasks) {
         if (!sub.done) {
@@ -235,13 +235,13 @@ export function buildProximosPassosText(loja: AssessoriaLoja, clienteNome: strin
     }
   }
 
-  for (const t of loja.custom_tasks) {
+  for (const t of data.custom_tasks) {
     if (!t.done) {
       const detalhes = [t.responsavel && `Responsável: ${t.responsavel}`, t.prazo && `Prazo: ${t.prazo}`].filter(Boolean).join(" · ")
       linhas.push(`[${t.tag ?? "Geral"}] ${t.text}${detalhes ? ` (${detalhes})` : ""}`)
     }
   }
 
-  const header = `Próximos passos — ${clienteNome} (${loja.label})`
+  const header = `Próximos passos — ${clienteNome}`
   return linhas.length ? `${header}\n\n${linhas.map((l, i) => `${i + 1}. ${l}`).join("\n")}` : `${header}\n\nNenhum entregável pendente no momento.`
 }

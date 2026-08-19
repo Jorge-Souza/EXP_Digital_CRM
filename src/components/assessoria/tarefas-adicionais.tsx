@@ -1,16 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import type { AssessoriaLoja, CustomTask } from "@/lib/types"
+import type { JornadaChecklist, CustomTask } from "@/lib/types"
 
 interface Props {
-  loja: AssessoriaLoja
-  onUpdate: (patch: Partial<AssessoriaLoja>) => void
+  data: JornadaChecklist
+  onUpdate: (patch: Partial<JornadaChecklist>) => void
 }
 
 const TAGS = ["Estrutura", "Exposição", "Expansão", "Etapa 1", "Etapa 2", "Etapa 3", "Geral"]
 
-export function TarefasAdicionais({ loja, onUpdate }: Props) {
+export function TarefasAdicionais({ data, onUpdate }: Props) {
   const [text, setText] = useState("")
   const [tag, setTag] = useState("Geral")
 
@@ -18,22 +18,22 @@ export function TarefasAdicionais({ loja, onUpdate }: Props) {
     const value = text.trim()
     if (!value) return
     const novaTask: CustomTask = { id: crypto.randomUUID(), text: value, tag, responsavel: null, prazo: null, done: false }
-    onUpdate({ custom_tasks: [...loja.custom_tasks, novaTask] })
+    onUpdate({ custom_tasks: [...data.custom_tasks, novaTask] })
     setText("")
   }
 
   function patch(id: string, value: Partial<CustomTask>) {
-    onUpdate({ custom_tasks: loja.custom_tasks.map((t) => (t.id === id ? { ...t, ...value } : t)) })
+    onUpdate({ custom_tasks: data.custom_tasks.map((t) => (t.id === id ? { ...t, ...value } : t)) })
   }
 
   function remove(id: string) {
-    onUpdate({ custom_tasks: loja.custom_tasks.filter((t) => t.id !== id) })
+    onUpdate({ custom_tasks: data.custom_tasks.filter((t) => t.id !== id) })
   }
 
   return (
     <div>
       <h3 className="text-sm font-bold uppercase tracking-wide mb-1">Tarefas Adicionais</h3>
-      <p className="text-xs text-[#8a8a8a] mb-3.5">Vá somando aqui as tarefas específicas que forem surgindo na evolução dessa loja.</p>
+      <p className="text-xs text-[#8a8a8a] mb-3.5">Vá somando aqui as tarefas específicas que forem surgindo na evolução dessa data.</p>
 
       <div className="flex gap-2 mb-3.5 flex-wrap">
         <input
@@ -62,11 +62,11 @@ export function TarefasAdicionais({ loja, onUpdate }: Props) {
         </button>
       </div>
 
-      {loja.custom_tasks.length === 0 ? (
+      {data.custom_tasks.length === 0 ? (
         <p className="text-xs text-[#8a8a8a] py-2.5">Nenhuma tarefa adicional ainda.</p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {loja.custom_tasks.map((t) => (
+          {data.custom_tasks.map((t) => (
             <div key={t.id} className="flex items-center gap-2.5 bg-[#141414] border border-[#2b2b2b] rounded-lg px-3.5 py-2.5 flex-wrap">
               <button
                 type="button"

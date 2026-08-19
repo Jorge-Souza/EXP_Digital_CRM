@@ -2,13 +2,16 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, FileBarChart } from "lucide-react"
-import type { Assessorado, SessaoAssessoria } from "@/lib/types"
+import type { Assessorado, PilarId, SessaoAssessoria } from "@/lib/types"
+import { mergeSituations } from "@/lib/assessoria-catalog"
 import { RelatorioTable, type LinhaRelatorio } from "./relatorio-table"
 
 function estagioAtual(a: Assessorado): string {
-  if (a.status_expansao !== "nao_iniciado") return "Expansão"
-  if (a.status_exposicao !== "nao_iniciado") return "Exposição"
-  if (a.status_estrutura !== "nao_iniciado") return "Estrutura"
+  const merged = mergeSituations(a.situations)
+  const temAtiva = (pilarId: PilarId) => merged[pilarId].some((s) => s.active)
+  if (temAtiva("expansao")) return "Expansão"
+  if (temAtiva("exposicao")) return "Exposição"
+  if (temAtiva("estrutura")) return "Estrutura"
   return "Não iniciado"
 }
 

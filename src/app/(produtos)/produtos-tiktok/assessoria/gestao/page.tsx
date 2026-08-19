@@ -47,8 +47,8 @@ export default async function AssessoriaGestaoPage() {
     <div className="dark bg-background text-foreground -m-6 min-h-[calc(100vh-3.5rem)] p-6 space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div className="space-y-3">
-          <Link href="/produtos-tiktok/assessoria" className="text-xs text-white/40 hover:text-white/70 inline-flex items-center gap-1.5 transition-colors">
-            <ArrowLeft className="h-3 w-3" /> Jornada por loja
+          <Link href="/produtos-tiktok" className="text-xs text-white/40 hover:text-white/70 inline-flex items-center gap-1.5 transition-colors">
+            <ArrowLeft className="h-3 w-3" /> TikTok Shop
           </Link>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
