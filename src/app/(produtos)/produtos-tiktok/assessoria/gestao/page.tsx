@@ -84,46 +84,46 @@ export default async function AssessoriaGestaoPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {lista.map((a) => (
             <Link key={a.id} href={`/produtos-tiktok/assessoria/gestao/${a.id}`}>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 space-y-4 h-full transition-all hover:border-purple-400/40 hover:bg-white/[0.05]">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2 h-full transition-all hover:border-purple-400/40 hover:bg-white/[0.05]">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white"
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-white"
                       style={{ background: "linear-gradient(135deg, #A855F7, #7C3AED)" }}>
                       {iniciais(a.nome)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold leading-tight truncate text-white">{a.nome}</p>
+                      <p className="text-sm font-semibold leading-tight truncate text-white">{a.nome}</p>
                       {a.loja ? (
-                        <p className="text-xs text-white/40 truncate flex items-center gap-1"><Store className="h-3 w-3" />{a.loja}</p>
-                      ) : a.email && <p className="text-xs text-white/40 truncate">{a.email}</p>}
+                        <p className="text-[11px] text-white/40 truncate flex items-center gap-1"><Store className="h-2.5 w-2.5" />{a.loja}</p>
+                      ) : a.email && <p className="text-[11px] text-white/40 truncate">{a.email}</p>}
                     </div>
                   </div>
                   {a.numero_vaga && (
-                    <span className="text-xs font-semibold text-white/40 shrink-0">Vaga {a.numero_vaga}/7</span>
+                    <span className="text-[10px] font-semibold text-white/40 shrink-0">#{a.numero_vaga}</span>
                   )}
                 </div>
 
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex items-center gap-2 text-white/40">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>Contratou em {new Date(a.data_contratacao + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <Calendar className="h-3 w-3" />
+                    <span>{new Date(a.data_contratacao + "T00:00:00").toLocaleDateString("pt-BR")}</span>
                   </div>
                   {a.valor_assessoria && (
-                    <div className="flex items-center gap-2 text-white/40">
-                      <DollarSign className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-1.5 text-white/40">
+                      <DollarSign className="h-3 w-3" />
                       <span>{a.valor_assessoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className={STATUS_CLASS[a.status] ?? ""}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge variant="outline" className={`text-[10px] py-0 ${STATUS_CLASS[a.status] ?? ""}`}>
                     {STATUS_LABEL[a.status] ?? a.status}
                   </Badge>
-                  <Badge variant="outline" className={SAUDE_CLASS[a.saude_conta] ?? ""}>
+                  <Badge variant="outline" className={`text-[10px] py-0 ${SAUDE_CLASS[a.saude_conta] ?? ""}`}>
                     {SAUDE_LABEL[a.saude_conta] ?? a.saude_conta}
                   </Badge>
                 </div>
