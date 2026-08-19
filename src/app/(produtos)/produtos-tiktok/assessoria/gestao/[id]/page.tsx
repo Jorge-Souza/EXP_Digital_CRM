@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Calendar, DollarSign, Phone, Mail, ExternalLink, Clock, Store, Tag, TrendingUp } from "lucide-react"
+import { ArrowLeft, Calendar, DollarSign, Phone, Mail, ExternalLink, Clock, Store, Tag, TrendingUp, MessageCircle } from "lucide-react"
 import type { Assessorado, SessaoAssessoria } from "@/lib/types"
 import { NovaSessaoDialog } from "@/components/nova-sessao-dialog"
 import { RegistrarSessaoDialog } from "@/components/registrar-sessao-dialog"
@@ -152,6 +152,10 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                 const dt = new Date(s.data_sessao)
                 const cfg = statusConfig[s.status] ?? statusConfig.agendada
                 const podeRegistrar = s.status === "agendada" || s.status === "remarcada"
+                const waTexto = [s.titulo, s.descricao, s.plano_de_acao && `*Plano de Ação:*\n${s.plano_de_acao}`]
+                  .filter(Boolean).join("\n\n")
+                const telefoneDigits = a.telefone?.replace(/\D/g, "") ?? ""
+                const waHref = `https://wa.me/${telefoneDigits}?text=${encodeURIComponent(waTexto)}`
                 return (
                   <div key={s.id} className="rounded-xl border border-white/10 bg-white/[0.03] hover:border-white/20 transition-colors p-3">
                     <div className="flex items-start justify-between gap-3">
@@ -191,6 +195,12 @@ export default async function AssessoradoPage({ params }: { params: Promise<{ id
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {podeRegistrar && <RegistrarSessaoDialog sessao={s} assessoradoId={id} />}
+                        {(s.descricao || s.plano_de_acao) && (
+                          <a href={waHref} target="_blank" rel="noopener noreferrer"
+                            className="text-[11px] text-green-400 hover:underline flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3" /> Enviar por WhatsApp
+                          </a>
+                        )}
                         {s.google_event_link && (
                           <a href={s.google_event_link} target="_blank" rel="noopener noreferrer"
                             className="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
