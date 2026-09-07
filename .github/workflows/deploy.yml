@@ -10,8 +10,36 @@ jobs:
     steps:
       - name: SSH deploy
         uses: appleboy/ssh-action@v1
+        env:
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_FORMS_WEBHOOK_SECRET: ${{ secrets.GOOGLE_FORMS_WEBHOOK_SECRET }}
+          KIWIFY_WEBHOOK_SECRET: ${{ secrets.KIWIFY_WEBHOOK_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_DEPLOY_USER }}
           key: ${{ secrets.VPS_DEPLOY_SSH_KEY }}
-          script: bash /opt/exp-crm/scripts/deploy-vps.sh
+          envs: FACEBOOK_ACCESS_TOKEN,ANTHROPIC_API_KEY,GOOGLE_FORMS_WEBHOOK_SECRET,KIWIFY_WEBHOOK_SECRET,CRON_SECRET,SUPABASE_SERVICE_ROLE_KEY,GROQ_API_KEY,APPS_SCRIPT_URL,GEMINI_API_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL
+          script: |
+            cat > /opt/exp-crm/.env.production <<ENVEOF
+            FACEBOOK_ACCESS_TOKEN=$FACEBOOK_ACCESS_TOKEN
+            ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+            GOOGLE_FORMS_WEBHOOK_SECRET=$GOOGLE_FORMS_WEBHOOK_SECRET
+            KIWIFY_WEBHOOK_SECRET=$KIWIFY_WEBHOOK_SECRET
+            CRON_SECRET=$CRON_SECRET
+            SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+            GROQ_API_KEY=$GROQ_API_KEY
+            APPS_SCRIPT_URL=$APPS_SCRIPT_URL
+            GEMINI_API_KEY=$GEMINI_API_KEY
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+            NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+            ENVEOF
+            chmod 600 /opt/exp-crm/.env.production
+            bash /opt/exp-crm/scripts/deploy-vps.sh

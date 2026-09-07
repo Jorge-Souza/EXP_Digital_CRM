@@ -11,10 +11,9 @@ cd "$APP_DIR"
 git pull origin main
 
 # NEXT_PUBLIC_* precisam existir no momento do build (o Next.js embute no bundle),
-# não adianta só passar no `docker run --env-file`. O `vercel env pull` grava os
-# valores entre aspas duplas — precisa remover antes de usar como build-arg.
-NEXT_PUBLIC_SUPABASE_URL=$(grep '^NEXT_PUBLIC_SUPABASE_URL=' .env.production | cut -d= -f2- | sed 's/^"//;s/"$//')
-NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.production | cut -d= -f2- | sed 's/^"//;s/"$//')
+# não adianta só passar no `docker run --env-file`.
+NEXT_PUBLIC_SUPABASE_URL=$(grep '^NEXT_PUBLIC_SUPABASE_URL=' .env.production | cut -d= -f2-)
+NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.production | cut -d= -f2-)
 
 docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
