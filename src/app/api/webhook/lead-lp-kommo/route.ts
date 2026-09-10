@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify([
       {
         name: nomeLead,
-        pipeline_id: 14439111, // Form - Tiktok Shop
-        status_id: 111530671, // Etapa de leads de entrada
+        pipeline_id: 14439111, // Form - Tiktok Shop (status_id omitido: a 1ª etapa é
+        // do tipo "leads de entrada" e o Kommo rejeita atribuição direta a ela)
         _embedded: {
           contacts: [
             {
