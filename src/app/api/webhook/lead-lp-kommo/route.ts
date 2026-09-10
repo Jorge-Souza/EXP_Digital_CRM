@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify([
       {
         name: nomeLead,
+        pipeline_id: 14439111, // Form - Tiktok Shop
+        status_id: 111530671, // Etapa de leads de entrada
         _embedded: {
           contacts: [
             {
