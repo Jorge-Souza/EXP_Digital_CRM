@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   }
 
   const kommoData = await kommoRes.json().catch(() => null)
-  const leadId = kommoData?._embedded?.leads?.[0]?.id
+  const leadId = kommoData?.[0]?.id
   if (!leadId) {
     console.error("[lead-lp-kommo] resposta sem id de lead:", JSON.stringify(kommoData).slice(0, 500))
     return NextResponse.json({ ok: true, warning: "lead criado sem id retornado" })
