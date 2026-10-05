@@ -13,7 +13,8 @@ export type Venda = {
 export type Saque = { plataforma: "kiwify" | "hotmart"; external_id: string; valor: number; status: string; data: string }
 export type Lancamento = {
   id: string
-  tipo: "despesa" | "retirada" | "saque"
+  tipo: "despesa" | "retirada" | "saque" | "receita" | "devolucao"
+  produto: string | null
   data: string
   categoria: string | null
   descricao: string | null
@@ -36,3 +37,11 @@ export const CATEGORIAS: Record<string, string> = {
 }
 export const CATS_VARIAVEIS = ["trafego", "comissoes", "impostos"]
 export const CATS_FIXAS = ["equipe", "ferramentas", "fixas", "outros"]
+
+export const PRODUTOS_DIRETOS: Record<string, string> = {
+  sos: "SOS TikTok Shop",
+  mentoria: "Mentoria",
+  assessoria: "Assessoria",
+  a_classificar: "A classificar",
+  outros: "Outros",
+}

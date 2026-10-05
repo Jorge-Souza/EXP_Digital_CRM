@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  CATEGORIAS, CATS_FIXAS, CATS_VARIAVEIS,
+  CATEGORIAS, CATS_FIXAS, CATS_VARIAVEIS, PRODUTOS_DIRETOS,
   type Config, type Lancamento, type SaldoKiwify, type Saque, type Venda,
 } from "@/lib/financeiro/tipos"
 
@@ -69,11 +69,15 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     const RE = vendas.filter((v) => v.status !== "aprovada" && noPeriodoBR(v.data_status ?? v.data_venda, p))
     const D = lancamentos.filter((l) => l.tipo === "despesa" && noPeriodo(l.data, p))
     const bruta = soma(V, (v) => v.bruto)
+    // receitas diretas (Pix) só entram quando o filtro de produto está em "todos"
+    const diretas = produto === "all" ? soma(lancamentos.filter((l) => l.tipo === "receita" && noPeriodo(l.data, p)), (l) => l.valor) : 0
+    const devolucoes = produto === "all" ? soma(lancamentos.filter((l) => l.tipo === "devolucao" && noPeriodo(l.data, p)), (l) => l.valor) : 0
     const reemb = soma(RE, (v) => v.bruto)
     const taxas = soma(V, (v) => v.taxa)
     // parte da venda repassada a afiliado/coprodutor/dono do produto: bruto − taxa − o que você recebe
     const parceiros = soma(V.filter((v) => v.status === "aprovada"), (v) => Math.max(0, v.bruto - v.taxa - v.liquido))
-    const liq = bruta - reemb - taxas - parceiros
+    const receita = bruta + diretas
+    const liq = receita - reemb - devolucoes - taxas - parceiros
     const cat: Record<string, number> = {}
     Object.keys(CATEGORIAS).forEach((c) => (cat[c] = soma(D.filter((l) => l.categoria === c), (l) => l.valor)))
     const variavel = soma(CATS_VARIAVEIS, (c) => cat[c])
@@ -84,7 +88,7 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     const saqueTotal =
       soma(sq, (s) => s.valor) + soma(lancamentos.filter((l) => l.tipo === "saque" && noPeriodo(l.data, p)), (l) => l.valor)
     return {
-      n: V.length, bruta, reemb, taxas, parceiros, liq, cat, variavel, fixo, contrib: liq - variavel, op,
+      n: V.length, bruta, diretas, devolucoes, receita, reemb, taxas, parceiros, liq, cat, variavel, fixo, contrib: liq - variavel, op,
       ret, retido: op - ret, saqueTotal,
       pago: soma(D.filter((l) => l.pago), (l) => l.valor),
       aberto: soma(D.filter((l) => !l.pago), (l) => l.valor),
@@ -111,7 +115,9 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     const banco =
       config.banco_inicial +
       soma(saques.filter((s) => s.status === "success"), (s) => s.valor) +
-      soma(lancamentos.filter((l) => l.tipo === "saque"), (l) => l.valor) -
+      soma(lancamentos.filter((l) => l.tipo === "saque"), (l) => l.valor) +
+      soma(lancamentos.filter((l) => l.tipo === "receita"), (l) => l.valor) -
+      soma(lancamentos.filter((l) => l.tipo === "devolucao"), (l) => l.valor) -
       soma(lancamentos.filter((l) => l.tipo === "despesa" && l.pago), (l) => l.valor) -
       soma(lancamentos.filter((l) => l.tipo === "retirada"), (l) => l.valor)
     return { ...o, banco }
@@ -173,8 +179,8 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
 
         <TabsContent value="geral" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Kpi l="Receita bruta" v={BRL(d.bruta)} s={`${d.n} vendas`} />
-            <Kpi l="Receita líquida" v={BRL(d.liq)} s={`${pct(d.liq, d.bruta)} da bruta`} />
+            <Kpi l="Receita bruta" v={BRL(d.receita)} s={`${d.n} vendas + ${BRL(d.diretas)} em Pix diretos`} />
+            <Kpi l="Receita líquida" v={BRL(d.liq)} s={`${pct(d.liq, d.receita)} da bruta`} />
             <Kpi l="Resultado operacional" v={BRL(d.op)} s={`margem ${pct(d.op, d.liq)}`} neg={d.op < 0} />
             <Kpi l="Retiradas do sócio" v={BRL(d.ret)} s="no período" />
             <Kpi l="Sobra na empresa" v={BRL(d.retido)} s="após retiradas" neg={d.retido < 0} />
@@ -252,17 +258,20 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
               <table className="w-full text-sm">
                 <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-2">Linha</th><th className="text-right">Valor</th><th className="text-right">% da bruta</th></tr></thead>
                 <tbody>
-                  <Linha t="Receita bruta" v={d.bruta} b={d.bruta} total />
-                  <Linha t="(−) Reembolsos e chargebacks" v={d.reemb} b={d.bruta} sub />
-                  <Linha t="(−) Taxas Hotmart / Kiwify" v={d.taxas} b={d.bruta} sub />
-                  <Linha t="(−) Repasse a afiliados, coprodutores e donos do produto" v={d.parceiros} b={d.bruta} sub />
-                  <Linha t="Receita líquida" v={d.liq} b={d.bruta} total />
-                  {CATS_VARIAVEIS.map((c) => <Linha key={c} t={`(−) ${CATEGORIAS[c]}`} v={d.cat[c]} b={d.bruta} sub />)}
-                  <Linha t="Margem de contribuição" v={d.contrib} b={d.bruta} total />
-                  {CATS_FIXAS.map((c) => <Linha key={c} t={`(−) ${CATEGORIAS[c]}`} v={d.cat[c]} b={d.bruta} sub />)}
-                  <Linha t="Resultado operacional" v={d.op} b={d.bruta} total />
-                  <Linha t="(−) Retiradas do sócio" v={d.ret} b={d.bruta} sub />
-                  <Linha t="Sobra na empresa" v={d.retido} b={d.bruta} total />
+                  <Linha t="Vendas nas plataformas (Hotmart + Kiwify)" v={d.bruta} b={d.receita} plus />
+                  <Linha t="Receitas diretas por Pix (SOS, Mentoria, Assessoria)" v={d.diretas} b={d.receita} plus />
+                  <Linha t="Receita bruta" v={d.receita} b={d.receita} total />
+                  <Linha t="(−) Reembolsos e chargebacks das plataformas" v={d.reemb} b={d.receita} sub />
+                  <Linha t="(−) Devoluções de Pix a clientes" v={d.devolucoes} b={d.receita} sub />
+                  <Linha t="(−) Taxas Hotmart / Kiwify" v={d.taxas} b={d.receita} sub />
+                  <Linha t="(−) Repasse a afiliados, coprodutores e donos do produto" v={d.parceiros} b={d.receita} sub />
+                  <Linha t="Receita líquida" v={d.liq} b={d.receita} total />
+                  {CATS_VARIAVEIS.map((c) => <Linha key={c} t={`(−) ${CATEGORIAS[c]}`} v={d.cat[c]} b={d.receita} sub />)}
+                  <Linha t="Margem de contribuição" v={d.contrib} b={d.receita} total />
+                  {CATS_FIXAS.map((c) => <Linha key={c} t={`(−) ${CATEGORIAS[c]}`} v={d.cat[c]} b={d.receita} sub />)}
+                  <Linha t="Resultado operacional" v={d.op} b={d.receita} total />
+                  <Linha t="(−) Retiradas do sócio" v={d.ret} b={d.receita} sub />
+                  <Linha t="Sobra na empresa" v={d.retido} b={d.receita} total />
                 </tbody>
               </table>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -283,11 +292,11 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
             <Card>
               <CardHeader><CardTitle className="text-sm">Caminho do dinheiro · {mesLabel(periodo)}</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
-                {[["Vendido (bruto)", d.bruta], ["Líquido (após taxas e reembolsos)", d.liq], ["Sacado para o banco", d.saqueTotal], ["Contas pagas pelo banco", d.pago], ["Retirada do sócio", d.ret]].map(([l, v]) => (
+                {[["Vendido (bruto, plataformas + Pix diretos)", d.receita], ["Líquido (após taxas e reembolsos)", d.liq], ["Sacado para o banco", d.saqueTotal], ["Pix diretos recebidos (líquido de devoluções)", d.diretas - d.devolucoes], ["Contas pagas pelo banco", d.pago], ["Retirada do sócio", d.ret]].map(([l, v]) => (
                   <div key={l as string} className="flex justify-between gap-3 border-b py-1.5"><span>{l}</span><span className="tabular-nums">{BRL(v as number)}</span></div>
                 ))}
                 <p className="pt-1 text-xs text-muted-foreground">
-                  Entrou no banco − contas pagas − retirada = <b className={d.saqueTotal - d.pago - d.ret < 0 ? "text-red-600" : "text-emerald-600"}>{BRL(d.saqueTotal - d.pago - d.ret)}</b>
+                  Saques + Pix diretos − devoluções − contas pagas − retirada = <b className={d.saqueTotal + d.diretas - d.devolucoes - d.pago - d.ret < 0 ? "text-red-600" : "text-emerald-600"}>{BRL(d.saqueTotal + d.diretas - d.devolucoes - d.pago - d.ret)}</b>
                 </p>
               </CardContent>
             </Card>
@@ -337,10 +346,10 @@ function Kpi({ l, v, s, neg }: { l: string; v: string; s?: string; neg?: boolean
   )
 }
 
-function Linha({ t, v, b, total, sub }: { t: string; v: number; b: number; total?: boolean; sub?: boolean }) {
+function Linha({ t, v, b, total, sub, plus }: { t: string; v: number; b: number; total?: boolean; sub?: boolean; plus?: boolean }) {
   return (
     <tr className={`border-b ${total ? "bg-muted/60 font-semibold" : ""}`}>
-      <td className={`py-2 ${sub ? "pl-6 text-muted-foreground" : ""}`}>{t}</td>
+      <td className={`py-2 ${sub || plus ? "pl-6 text-muted-foreground" : ""}`}>{t}</td>
       <td className={`text-right tabular-nums ${v < 0 && total ? "text-red-600" : ""}`}>{sub && v > 0 ? "−" : ""}{BRL(Math.abs(v) * (sub ? 1 : Math.sign(v) || 1))}</td>
       <td className="text-right tabular-nums text-muted-foreground">{pct(v, b)}</td>
     </tr>
@@ -382,7 +391,7 @@ function ListaLancamentos({ lancamentos, onChange }: { lancamentos: Lancamento[]
           <tr key={l.id} className="border-b">
             <td className="py-2 tabular-nums">{l.data.split("-").reverse().join("/")}</td>
             <td>{l.tipo}</td>
-            <td>{l.categoria ? CATEGORIAS[l.categoria] : l.plataforma ? PLAT_NOME[l.plataforma] : ""}</td>
+            <td>{l.categoria ? CATEGORIAS[l.categoria] : l.produto ? PRODUTOS_DIRETOS[l.produto] ?? l.produto : l.plataforma ? PLAT_NOME[l.plataforma] : ""}</td>
             <td className="max-w-64 truncate">{l.descricao}</td>
             <td className="text-right tabular-nums">{BRL(l.valor)}</td>
             <td>{l.tipo === "despesa" ? (l.pago ? "pago" : <Button size="sm" variant="outline" onClick={async () => { await chamar({ acao: "pagar", id: l.id }); onChange() }}>Marcar pago</Button>) : ""}</td>
@@ -401,7 +410,7 @@ function ListaLancamentos({ lancamentos, onChange }: { lancamentos: Lancamento[]
 
 function NovoLancamento({ onSaved }: { onSaved: () => void }) {
   const [tipo, setTipo] = useState("despesa")
-  const [f, setF] = useState({ data: hoje(), categoria: "trafego", descricao: "", valor: "", plataforma: "hotmart", pago: "1", vencimento: "" })
+  const [f, setF] = useState({ data: hoje(), categoria: "trafego", descricao: "", valor: "", plataforma: "hotmart", produto: "sos", pago: "1", vencimento: "" })
   const [msg, setMsg] = useState("")
   const set = (k: string, v: string) => setF((x) => ({ ...x, [k]: v }))
   return (
@@ -421,6 +430,8 @@ function NovoLancamento({ onSaved }: { onSaved: () => void }) {
           <Campo l="Tipo">
             <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
               <option value="despesa">Despesa</option>
+              <option value="receita">Receita direta (Pix)</option>
+              <option value="devolucao">Devolução a cliente</option>
               <option value="retirada">Retirada do sócio</option>
               <option value="saque">Saque Hotmart → banco</option>
             </select>
@@ -430,6 +441,13 @@ function NovoLancamento({ onSaved }: { onSaved: () => void }) {
             <Campo l="Categoria">
               <select value={f.categoria} onChange={(e) => set("categoria", e.target.value)} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
                 {Object.entries(CATEGORIAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </Campo>
+          )}
+          {(tipo === "receita" || tipo === "devolucao") && (
+            <Campo l="Produto">
+              <select value={f.produto} onChange={(e) => set("produto", e.target.value)} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
+                {Object.entries(PRODUTOS_DIRETOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </Campo>
           )}

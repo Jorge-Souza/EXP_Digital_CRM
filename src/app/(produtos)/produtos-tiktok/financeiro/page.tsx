@@ -53,7 +53,7 @@ export default async function FinanceiroPage() {
   const [vendas, saques, lancamentos, cfgRows, kiwify] = await Promise.all([
     todas<Venda>("financeiro_vendas", "plataforma, external_id, produto, data_venda, bruto, taxa, liquido, status, data_status, liberacao", "data_venda"),
     todas<Saque>("financeiro_saques", "plataforma, external_id, valor, status, data", "data"),
-    todas<Lancamento>("financeiro_lancamentos", "id, tipo, data, categoria, descricao, valor, plataforma, pago, vencimento", "data"),
+    todas<Lancamento>("financeiro_lancamentos", "id, tipo, data, categoria, produto, descricao, valor, plataforma, pago, vencimento", "data"),
     createAdminClient().from("financeiro_config").select("chave, valor"),
     saldoKiwify(),
   ])

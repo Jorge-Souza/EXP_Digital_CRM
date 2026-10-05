@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { CATEGORIAS } from "@/lib/financeiro/tipos"
+import { CATEGORIAS, PRODUTOS_DIRETOS } from "@/lib/financeiro/tipos"
 
 // Escritas do painel financeiro (só admin). Leitura é feita direto na página.
 export async function POST(req: Request) {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   if (b.acao === "criar") {
     const tipo = b.tipo
     const valor = Number(b.valor)
-    if (!["despesa", "retirada", "saque"].includes(tipo) || !(valor >= 0) || !/^\d{4}-\d{2}-\d{2}$/.test(b.data ?? "")) {
+    if (!["despesa", "retirada", "saque", "receita", "devolucao"].includes(tipo) || !(valor >= 0) || !/^\d{4}-\d{2}-\d{2}$/.test(b.data ?? "")) {
       return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
     }
     const row = {
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
       descricao: typeof b.descricao === "string" ? b.descricao.trim().slice(0, 200) || null : null,
       categoria: tipo === "despesa" && b.categoria in CATEGORIAS ? b.categoria : null,
       plataforma: tipo === "saque" && ["kiwify", "hotmart"].includes(b.plataforma) ? b.plataforma : null,
+      produto: ["receita", "devolucao"].includes(tipo) && b.produto in PRODUTOS_DIRETOS ? b.produto : null,
       pago: tipo === "despesa" ? b.pago !== false : true,
       vencimento: tipo === "despesa" && /^\d{4}-\d{2}-\d{2}$/.test(b.vencimento ?? "") ? b.vencimento : null,
     }
