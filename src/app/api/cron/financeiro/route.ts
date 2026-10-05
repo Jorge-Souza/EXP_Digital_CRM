@@ -5,7 +5,8 @@ export const maxDuration = 300
 
 // Sync diário das vendas e saques (Kiwify + Hotmart). ?desde=AAAA-MM-DD refaz o histórico.
 export async function GET(req: Request) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  const segredo = process.env.CRON_SECRET?.trim()
+  if (!segredo || req.headers.get("authorization") !== `Bearer ${segredo}`) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
   }
   const url = new URL(req.url)
