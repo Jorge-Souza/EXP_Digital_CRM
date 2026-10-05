@@ -15,6 +15,16 @@ import {
 const BRL = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 const pct = (a: number, b: number) => (b ? ((a / b) * 100).toFixed(1).replace(".", ",") + "%" : "–")
 const MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+type Faixa = { ini: string; fim: string } // datas AAAA-MM-DD, inclusivas
+type Modo = "mensal" | "trimestral" | "anual" | "periodo"
+const MODOS: [Modo, string][] = [["mensal", "Mensal"], ["trimestral", "Trimestral"], ["anual", "Anual"], ["periodo", "Período"]]
+const ultimoDia = (a: number, m: number) => new Date(a, m, 0).getDate()
+const dd = (n: number) => String(n).padStart(2, "0")
+const faixaMes = (m: string): Faixa => { const a = +m.slice(0, 4), n = +m.slice(5, 7); return { ini: `${m}-01`, fim: `${m}-${dd(ultimoDia(a, n))}` } }
+const faixaTri = (t: string): Faixa => { const a = +t.slice(0, 4), q = +t.slice(6), m1 = (q - 1) * 3 + 1, m3 = m1 + 2; return { ini: `${a}-${dd(m1)}-01`, fim: `${a}-${dd(m3)}-${dd(ultimoDia(a, m3))}` } }
+const faixaAno = (y: string): Faixa => ({ ini: `${y}-01-01`, fim: `${y}-12-31` })
+const triLabel = (t: string) => `T${t.slice(6)}/${t.slice(0, 4)}`
+const dataBR = (d: string) => d.split("-").reverse().join("/")
 const mesLabel = (m: string) => (m === "all" ? "Todo o período" : `${MES[+m.slice(5, 7) - 1]}/${m.slice(2, 4)}`)
 const PLATS = ["hotmart", "kiwify"] as const
 const PLAT_NOME = { hotmart: "Hotmart", kiwify: "Kiwify" }
@@ -35,7 +45,12 @@ type Props = { vendas: Venda[]; saques: Saque[]; lancamentos: Lancamento[]; conf
 
 export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, config, saldoKiwify }: Props) {
   const router = useRouter()
-  const [periodo, setPeriodo] = useState("all")
+  const [modo, setModo] = useState<Modo>("anual")
+  const [selMes, setSelMes] = useState("")
+  const [selTri, setSelTri] = useState("")
+  const [selAno, setSelAno] = useState("")
+  const [selDe, setSelDe] = useState("")
+  const [selAte, setSelAte] = useState("")
   const [produto, setProduto] = useState("all")
 
   const produtos = useMemo(() => {
@@ -60,10 +75,23 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     return [...s].sort()
   }, [vendas, lancamentos])
 
-  const noPeriodo = (iso: string, p: string) => p === "all" || iso.slice(0, 7) === p
-  const noPeriodoBR = (iso: string, p: string) => p === "all" || mesBR(iso) === p
+  const anos = useMemo(() => [...new Set(meses.map((m) => m.slice(0, 4)))], [meses])
+  const tris = useMemo(() => [...new Set(meses.map((m) => `${m.slice(0, 4)}-T${Math.ceil(+m.slice(5, 7) / 3)}`))], [meses])
+  const mesSel = selMes || meses[meses.length - 1] || hoje().slice(0, 7)
+  const triSel = selTri || tris[tris.length - 1] || `${hoje().slice(0, 4)}-T${Math.ceil(+hoje().slice(5, 7) / 3)}`
+  const anoSel = selAno || anos[anos.length - 1] || hoje().slice(0, 4)
+  const deSel = selDe || `${anoSel}-01-01`
+  const ateSel = selAte || hoje()
 
-  function dre(p: string) {
+  const faixa: Faixa =
+    modo === "mensal" ? faixaMes(mesSel) : modo === "trimestral" ? faixaTri(triSel) : modo === "anual" ? faixaAno(anoSel) : { ini: deSel, fim: ateSel }
+  const rotulo =
+    modo === "mensal" ? mesLabel(mesSel) : modo === "trimestral" ? triLabel(triSel) : modo === "anual" ? anoSel : `${dataBR(deSel)} a ${dataBR(ateSel)}`
+
+  const noPeriodo = (iso: string, f: Faixa) => iso.slice(0, 10) >= f.ini && iso.slice(0, 10) <= f.fim
+  const noPeriodoBR = (iso: string, f: Faixa) => noPeriodo(diaBR(iso), f)
+
+  function dre(p: Faixa) {
     const V = vendas.filter((v) => noPeriodoBR(v.data_venda, p))
     // reembolso conta no mês em que aconteceu (data_status), não no mês da venda
     const RE = vendas.filter((v) => v.status !== "aprovada" && noPeriodoBR(v.data_status ?? v.data_venda, p))
@@ -95,12 +123,12 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     }
   }
 
-  const d = dre(periodo)
+  const d = dre(faixa)
 
   // receita líquida por plataforma: mesma conta do DRE, aberta por origem
   const porPlat = PLATS.map((p) => {
-    const V = vendas.filter((v) => v.plataforma === p && noPeriodoBR(v.data_venda, periodo))
-    const RE = vendas.filter((v) => v.plataforma === p && v.status !== "aprovada" && noPeriodoBR(v.data_status ?? v.data_venda, periodo))
+    const V = vendas.filter((v) => v.plataforma === p && noPeriodoBR(v.data_venda, faixa))
+    const RE = vendas.filter((v) => v.plataforma === p && v.status !== "aprovada" && noPeriodoBR(v.data_status ?? v.data_venda, faixa))
     const bruta = soma(V, (v) => v.bruto)
     const taxas = soma(V, (v) => v.taxa)
     const reemb = soma(RE, (v) => v.bruto)
@@ -139,8 +167,18 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
     return { ...o, banco }
   }, [todasVendas, saques, lancamentos, config])
 
-  const serie = meses.slice(-12).map((m) => {
-    const x = dre(m)
+  const mesesFaixa: string[] = []
+  {
+    let a = +faixa.ini.slice(0, 4), m = +faixa.ini.slice(5, 7)
+    const fa = +faixa.fim.slice(0, 4), fm = +faixa.fim.slice(5, 7)
+    while ((a < fa || (a === fa && m <= fm)) && mesesFaixa.length < 240) {
+      mesesFaixa.push(`${a}-${dd(m)}`)
+      if (++m > 12) { m = 1; a++ }
+    }
+  }
+  const serie = mesesFaixa.slice(-12).map((m) => {
+    const fm = faixaMes(m)
+    const x = dre({ ini: fm.ini > faixa.ini ? fm.ini : faixa.ini, fim: fm.fim < faixa.fim ? fm.fim : faixa.fim })
     return { mes: mesLabel(m), "Receita líquida": +x.liq.toFixed(2), "Resultado operacional": +x.op.toFixed(2) }
   })
 
@@ -165,17 +203,39 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
-        <select
-          value={periodo}
-          onChange={(e) => setPeriodo(e.target.value)}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
-          aria-label="Período"
-        >
-          <option value="all">Todo o período</option>
-          {[...meses].reverse().map((m) => (
-            <option key={m} value={m}>{mesLabel(m)}</option>
+        <div className="flex rounded-md border p-0.5 text-sm" role="group" aria-label="Tipo de período">
+          {MODOS.map(([k, l]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setModo(k)}
+              aria-pressed={modo === k}
+              className={`rounded px-3 py-1 ${modo === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >{l}</button>
           ))}
-        </select>
+        </div>
+        {modo === "mensal" && (
+          <select value={mesSel} onChange={(e) => setSelMes(e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm" aria-label="Mês">
+            {[...meses].reverse().map((m) => <option key={m} value={m}>{mesLabel(m)}</option>)}
+          </select>
+        )}
+        {modo === "trimestral" && (
+          <select value={triSel} onChange={(e) => setSelTri(e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm" aria-label="Trimestre">
+            {[...tris].reverse().map((t) => <option key={t} value={t}>{triLabel(t)}</option>)}
+          </select>
+        )}
+        {modo === "anual" && (
+          <select value={anoSel} onChange={(e) => setSelAno(e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm" aria-label="Ano">
+            {[...anos].reverse().map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        )}
+        {modo === "periodo" && (
+          <div className="flex items-center gap-2 text-sm">
+            <Input type="date" value={deSel} max={ateSel} onChange={(e) => setSelDe(e.target.value)} aria-label="De" className="h-9 w-auto" />
+            <span className="text-muted-foreground">até</span>
+            <Input type="date" value={ateSel} min={deSel} onChange={(e) => setSelAte(e.target.value)} aria-label="Até" className="h-9 w-auto" />
+          </div>
+        )}
         </div>
       </div>
 
@@ -235,7 +295,7 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
                 <div className="flex justify-between border-t pt-2 text-sm font-semibold"><span>Total</span><span className="tabular-nums">{BRL(d.liq)}</span></div>
 <div className="border-t pt-3 text-xs font-medium text-muted-foreground">Por produto</div>
                 {Object.entries(
-                  vendas.filter((v) => noPeriodoBR(v.data_venda, periodo)).reduce<Record<string, number>>((a, v) => {
+                  vendas.filter((v) => noPeriodoBR(v.data_venda, faixa)).reduce<Record<string, number>>((a, v) => {
                     const k = v.produto ?? "(sem nome)"
                     a[k] = (a[k] ?? 0) + v.bruto
                     return a
@@ -270,7 +330,7 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
 
         <TabsContent value="dre">
           <Card>
-            <CardHeader><CardTitle className="text-sm">DRE · {mesLabel(periodo)}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">DRE · {rotulo}</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-2">Linha</th><th className="text-right">Valor</th><th className="text-right">% da bruta</th></tr></thead>
@@ -307,7 +367,7 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader><CardTitle className="text-sm">Caminho do dinheiro · {mesLabel(periodo)}</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Caminho do dinheiro · {rotulo}</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {[["Vendido (bruto, plataformas + Pix diretos)", d.receita], ["Líquido (após taxas e reembolsos)", d.liq], ["Sacado para o banco", d.saqueTotal], ["Pix diretos recebidos (líquido de devoluções)", d.diretas - d.devolucoes], ["Contas pagas pelo banco", d.pago], ["Retirada do sócio", d.ret]].map(([l, v]) => (
                   <div key={l as string} className="flex justify-between gap-3 border-b py-1.5"><span>{l}</span><span className="tabular-nums">{BRL(v as number)}</span></div>
