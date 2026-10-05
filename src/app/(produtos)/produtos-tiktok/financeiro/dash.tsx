@@ -33,9 +33,25 @@ const soma = <T,>(a: T[], f: (x: T) => number) => a.reduce((s, x) => s + f(x), 0
 
 type Props = { vendas: Venda[]; saques: Saque[]; lancamentos: Lancamento[]; config: Config; saldoKiwify: SaldoKiwify }
 
-export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwify }: Props) {
+export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, config, saldoKiwify }: Props) {
   const router = useRouter()
   const [periodo, setPeriodo] = useState("all")
+  const [produto, setProduto] = useState("all")
+
+  const produtos = useMemo(() => {
+    const m = new Map<string, number>()
+    todasVendas.filter((v) => v.status === "aprovada").forEach((v) => {
+      const k = (v.produto ?? "(sem nome)").trim()
+      m.set(k, (m.get(k) ?? 0) + v.bruto)
+    })
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k)
+  }, [todasVendas])
+
+  // o filtro de produto vale para vendas e DRE; saldos das plataformas usam todas as vendas
+  const vendas = useMemo(
+    () => (produto === "all" ? todasVendas : todasVendas.filter((v) => (v.produto ?? "(sem nome)").trim() === produto)),
+    [todasVendas, produto],
+  )
 
   const meses = useMemo(() => {
     const s = new Set<string>()
@@ -55,7 +71,9 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
     const bruta = soma(V, (v) => v.bruto)
     const reemb = soma(RE, (v) => v.bruto)
     const taxas = soma(V, (v) => v.taxa)
-    const liq = bruta - reemb - taxas
+    // parte da venda repassada a afiliado/coprodutor/dono do produto: bruto − taxa − o que você recebe
+    const parceiros = soma(V.filter((v) => v.status === "aprovada"), (v) => Math.max(0, v.bruto - v.taxa - v.liquido))
+    const liq = bruta - reemb - taxas - parceiros
     const cat: Record<string, number> = {}
     Object.keys(CATEGORIAS).forEach((c) => (cat[c] = soma(D.filter((l) => l.categoria === c), (l) => l.valor)))
     const variavel = soma(CATS_VARIAVEIS, (c) => cat[c])
@@ -66,7 +84,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
     const saqueTotal =
       soma(sq, (s) => s.valor) + soma(lancamentos.filter((l) => l.tipo === "saque" && noPeriodo(l.data, p)), (l) => l.valor)
     return {
-      n: V.length, bruta, reemb, taxas, liq, cat, variavel, fixo, contrib: liq - variavel, op,
+      n: V.length, bruta, reemb, taxas, parceiros, liq, cat, variavel, fixo, contrib: liq - variavel, op,
       ret, retido: op - ret, saqueTotal,
       pago: soma(D.filter((l) => l.pago), (l) => l.valor),
       aberto: soma(D.filter((l) => !l.pago), (l) => l.valor),
@@ -81,7 +99,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
     for (const p of PLATS) {
       const prazo = config[`prazo_${p}`]
       let disp = 0, fut = 0
-      vendas.filter((v) => v.plataforma === p && v.status === "aprovada").forEach((v) => {
+      todasVendas.filter((v) => v.plataforma === p && v.status === "aprovada").forEach((v) => {
         const lib = v.liberacao ?? somaDias(diaBR(v.data_venda), prazo)
         if (lib <= t) disp += v.liquido
         else fut += v.liquido
@@ -97,7 +115,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
       soma(lancamentos.filter((l) => l.tipo === "despesa" && l.pago), (l) => l.valor) -
       soma(lancamentos.filter((l) => l.tipo === "retirada"), (l) => l.valor)
     return { ...o, banco }
-  }, [vendas, saques, lancamentos, config])
+  }, [todasVendas, saques, lancamentos, config])
 
   const serie = meses.slice(-12).map((m) => {
     const x = dre(m)
@@ -113,6 +131,18 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
           <h1 className="text-xl font-semibold">Financeiro TikTok Shop</h1>
           <p className="text-sm text-muted-foreground">DRE e caixa · Hotmart + Kiwify · sincroniza todo dia às 06h</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <select
+          value={produto}
+          onChange={(e) => setProduto(e.target.value)}
+          className="h-9 max-w-64 rounded-md border bg-background px-3 text-sm"
+          aria-label="Produto"
+        >
+          <option value="all">Todos os produtos</option>
+          {produtos.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
         <select
           value={periodo}
           onChange={(e) => setPeriodo(e.target.value)}
@@ -124,6 +154,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
             <option key={m} value={m}>{mesLabel(m)}</option>
           ))}
         </select>
+        </div>
       </div>
 
       {vazio && (
@@ -224,6 +255,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
                   <Linha t="Receita bruta" v={d.bruta} b={d.bruta} total />
                   <Linha t="(−) Reembolsos e chargebacks" v={d.reemb} b={d.bruta} sub />
                   <Linha t="(−) Taxas Hotmart / Kiwify" v={d.taxas} b={d.bruta} sub />
+                  <Linha t="(−) Repasse a afiliados, coprodutores e donos do produto" v={d.parceiros} b={d.bruta} sub />
                   <Linha t="Receita líquida" v={d.liq} b={d.bruta} total />
                   {CATS_VARIAVEIS.map((c) => <Linha key={c} t={`(−) ${CATEGORIAS[c]}`} v={d.cat[c]} b={d.bruta} sub />)}
                   <Linha t="Margem de contribuição" v={d.contrib} b={d.bruta} total />
@@ -234,7 +266,7 @@ export function FinanceiroDash({ vendas, saques, lancamentos, config, saldoKiwif
                 </tbody>
               </table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Competência pela data da venda; reembolso e chargeback saem no mês em que ocorreram. A taxa da plataforma de uma venda reembolsada continua contada como custo.
+                Competência pela data da venda; reembolso e chargeback saem no mês em que ocorreram. O repasse a parceiros é calculado venda a venda (bruto − taxa − o que a plataforma deposita para você), então a receita líquida bate com o valor líquido da Kiwify. A taxa da plataforma de uma venda reembolsada continua contada como custo.
               </p>
             </CardContent>
           </Card>

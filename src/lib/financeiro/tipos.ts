@@ -27,7 +27,7 @@ export type SaldoKiwify = { available: number; pending: number } | null
 
 export const CATEGORIAS: Record<string, string> = {
   trafego: "Tráfego pago",
-  comissoes: "Comissões / coprodução",
+  comissoes: "Outras comissões (lançadas à mão)",
   impostos: "Impostos",
   equipe: "Equipe",
   ferramentas: "Ferramentas",
