@@ -97,6 +97,22 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
 
   const d = dre(periodo)
 
+  // receita líquida por plataforma: mesma conta do DRE, aberta por origem
+  const porPlat = PLATS.map((p) => {
+    const V = vendas.filter((v) => v.plataforma === p && noPeriodoBR(v.data_venda, periodo))
+    const RE = vendas.filter((v) => v.plataforma === p && v.status !== "aprovada" && noPeriodoBR(v.data_status ?? v.data_venda, periodo))
+    const bruta = soma(V, (v) => v.bruto)
+    const taxas = soma(V, (v) => v.taxa)
+    const reemb = soma(RE, (v) => v.bruto)
+    const parc = soma(V.filter((v) => v.status === "aprovada"), (v) => Math.max(0, v.bruto - v.taxa - v.liquido))
+    return { chave: p as string, nome: PLAT_NOME[p], cor: p === "hotmart" ? "#d9622b" : "#2a8c64", n: V.length, bruta, taxas, reemb, parc, liq: bruta - reemb - taxas - parc }
+  })
+  const linhasLiq = [
+    ...porPlat,
+    { chave: "pix", nome: "Pix direto", cor: "#0f5c73", n: 0, bruta: d.diretas, taxas: 0, reemb: d.devolucoes, parc: 0, liq: d.diretas - d.devolucoes },
+  ]
+  const somaLiq = soma(linhasLiq, (x) => Math.max(0, x.liq)) || 1
+
   const saldos = useMemo(() => {
     const t = hoje()
     const o = {} as Record<"hotmart" | "kiwify", { disp: number; fut: number }>
@@ -203,20 +219,21 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
               </CardContent>
             </Card>
             <Card className="md:col-span-2">
-              <CardHeader><CardTitle className="text-sm">Por plataforma</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Receita líquida por plataforma</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                {PLATS.map((p) => {
-                  const V = vendas.filter((v) => v.plataforma === p && noPeriodoBR(v.data_venda, periodo))
-                  const b = soma(V, (v) => v.bruto)
-                  return (
-                    <div key={p}>
-                      <div className="flex justify-between text-sm"><b>{PLAT_NOME[p]}</b><span className="tabular-nums">{BRL(b)}</span></div>
-                      <div className="mt-1 h-2 rounded bg-muted"><div className="h-2 rounded" style={{ width: `${d.bruta ? (b / d.bruta) * 100 : 0}%`, background: p === "hotmart" ? "#d9622b" : "#2a8c64" }} /></div>
-                      <div className="mt-1 text-xs text-muted-foreground">{V.length} vendas · taxas {BRL(soma(V, (v) => v.taxa))} · ticket {BRL(V.length ? b / V.length : 0)}</div>
+                {linhasLiq.map((x) => (
+                  <div key={x.chave}>
+                    <div className="flex justify-between text-sm"><b>{x.nome}</b><b className="tabular-nums">{BRL(x.liq)}</b></div>
+                    <div className="mt-1 h-2 rounded bg-muted"><div className="h-2 rounded" style={{ width: `${(Math.max(0, x.liq) / somaLiq) * 100}%`, background: x.cor }} /></div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {x.chave === "pix"
+                        ? `recebido ${BRL(x.bruta)} − devoluções ${BRL(x.reemb)}`
+                        : `${x.n} vendas · bruta ${BRL(x.bruta)} − taxas ${BRL(x.taxas)} − repasse ${BRL(x.parc)} − reembolsos ${BRL(x.reemb)} · ${pct(x.liq, x.bruta)} da bruta`}
                     </div>
-                  )
-                })}
-                <div className="border-t pt-3 text-xs font-medium text-muted-foreground">Por produto</div>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t pt-2 text-sm font-semibold"><span>Total</span><span className="tabular-nums">{BRL(d.liq)}</span></div>
+<div className="border-t pt-3 text-xs font-medium text-muted-foreground">Por produto</div>
                 {Object.entries(
                   vendas.filter((v) => noPeriodoBR(v.data_venda, periodo)).reduce<Record<string, number>>((a, v) => {
                     const k = v.produto ?? "(sem nome)"
