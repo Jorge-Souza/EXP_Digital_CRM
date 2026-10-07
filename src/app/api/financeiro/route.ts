@@ -43,6 +43,11 @@ export async function POST(req: Request) {
     return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true })
   }
 
+  if (b.acao === "classificar" && typeof b.id === "string" && b.produto in PRODUTOS_DIRETOS) {
+    const { error } = await admin.from("financeiro_lancamentos").update({ produto: b.produto }).eq("id", b.id).in("tipo", ["receita", "devolucao"])
+    return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true })
+  }
+
   if (b.acao === "excluir" && typeof b.id === "string") {
     const { error } = await admin.from("financeiro_lancamentos").delete().eq("id", b.id)
     return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true })

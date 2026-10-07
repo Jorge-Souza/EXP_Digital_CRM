@@ -141,6 +141,19 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
   ]
   const somaLiq = soma(linhasLiq, (x) => Math.max(0, x.liq)) || 1
 
+  // Pix direto aberto por produto (SOS, Mentoria, Assessoria, a classificar...)
+  const diretoProd = Object.keys(PRODUTOS_DIRETOS)
+    .map((k) => {
+      const R = produto === "all" ? lancamentos.filter((l) => l.tipo === "receita" && (l.produto ?? "a_classificar") === k && noPeriodo(l.data, faixa)) : []
+      const D = produto === "all" ? lancamentos.filter((l) => l.tipo === "devolucao" && (l.produto ?? "a_classificar") === k && noPeriodo(l.data, faixa)) : []
+      const receb = soma(R, (l) => l.valor)
+      const dev = soma(D, (l) => l.valor)
+      return { chave: k, nome: PRODUTOS_DIRETOS[k], n: R.length, receb, dev, liq: receb - dev }
+    })
+    .filter((x) => x.n > 0 || x.dev > 0)
+    .sort((a, b) => b.liq - a.liq)
+  const semProduto = diretoProd.find((x) => x.chave === "a_classificar")
+
   const saldos = useMemo(() => {
     const t = hoje()
     const o = {} as Record<"hotmart" | "kiwify", { disp: number; fut: number }>
@@ -282,7 +295,7 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
               <CardHeader><CardTitle className="text-sm">Receita líquida por plataforma</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {linhasLiq.map((x) => (
-                  <div key={x.chave}>
+                  <div key={x.chave} className="space-y-2">
                     <div className="flex justify-between text-sm"><b>{x.nome}</b><b className="tabular-nums">{BRL(x.liq)}</b></div>
                     <div className="mt-1 h-2 rounded bg-muted"><div className="h-2 rounded" style={{ width: `${(Math.max(0, x.liq) / somaLiq) * 100}%`, background: x.cor }} /></div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -290,6 +303,23 @@ export function FinanceiroDash({ vendas: todasVendas, saques, lancamentos, confi
                         ? `recebido ${BRL(x.bruta)} − devoluções ${BRL(x.reemb)}`
                         : `${x.n} vendas · bruta ${BRL(x.bruta)} − taxas ${BRL(x.taxas)} − repasse ${BRL(x.parc)} − reembolsos ${BRL(x.reemb)} · ${pct(x.liq, x.bruta)} da bruta`}
                     </div>
+                    {x.chave === "pix" && diretoProd.length > 0 && (
+                      <div className="space-y-1.5 border-l pl-3">
+                        {diretoProd.map((p) => (
+                          <div key={p.chave} className="text-xs">
+                            <div className="flex justify-between gap-2">
+                              <span className={p.chave === "a_classificar" ? "font-medium text-amber-600" : ""}>{p.nome} · {p.n} {p.n === 1 ? "Pix" : "Pix"}</span>
+                              <span className="tabular-nums">{BRL(p.liq)}</span>
+                            </div>
+                            <div className="mt-0.5 h-1.5 rounded bg-muted"><div className="h-1.5 rounded" style={{ width: `${(Math.max(0, p.liq) / Math.max(1, d.diretas - d.devolucoes)) * 100}%`, background: p.chave === "a_classificar" ? "#d97706" : "#0f5c73" }} /></div>
+                            {p.dev > 0 && <div className="text-muted-foreground">recebido {BRL(p.receb)} − devoluções {BRL(p.dev)}</div>}
+                          </div>
+                        ))}
+                        {semProduto && semProduto.liq > 0 && (
+                          <p className="text-xs text-amber-600">{BRL(semProduto.liq)} em Pix ainda sem produto. Classifique na aba Lançamentos.</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div className="flex justify-between border-t pt-2 text-sm font-semibold"><span>Total</span><span className="tabular-nums">{BRL(d.liq)}</span></div>
@@ -458,9 +488,22 @@ function ContasAbertas({ lancamentos, onChange }: { lancamentos: Lancamento[]; o
 
 function ListaLancamentos({ lancamentos, onChange }: { lancamentos: Lancamento[]; onChange: () => void }) {
   const [armado, setArmado] = useState<string | null>(null)
-  const L = [...lancamentos].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 200)
+  const [tipo, setTipo] = useState("")
+  const L = [...lancamentos].filter((l) => !tipo || l.tipo === tipo).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 300)
   if (!L.length) return <p className="text-sm text-muted-foreground">Nenhum lançamento. Use o formulário acima para registrar despesas, retiradas e saques da Hotmart.</p>
   return (
+    <>
+    <div className="mb-2 flex items-center gap-2 text-sm">
+      <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="h-9 rounded-md border bg-background px-2" aria-label="Filtrar por tipo">
+        <option value="">Todos os tipos</option>
+        <option value="receita">Receita direta (Pix)</option>
+        <option value="devolucao">Devolução</option>
+        <option value="despesa">Despesa</option>
+        <option value="retirada">Retirada</option>
+        <option value="saque">Saque</option>
+      </select>
+      <span className="text-xs text-muted-foreground">{L.length} lançamentos</span>
+    </div>
     <table className="w-full text-sm">
       <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-2">Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th className="text-right">Valor</th><th>Situação</th><th /></tr></thead>
       <tbody>
@@ -468,7 +511,18 @@ function ListaLancamentos({ lancamentos, onChange }: { lancamentos: Lancamento[]
           <tr key={l.id} className="border-b">
             <td className="py-2 tabular-nums">{l.data.split("-").reverse().join("/")}</td>
             <td>{l.tipo}</td>
-            <td>{l.categoria ? CATEGORIAS[l.categoria] : l.produto ? PRODUTOS_DIRETOS[l.produto] ?? l.produto : l.plataforma ? PLAT_NOME[l.plataforma] : ""}</td>
+            <td>
+              {l.tipo === "receita" || l.tipo === "devolucao" ? (
+                <select
+                  value={l.produto ?? "a_classificar"}
+                  onChange={async (e) => { await chamar({ acao: "classificar", id: l.id, produto: e.target.value }); onChange() }}
+                  className={`h-8 rounded-md border bg-background px-1 text-xs ${(l.produto ?? "a_classificar") === "a_classificar" ? "border-amber-500 text-amber-600" : ""}`}
+                  aria-label="Produto do Pix"
+                >
+                  {Object.entries(PRODUTOS_DIRETOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              ) : l.categoria ? CATEGORIAS[l.categoria] : l.plataforma ? PLAT_NOME[l.plataforma] : ""}
+            </td>
             <td className="max-w-64 truncate">{l.descricao}</td>
             <td className="text-right tabular-nums">{BRL(l.valor)}</td>
             <td>{l.tipo === "despesa" ? (l.pago ? "pago" : <Button size="sm" variant="outline" onClick={async () => { await chamar({ acao: "pagar", id: l.id }); onChange() }}>Marcar pago</Button>) : ""}</td>
@@ -482,6 +536,7 @@ function ListaLancamentos({ lancamentos, onChange }: { lancamentos: Lancamento[]
         ))}
       </tbody>
     </table>
+    </>
   )
 }
 
